@@ -7,7 +7,7 @@ package com.ubirch.keyservice.util.server
 object RouteConstants {
 
   final val apiPrefix = "api"
-  final val serviceName = "templateService"
+  final val serviceName = "keyService"
   final val currentVersion = "v1"
 
   val pathPrefix = s"/$apiPrefix/$serviceName/$currentVersion"

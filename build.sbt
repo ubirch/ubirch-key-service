@@ -10,12 +10,12 @@ lazy val commonSettings = Seq(
 
   scalaVersion := "2.11.8",
   scalacOptions ++= Seq("-feature"),
-  organization := "com.ubirch.template",
+  organization := "com.ubirch.key",
 
   homepage := Some(url("http://ubirch.com")),
   scmInfo := Some(ScmInfo(
-    url("https://github.com/ubirch/ubirch-template-service"),
-    "scm:git:git@github.com:ubirch/ubirch-template-service.git"
+    url("https://github.com/ubirch/ubirch-key-service"),
+    "scm:git:git@github.com:ubirch/ubirch-key-service.git"
   )),
   version := "0.1.0-SNAPSHOT",
   test in assembly := {},
@@ -30,7 +30,7 @@ lazy val commonSettings = Seq(
  * MODULES
  ********************************************************/
 
-lazy val templateService = (project in file("."))
+lazy val keyService = (project in file("."))
   .settings(commonSettings: _*)
   .aggregate(
     cmdtools,
@@ -45,7 +45,7 @@ lazy val templateService = (project in file("."))
 lazy val config = project
   .settings(commonSettings: _*)
   .settings(
-    description := "template-service specific config and config tools",
+    description := "key-service specific config and config tools",
     libraryDependencies += ubirchConfig
   )
 
@@ -62,9 +62,7 @@ lazy val core = project
   .settings(
     description := "business logic",
     libraryDependencies ++= depCore,
-    resolvers ++= Seq(
-      resolverAnormcypher
-    )
+    resolvers ++= anormCypherResolvers
   )
 
 lazy val model = project
@@ -85,7 +83,7 @@ lazy val server = project
     resolvers ++= Seq(
       resolverSeebergerJson
     ),
-    mainClass in(Compile, run) := Some("com.ubirch.template.server.Boot"),
+    mainClass in(Compile, run) := Some("com.ubirch.keyservice.server.Boot"),
     resourceGenerators in Compile += Def.task {
       generateDockerFile(baseDirectory.value / ".." / "Dockerfile", (assemblyOutputPath in assembly).value)
     }.taskValue
@@ -198,7 +196,9 @@ lazy val anormcypher = "org.anormcypher" %% "anormcypher" % "0.6.0"
  ********************************************************/
 
 lazy val resolverSeebergerJson = Resolver.bintrayRepo("hseeberger", "maven")
-lazy val resolverAnormcypher = Resolver.typesafeRepo("anormcypher")
+lazy val resolverAnormcypher = "anormcypher" at "http://repo.anormcypher.org/"
+lazy val resolverTypesafeReleases = "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
+lazy val anormCypherResolvers = Seq(resolverAnormcypher, resolverTypesafeReleases)
 
 /*
  * MISC

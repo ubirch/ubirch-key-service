@@ -18,7 +18,7 @@
 
     <appender name="ELASTIC" class="com.internetitem.logback.elasticsearch.ElasticsearchAppender">
         <url>http://${ES_HOST}:${ES_PORT_HTTP}/_bulk</url>
-        <index>template-service-logs-%date{yyyy-MM-dd}</index>
+        <index>key-service-logs-%date{yyyy-MM-dd}</index>
         <type>log</type>
         <loggerName>es-logger</loggerName> <!-- optional -->
         <errorLoggerName>es-error-logger</errorLoggerName> <!-- optional -->

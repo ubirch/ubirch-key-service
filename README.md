@@ -1,10 +1,10 @@
-# ubirch-template-service
+# ubirch-key-service
 
 
 ## General Information
 
-This project can be used as a template for ubirch-services. To actually use it please copy it and replace all
-occurrences of the string "template" with the name of your new service.
+This project serves as a keyserver but unlike PGP keyservers it has additional features (for example, uploading pub keys
+is only possible if you control the private key, too).
 
 
 ## Release History
@@ -23,7 +23,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.template" %% "cmdtools" % "0.1.0-SNAPSHOT"
+  "com.ubirch.key" %% "cmdtools" % "0.1.0-SNAPSHOT"
 )
 ```
 
@@ -34,7 +34,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.template" %% "config" % "0.1.0-SNAPSHOT"
+  "com.ubirch.key" %% "config" % "0.1.0-SNAPSHOT"
 )
 ```
 
@@ -42,10 +42,12 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("snapshots")
+  Resolver.sonatypeRepo("snapshots"),
+  "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
+  "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.template" %% "core" % "0.1.0-SNAPSHOT"
+  "com.ubirch.key" %% "core" % "0.1.0-SNAPSHOT"
 )
 ```
 
@@ -56,7 +58,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.template" %% "model" % "0.1.0-SNAPSHOT"
+  "com.ubirch.key" %% "model" % "0.1.0-SNAPSHOT"
 )
 ```
 
@@ -68,7 +70,7 @@ resolvers ++= Seq(
   Resolver.bintrayRepo("hseeberger", "maven")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.template" %% "server" % "0.1.0-SNAPSHOT"
+  "com.ubirch.key" %% "server" % "0.1.0-SNAPSHOT"
 )
 ```
 
@@ -79,7 +81,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.template" %% "util" % "0.1.0-SNAPSHOT"
+  "com.ubirch.key" %% "util" % "0.1.0-SNAPSHOT"
 )
 ```
 
@@ -88,12 +90,12 @@ libraryDependencies ++= Seq(
 
 ### Welcome / Health
 
-    curl localhost:8092/
-    curl localhost:8092/api/templateService/v1
+    curl localhost:8095/
+    curl localhost:8095/api/keyService/v1
 
 If healthy the server response is:
 
-    200 {"version":"1.0","status":"OK","message":"Welcome to the ubirchTemplateService"}
+    200 {"version":"1.0","status":"OK","message":"Welcome to the ubirchKeyService"}
 
 If not healthy the server response is:
 
