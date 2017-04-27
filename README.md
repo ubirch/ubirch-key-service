@@ -102,6 +102,25 @@ If not healthy the server response is:
     400 {"version":"1.0","status":"NOK","message":"$ERROR_MESSAGE"}
 
 
+### Public Key
+
+#### Create
+
+    curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{
+      "pubkeyInfo": {
+        "hwDeviceId": "some-id-asdf", // String (not always a UUID)
+        "pubKey": "string", // base64
+        "algorithm": "RSA4096", // check X.509 re: constants
+        "previousPubKey": "...", // String - full pub key (optional)
+        "created": "2017-04-26T17:18:00.000Z+02:00",
+        "validNotBefore": "2017-04-26T17:18:00.000Z+02:00",
+        "validNotAfter": "2019-04-26T17:18:00.000Z+02:00" // (optional)
+      },
+      "signature": "string", // base64 (self signed)
+      "previousPubKeySignature": "..." // (optional)
+    }'
+
+
 ## Configuration
 
 TODO

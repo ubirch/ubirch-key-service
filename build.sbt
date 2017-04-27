@@ -68,7 +68,8 @@ lazy val core = project
 lazy val model = project
   .settings(commonSettings: _*)
   .settings(
-    description := "JSON models"
+    description := "JSON models",
+    libraryDependencies ++= depModel
   )
 
 lazy val server = project
@@ -130,6 +131,7 @@ lazy val depCore = Seq(
 ) ++ scalaLogging
 
 lazy val depModel = Seq(
+  ubirchDate,
   ubirchJsonAutoConvert,
   json4sNative
 )
@@ -183,6 +185,7 @@ lazy val excludedLoggers = Seq(
 )
 
 lazy val ubirchConfig = ubirchUtilG %% "config" % "0.1" excludeAll (excludedLoggers: _*)
+lazy val ubirchDate = ubirchUtilG %% "date" % "0.1" excludeAll(excludedLoggers: _*)
 lazy val ubirchJson = ubirchUtilG %% "json" % "0.3.4" excludeAll (excludedLoggers: _*)
 lazy val ubirchJsonAutoConvert = ubirchUtilG %% "json-auto-convert" % "0.3.4" excludeAll (excludedLoggers: _*)
 lazy val ubirchRestAkkaHttp = ubirchUtilG %% "rest-akka-http" % "0.3.4" excludeAll (excludedLoggers: _*)

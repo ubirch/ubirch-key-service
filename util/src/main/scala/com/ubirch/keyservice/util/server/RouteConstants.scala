@@ -10,6 +10,10 @@ object RouteConstants {
   final val serviceName = "keyService"
   final val currentVersion = "v1"
 
+  final val pubKey = "pubkey"
+
   val pathPrefix = s"/$apiPrefix/$serviceName/$currentVersion"
+
+  val pathPubKey = s"$pathPrefix/$pubKey"
 
 }
