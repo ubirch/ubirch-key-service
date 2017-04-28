@@ -120,6 +120,98 @@ If not healthy the server response is:
       "previousPubKeySignature": "..." // (optional)
     }'
 
+If successful the response is:
+
+    200
+    {
+      "pubkeyInfo": {
+        "hwDeviceId": "some-id-asdf", // String (not always a UUID)
+        "pubKey": "string", // base64
+        "algorithm": "RSA4096", // check X.509 re: constants
+        "previousPubKey": "...", // String - full pub key (optional)
+        "created": "2017-04-26T17:18:00.000Z+02:00",
+        "validNotBefore": "2017-04-26T17:18:00.000Z+02:00",
+        "validNotAfter": "2019-04-26T17:18:00.000Z+02:00" // (optional)
+      },
+      "signature": "string", // base64 (self signed)
+      "previousPubKeySignature": "..." // (optional)
+    }
+
+In case of an error the response is:
+
+    400
+    {
+      "apiVersion": "1.0.0",
+      "status": "NOK",
+      "error": {
+        "errorId": "CreateError",
+        "errorMessage": "failed to create public key"
+      }
+    }
+
+If the server has problems the response is:
+
+    500
+    {
+      "apiVersion": "1.0.0",
+      "status": "NOK",
+      "error": {
+        "errorId": "ServerError",
+        "errorMessage": "failed to create public key"
+      }
+    }
+
+#### Query Public Keys by HardwareId (currently active only)
+
+    curl localhost:8095/api/keyService/v1/pubkey/current/hardwareId/$HARDWARE_ID
+
+If no currently valid public keys were found the response is:
+
+    200
+    []
+
+If currently valid public keys were found the response is:
+
+    200
+    [
+      {
+        "pubkeyInfo": {
+          "hwDeviceId": "some-id-asdf", // String (not always a UUID)
+          "pubKey": "string", // base64
+          "algorithm": "RSA4096", // check X.509 re: constants
+          "previousPubKey": "...", // String - full pub key (optional)
+          "created": "2017-04-26T17:18:00.000Z+02:00",
+          "validNotBefore": "2017-04-26T17:18:00.000Z+02:00",
+          "validNotAfter": "2019-04-26T17:18:00.000Z+02:00" // (optional)
+        },
+        "signature": "string", // base64 (self signed)
+        "previousPubKeySignature": "..." // (optional)
+      }
+    ]
+
+In case of an error the response is:
+
+    400
+    {
+      "apiVersion": "1.0.0",
+      "status": "NOK",
+      "error": {
+        "errorId": "QueryError",
+        "errorMessage": "failed to query public keys"
+      }
+    }
+
+If the server has problems the response is:
+
+    500
+    {
+      "apiVersion": "1.0.0",
+      "status": "NOK",
+      "error": {
+        "errorId": "ServerError",
+        "errorMessage": "failed to query public keys"
+      }
+    }
 
 ## Configuration
 

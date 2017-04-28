@@ -19,4 +19,12 @@ object PublicKeyManager {
 
   }
 
+  def currentlyValid(hardwareId: String): Future[Set[PublicKey]] = {
+
+    // TODO automated tests
+    // TODO query Neo4j
+    Future(Set())
+
+  }
+
 }

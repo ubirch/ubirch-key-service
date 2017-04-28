@@ -8,3 +8,5 @@ case class PublicKey(pubkeyInfo: PublicKeyInfo,
                      signature: String,
                      previousPubKeySignature: Option[String]
                     )
+
+case class PublicKeys(publicKeys: Set[PublicKey])

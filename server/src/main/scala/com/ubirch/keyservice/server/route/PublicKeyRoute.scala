@@ -2,10 +2,10 @@ package com.ubirch.keyservice.server.route
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.PublicKey
+import com.ubirch.key.model.rest.{PublicKey, PublicKeys}
 import com.ubirch.keyservice.config.Config
 import com.ubirch.keyservice.server.actor.util.ActorNames
-import com.ubirch.keyservice.server.actor.{CreatePublicKey, PublicKeyActor}
+import com.ubirch.keyservice.server.actor.{CreatePublicKey, PublicKeyActor, QueryCurrentlyValid}
 import com.ubirch.keyservice.util.server.RouteConstants
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.MyJsonProtocol
@@ -40,15 +40,26 @@ trait PublicKeyRoute extends MyJsonProtocol
 
   val route: Route = {
 
-    path(RouteConstants.pubKey) {
-      respondWithCORS {
+    pathPrefix(RouteConstants.pubKey) {
+      pathEnd {
+        respondWithCORS {
 
-        post {
-          entity(as[PublicKey]) { publicKey =>
-            createPublicKey(publicKey)
+          post {
+            entity(as[PublicKey]) { publicKey =>
+              createPublicKey(publicKey)
+            }
           }
+
         }
 
+      } ~ path(RouteConstants.current / RouteConstants.hardwareId / Segment) { hardwareId =>
+        respondWithCORS {
+
+          get {
+            queryCurrentlyValid(hardwareId)
+          }
+
+        }
       }
     }
 
@@ -71,6 +82,30 @@ trait PublicKeyRoute extends MyJsonProtocol
           case None =>
             logger.error("failed to create public key (None)")
             complete(requestErrorResponse(errorType = "CreateError", errorMessage = "failed to create public key"))
+
+          case _ =>
+            logger.error("failed to create public key (server error)")
+            complete(serverErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key"))
+
+        }
+
+    }
+
+  }
+
+  private def queryCurrentlyValid(hardwareId: String): Route = {
+
+    onComplete(pubKeyActor ? QueryCurrentlyValid(hardwareId)) {
+
+      case Failure(t) =>
+        logger.error("query currently valid public keys call responded with an unhandled message (check PublicKeyRoute for bugs!!!)", t)
+        complete(serverErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
+
+      case Success(resp) =>
+
+        resp match {
+
+          case publicKeys: PublicKeys => complete(publicKeys.publicKeys)
 
           case _ =>
             logger.error("failed to create public key (server error)")
