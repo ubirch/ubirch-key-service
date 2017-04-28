@@ -238,7 +238,11 @@ more details here: https://github.com/scoverage/sbt-scoverage
 
 ## Local Setup
 
-TODO
+(**NOTE** we might go with the embedded server for loca development)
+
+1) download and install [Neo4j 3.1.x](https://neo4j.com/download/community-edition/) (community edition)
+
+2) start Neo4j
 
 
 ## Create Docker Image
