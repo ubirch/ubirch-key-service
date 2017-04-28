@@ -220,7 +220,9 @@ TODO
 
 ## Deployment Notes
 
-TODO
+This service has the following dependencies:
+
+* Neo4j 3.1.x
 
 
 ## Automated Tests
@@ -243,6 +245,10 @@ more details here: https://github.com/scoverage/sbt-scoverage
 1) download and install [Neo4j 3.1.x](https://neo4j.com/download/community-edition/) (community edition)
 
 2) start Neo4j
+
+3) start key-service
+
+    ./sbt server/run
 
 
 ## Create Docker Image
