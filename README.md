@@ -67,7 +67,9 @@ libraryDependencies ++= Seq(
 ```scala
 resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots"),
-  Resolver.bintrayRepo("hseeberger", "maven")
+  Resolver.bintrayRepo("hseeberger", "maven"),
+  "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
+  "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
   "com.ubirch.key" %% "server" % "0.1.0-SNAPSHOT"
@@ -215,7 +217,13 @@ If the server has problems the response is:
 
 ## Configuration
 
-TODO
+| Config Item                      | Mandatory  | Description                           |
+|:---------------------------------|:-----------|:--------------------------------------|
+| ubirchKeyService.neo4j.host      | no         | Neo4j host (defaults to "localhost")  |
+| ubirchKeyService.neo4j.port      | no         | Neo4j port (defaults to 7474)         |
+| ubirchKeyService.neo4j.userName  | no         | Neo4j user name (defaults to "")      |
+| ubirchKeyService.neo4j.password  | no         | Neo4j password (defaults to "")       |
+| ubirchKeyService.neo4j.https     | no         | Neo4j password (defaults to "")       |
 
 
 ## Deployment Notes

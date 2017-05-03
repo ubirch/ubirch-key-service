@@ -11,6 +11,8 @@ import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.MyJsonProtocol
 import com.ubirch.util.rest.akka.directives.CORSDirective
 
+import org.anormcypher.Neo4jConnection
+
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.server.Route
 import akka.pattern.ask
@@ -27,7 +29,7 @@ import scala.util.{Failure, Success}
   * author: cvandrei
   * since: 2017-04-27
   */
-trait PublicKeyRoute extends MyJsonProtocol
+class PublicKeyRoute(implicit neo4jConnection: Neo4jConnection) extends MyJsonProtocol
   with CORSDirective
   with ResponseUtil
   with StrictLogging {
@@ -36,7 +38,7 @@ trait PublicKeyRoute extends MyJsonProtocol
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
   implicit val timeout = Timeout(Config.actorTimeout seconds)
 
-  private val pubKeyActor = system.actorOf(new RoundRobinPool(Config.akkaNumberOfWorkers).props(Props[PublicKeyActor]), ActorNames.PUB_KEY)
+  private val pubKeyActor = system.actorOf(props = new RoundRobinPool(Config.akkaNumberOfWorkers).props(Props(new PublicKeyActor)), name = ActorNames.PUB_KEY)
 
   val route: Route = {
 

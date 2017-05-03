@@ -2,6 +2,8 @@ package com.ubirch.keyservice.core.manager
 
 import com.ubirch.key.model.rest.PublicKey
 
+import org.anormcypher.Neo4jConnection
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -11,7 +13,8 @@ import scala.concurrent.Future
   */
 object PublicKeyManager {
 
-  def create(toCreate: PublicKey): Future[Option[PublicKey]] = {
+  def create(toCreate: PublicKey)
+            (implicit neo4jConnection: Neo4jConnection): Future[Option[PublicKey]] = {
 
     // TODO automated tests
     // TODO store in Neo4j
@@ -19,7 +22,8 @@ object PublicKeyManager {
 
   }
 
-  def currentlyValid(hardwareId: String): Future[Set[PublicKey]] = {
+  def currentlyValid(hardwareId: String)
+                    (implicit neo4jConnection: Neo4jConnection): Future[Set[PublicKey]] = {
 
     // TODO automated tests
     // TODO query Neo4j

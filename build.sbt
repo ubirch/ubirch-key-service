@@ -83,7 +83,7 @@ lazy val server = project
     fork in run := true,
     resolvers ++= Seq(
       resolverSeebergerJson
-    ),
+    ) ++ anormCypherResolvers,
     mainClass in(Compile, run) := Some("com.ubirch.keyservice.server.Boot"),
     resourceGenerators in Compile += Def.task {
       generateDockerFile(baseDirectory.value / ".." / "Dockerfile", (assemblyOutputPath in assembly).value)
@@ -116,6 +116,8 @@ lazy val depServer = Seq(
   ubirchRestAkkaHttp,
   ubirchRestAkkaHttpTest % "test",
 
+  anormCypher,
+
   ubirchJsonAutoConvert,
   ubirchResponse
 
@@ -126,7 +128,7 @@ lazy val depCore = Seq(
   ubirchResponse,
   json4sNative,
   ubirchJson,
-  anormcypher,
+  anormCypher,
   scalatest % "test"
 ) ++ scalaLogging
 
@@ -192,7 +194,7 @@ lazy val ubirchRestAkkaHttp = ubirchUtilG %% "rest-akka-http" % "0.3.4" excludeA
 lazy val ubirchRestAkkaHttpTest = ubirchUtilG %% "rest-akka-http-test" % "0.3.4" excludeAll (excludedLoggers: _*)
 lazy val ubirchResponse = ubirchUtilG %% "response-util" % "0.1.3" excludeAll (excludedLoggers: _*)
 
-lazy val anormcypher = "org.anormcypher" %% "anormcypher" % "0.6.0"
+lazy val anormCypher = "org.anormcypher" %% "anormcypher" % "0.9.1"
 
 /*
  * RESOLVER
