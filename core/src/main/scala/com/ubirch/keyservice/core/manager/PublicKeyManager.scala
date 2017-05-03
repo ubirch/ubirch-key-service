@@ -20,11 +20,22 @@ object PublicKeyManager extends StrictLogging {
             (implicit neo4jConnection: Neo4jConnection): Future[Option[PublicKey]] = {
 
     // TODO automated tests
-    // TODO use actual fields
-    val json = """{name:"AnormCypher"}""".stripMargin
+    // TODO optional fields: infoValidNotAfter, previousPubKeySignature
+    val data =
+    s"""{
+      |  infoHwDeviceId: "${toCreate.pubkeyInfo.hwDeviceId}",
+      |  infoPubKey: "${toCreate.pubkeyInfo.pubKey}",
+      |  infoAlgorithm: "${toCreate.pubkeyInfo.algorithm}",
+      |  infoPreviousPubKey: "${toCreate.pubkeyInfo.previousPubKey}",
+      |  infoCreated: "${toCreate.pubkeyInfo.created}",
+      |  infoValidNotBefore: "${toCreate.pubkeyInfo.validNotBefore}",
+      |  infoValidNotAfter: "${toCreate.pubkeyInfo.validNotAfter}",
+      |  signature: "${toCreate.signature}",
+      |  previousPubKeySignature: "${toCreate.previousPubKeySignature}"
+      |}""".stripMargin
 
     val result = Cypher(
-      s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $json)
+      s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
          |RETURN pubKey""".stripMargin
     ).execute()
 
@@ -52,6 +63,7 @@ object PublicKeyManager extends StrictLogging {
 
     // TODO map result to Set[PublicKey]
 
+    // TODO Future doesn't seem to be necessary...remove?
     Future(Set())
 
   }
