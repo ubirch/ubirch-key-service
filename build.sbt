@@ -36,7 +36,8 @@ lazy val keyService = (project in file("."))
     cmdtools,
     config,
     core,
-    model,
+    modelDb,
+    modelRest,
     server,
     testTools,
     util
@@ -58,24 +59,33 @@ lazy val cmdtools = project
 
 lazy val core = project
   .settings(commonSettings: _*)
-  .dependsOn(model, util, testTools % "test")
+  .dependsOn(modelDb, modelRest, util, testTools % "test")
   .settings(
     description := "business logic",
     libraryDependencies ++= depCore,
     resolvers ++= anormCypherResolvers
   )
 
-lazy val model = project
+lazy val modelDb = (project in file("model-db"))
   .settings(commonSettings: _*)
   .settings(
+    name := "model-db",
+    description := "DB models",
+    libraryDependencies ++= depModelDb
+  )
+
+lazy val modelRest = (project in file("model-rest"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "model-rest",
     description := "JSON models",
-    libraryDependencies ++= depModel
+    libraryDependencies ++= depModelRest
   )
 
 lazy val server = project
   .settings(commonSettings: _*)
   .settings(mergeStrategy: _*)
-  .dependsOn(config, core, model, util)
+  .dependsOn(config, core, modelRest, util)
   .enablePlugins(DockerPlugin)
   .settings(
     description := "REST interface and Akka HTTP specific code",
@@ -132,7 +142,13 @@ lazy val depCore = Seq(
   scalatest % "test"
 ) ++ scalaLogging
 
-lazy val depModel = Seq(
+lazy val depModelRest = Seq(
+  ubirchDate,
+  ubirchJsonAutoConvert,
+  json4sNative
+)
+
+lazy val depModelDb = Seq(
   ubirchDate,
   ubirchJsonAutoConvert,
   json4sNative

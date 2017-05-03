@@ -51,14 +51,25 @@ libraryDependencies ++= Seq(
 )
 ```
 
-### `model`
+### `model-db`
 
 ```scala
 resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "model" % "0.1.0-SNAPSHOT"
+  "com.ubirch.key" %% "model-db" % "0.1.0-SNAPSHOT"
+)
+```
+
+### `model-rest`
+
+```scala
+resolvers ++= Seq(
+  Resolver.sonatypeRepo("snapshots")
+)
+libraryDependencies ++= Seq(
+  "com.ubirch.key" %% "model-rest" % "0.1.0-SNAPSHOT"
 )
 ```
 
@@ -253,6 +264,8 @@ more details here: https://github.com/scoverage/sbt-scoverage
 1) download and install [Neo4j 3.1.x](https://neo4j.com/download/community-edition/) (community edition)
 
 2) start Neo4j
+
+  1) first time setup: set the password to "neo4jneo4j" (as configured in application.base.conf)
 
 3) start key-service
 
