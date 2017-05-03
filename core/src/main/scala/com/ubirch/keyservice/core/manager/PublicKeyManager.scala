@@ -28,6 +28,7 @@ object PublicKeyManager extends StrictLogging {
          |RETURN pubKey""".stripMargin
     ).execute()
 
+    // TODO Future doesn't seem to be necessary...remove?
     if (!result) {
       logger.error(s"failed to create public key: publicKey=$toCreate")
       Future(None)
@@ -41,7 +42,16 @@ object PublicKeyManager extends StrictLogging {
                     (implicit neo4jConnection: Neo4jConnection): Future[Set[PublicKey]] = {
 
     // TODO automated tests
-    // TODO query Neo4j
+    val result = Cypher(
+      s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY})
+         |WHERE pubKey.hwDeviceId = {hwDeviceId}
+         |RETURN pubKey
+       """.stripMargin
+    ).on("hwDeviceId" -> hardwareId)()
+    logger.debug(s"found ${result.size} results for hardwareId=$hardwareId")
+
+    // TODO map result to Set[PublicKey]
+
     Future(Set())
 
   }
