@@ -70,12 +70,14 @@ object PublicKeyManager extends StrictLogging {
                     (implicit neo4jConnection: Neo4jConnection): Future[Set[PublicKey]] = {
 
     // TODO automated tests
-    val result = Cypher(
+    // TODO return only currently valid keys
+    val query = Cypher(
       s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY})
          |WHERE pubKey.infoHwDeviceId = {hwDeviceId}
          |RETURN pubKey
        """.stripMargin
-    ).on("hwDeviceId" -> hardwareId)()
+    ).on("hwDeviceId" -> hardwareId)
+    val result = query()
 
     logger.debug(s"found ${result.size} results for hardwareId=$hardwareId")
     for (foo <- result) {
