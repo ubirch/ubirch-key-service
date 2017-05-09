@@ -23,6 +23,7 @@ object PublicKeyManager extends StrictLogging {
 
     // TODO automated tests
     // TODO add transaction
+    // TODO verify that toCreate.signature matches toCreate.pubkeyInfo
     publicKeyExists(toCreate.pubkeyInfo.pubKey) map {
 
       case true =>
