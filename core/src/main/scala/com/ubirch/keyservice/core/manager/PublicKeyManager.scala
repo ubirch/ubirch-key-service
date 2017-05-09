@@ -6,7 +6,7 @@ import com.ubirch.key.model.db.Neo4jLabels
 import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo}
 
 import org.anormcypher.{Cypher, Neo4jConnection, NeoNode}
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -70,13 +70,23 @@ object PublicKeyManager extends StrictLogging {
                     (implicit neo4jConnection: Neo4jConnection): Future[Set[PublicKey]] = {
 
     // TODO automated tests
-    // TODO return only currently valid keys
+    val now = DateTime.now(DateTimeZone.UTC).toString
+    logger.debug(s"now=$now")
     val query = Cypher(
       s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY})
-         |WHERE pubKey.infoHwDeviceId = {hwDeviceId}
+         |WHERE
+         |  pubKey.infoHwDeviceId = {hwDeviceId}
+         |  AND {now} > pubKey.infoValidNotBefore
+         |  AND (
+         |    pubKey.infoValidNotAfter is null
+         |     OR {now} < pubKey.infoValidNotAfter
+         |  )
          |RETURN pubKey
        """.stripMargin
-    ).on("hwDeviceId" -> hardwareId)
+    ).on(
+      "hwDeviceId" -> hardwareId,
+      "now" -> now
+    )
     val result = query()
 
     logger.debug(s"found ${result.size} results for hardwareId=$hardwareId")
