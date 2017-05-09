@@ -21,6 +21,7 @@ object PublicKeyManager extends StrictLogging {
             (implicit neo4jConnection: Neo4jConnection): Future[Option[PublicKey]] = {
 
     // TODO automated tests
+    // TODO check if record already exists
     var keyValue: Map[String, Any] = Map(
       "infoHwDeviceId" -> toCreate.pubkeyInfo.hwDeviceId,
       "infoPubKey" -> toCreate.pubkeyInfo.pubKey,
