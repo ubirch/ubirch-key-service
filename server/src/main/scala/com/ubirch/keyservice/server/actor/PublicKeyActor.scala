@@ -4,7 +4,7 @@ import com.ubirch.key.model.rest.{PublicKey, PublicKeys}
 import com.ubirch.keyservice.core.manager.PublicKeyManager
 import com.ubirch.util.model.JsonErrorResponse
 
-import org.anormcypher.Neo4jConnection
+import org.anormcypher.Neo4jREST
 
 import akka.actor.{Actor, ActorLogging}
 
@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
   * author: cvandrei
   * since: 2017-04-27
   */
-class PublicKeyActor(implicit neo4jConnection: Neo4jConnection) extends Actor
+class PublicKeyActor(implicit neo4jConnection: Neo4jREST) extends Actor
   with ActorLogging {
 
   override def receive: Receive = {

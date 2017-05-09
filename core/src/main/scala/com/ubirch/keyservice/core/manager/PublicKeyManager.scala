@@ -5,7 +5,8 @@ import com.typesafe.scalalogging.slf4j.StrictLogging
 import com.ubirch.key.model.db.Neo4jLabels
 import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo}
 
-import org.anormcypher.{Cypher, Neo4jConnection, NeoNode}
+import org.anormcypher.CypherParser._
+import org.anormcypher.{Cypher, Neo4jREST, NeoNode}
 import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -18,66 +19,92 @@ import scala.concurrent.Future
 object PublicKeyManager extends StrictLogging {
 
   def create(toCreate: PublicKey)
-            (implicit neo4jConnection: Neo4jConnection): Future[Option[PublicKey]] = {
+            (implicit neo4jConnection: Neo4jREST): Future[Option[PublicKey]] = {
 
     // TODO automated tests
-    // TODO check if record already exists
-    var keyValue: Map[String, Any] = Map(
-      "infoHwDeviceId" -> toCreate.pubkeyInfo.hwDeviceId,
-      "infoPubKey" -> toCreate.pubkeyInfo.pubKey,
-      "infoAlgorithm" -> toCreate.pubkeyInfo.algorithm,
-      "infoCreated" -> toCreate.pubkeyInfo.created,
-      "infoValidNotBefore" -> toCreate.pubkeyInfo.validNotBefore,
-      "signature" -> toCreate.signature
-    )
-    if (toCreate.pubkeyInfo.validNotAfter.isDefined) {
-      keyValue += "infoValidNotAfter" -> toCreate.pubkeyInfo.validNotAfter.get
-    }
-    if (toCreate.pubkeyInfo.previousPubKey.isDefined) {
-      keyValue += "infoPreviousPubKey" -> toCreate.pubkeyInfo.previousPubKey.get
-    }
-    if (toCreate.previousPubKeySignature.isDefined) {
-      keyValue += "previousPubKeySignature" -> toCreate.previousPubKeySignature.get
-    }
+    publicKeyExists(toCreate.pubkeyInfo.pubKey) map {
 
-    val data: String = (
-      keyValue map {
-        case (key, value: Int) => s"""$key: $value"""
-        case (key, value: Long) => s"""$key: $value"""
-        case (key, value: Boolean) => s"""$key: $value"""
-        case (key, value: String) => s"""$key: "$value""""
-        case (key, value) => s"""$key: "$value""""
-      }
-        mkString("{", ", ", "}")
-      )
-    logger.debug(s"keyValues.string -- $data")
+      case true =>
+        logger.error("unable to create existing public key")
+        None
 
-    val result = Cypher(
-      s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
-         |RETURN pubKey""".stripMargin
-    ).execute()
+      case false =>
 
-    // TODO Future doesn't seem to be necessary...remove?
-    if (!result) {
-      logger.error(s"failed to create public key: publicKey=$toCreate")
-      Future(None)
-    } else {
-      Future(Some(toCreate))
+        var keyValue: Map[String, Any] = Map(
+          "infoHwDeviceId" -> toCreate.pubkeyInfo.hwDeviceId,
+          "infoPubKey" -> toCreate.pubkeyInfo.pubKey,
+          "infoAlgorithm" -> toCreate.pubkeyInfo.algorithm,
+          "infoCreated" -> toCreate.pubkeyInfo.created,
+          "infoValidNotBefore" -> toCreate.pubkeyInfo.validNotBefore,
+          "signature" -> toCreate.signature
+        )
+        if (toCreate.pubkeyInfo.validNotAfter.isDefined) {
+          keyValue += "infoValidNotAfter" -> toCreate.pubkeyInfo.validNotAfter.get
+        }
+        if (toCreate.pubkeyInfo.previousPubKey.isDefined) {
+          keyValue += "infoPreviousPubKey" -> toCreate.pubkeyInfo.previousPubKey.get
+        }
+        if (toCreate.previousPubKeySignature.isDefined) {
+          keyValue += "previousPubKeySignature" -> toCreate.previousPubKeySignature.get
+        }
+
+        val data: String = (
+          keyValue map {
+            case (key, value: Int) => s"""$key: $value"""
+            case (key, value: Long) => s"""$key: $value"""
+            case (key, value: Boolean) => s"""$key: $value"""
+            case (key, value: String) => s"""$key: "$value""""
+            case (key, value) => s"""$key: "$value""""
+          }
+            mkString("{", ", ", "}")
+          )
+        logger.debug(s"keyValues.string -- $data")
+
+        val result = Cypher(
+          s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
+             |RETURN pubKey""".stripMargin
+        ).execute()
+
+        // TODO Future doesn't seem to be necessary...remove?
+        if (!result) {
+          logger.error(s"failed to create public key: publicKey=$toCreate")
+          None
+        } else {
+          Some(toCreate)
+        }
+
     }
+  }
+
+  def publicKeyExists(pubKey: String)
+                     (implicit neo4jConnection: Neo4jREST): Future[Boolean] = {
+
+    // TODO automated tests
+    // TODO does not work yet (always returns false)
+    val query = Cypher(
+      s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY} {infoPubKey: {publicKey}})
+         | RETURN count(pubKey) AS pubKeyCount
+       """.stripMargin
+    ).on("publicKey" -> pubKey)
+
+    val count: Long = query.as(scalar[Long].single)
+    val exists = count == 1
+    logger.debug(s"publicKeyExists? $exists (pubKey: '$pubKey')")
+
+    Future(exists)
 
   }
 
   def currentlyValid(hardwareId: String)
-                    (implicit neo4jConnection: Neo4jConnection): Future[Set[PublicKey]] = {
+                    (implicit neo4jConnection: Neo4jREST): Future[Set[PublicKey]] = {
 
     // TODO automated tests
     val now = DateTime.now(DateTimeZone.UTC).toString
     logger.debug(s"now=$now")
     val query = Cypher(
-      s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY})
+      s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY}  {infoHwDeviceId: {hwDeviceId}})
          |WHERE
-         |  pubKey.infoHwDeviceId = {hwDeviceId}
-         |  AND {now} > pubKey.infoValidNotBefore
+         |  {now} > pubKey.infoValidNotBefore
          |  AND (
          |    pubKey.infoValidNotAfter is null
          |     OR {now} < pubKey.infoValidNotAfter
