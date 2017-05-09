@@ -241,7 +241,7 @@ If the server has problems the response is:
 
 This service has the following dependencies:
 
-* Neo4j 3.1.x
+* Neo4j 3.1.x (needs some constraints listed in `Local Setup`)
 
 
 ## Automated Tests
@@ -266,6 +266,10 @@ more details here: https://github.com/scoverage/sbt-scoverage
 2) start Neo4j
 
   1) first time setup: set the password to "neo4jneo4j" (as configured in application.base.conf)
+  
+  2) create constraints
+
+    `CREATE CONSTRAINT ON (pubKey:PublicKey) ASSERT pubKey.infoPubKey IS UNIQUE`
 
 3) start key-service
 

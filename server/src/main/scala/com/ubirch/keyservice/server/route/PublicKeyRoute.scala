@@ -11,7 +11,7 @@ import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.MyJsonProtocol
 import com.ubirch.util.rest.akka.directives.CORSDirective
 
-import org.anormcypher.Neo4jREST
+import org.anormcypher.Neo4jConnection
 
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.server.Route
@@ -29,7 +29,7 @@ import scala.util.{Failure, Success}
   * author: cvandrei
   * since: 2017-04-27
   */
-class PublicKeyRoute(implicit neo4jConnection: Neo4jREST) extends MyJsonProtocol
+class PublicKeyRoute(implicit neo4jConnection: Neo4jConnection) extends MyJsonProtocol
   with CORSDirective
   with ResponseUtil
   with StrictLogging {

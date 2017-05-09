@@ -5,12 +5,12 @@ import com.typesafe.scalalogging.slf4j.StrictLogging
 import com.ubirch.key.model.db.Neo4jLabels
 import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo}
 
-import org.anormcypher.CypherParser._
-import org.anormcypher.{Cypher, CypherResultRow, Neo4jREST, NeoNode}
+import org.anormcypher.{Cypher, CypherResultRow, Neo4jConnection, NeoNode}
 import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.language.postfixOps
 
 /**
   * author: cvandrei
@@ -19,57 +19,29 @@ import scala.concurrent.Future
 object PublicKeyManager extends StrictLogging {
 
   def create(toCreate: PublicKey)
-            (implicit neo4jConnection: Neo4jREST): Future[Option[PublicKey]] = {
+            (implicit neo4jConnection: Neo4jConnection): Future[Option[PublicKey]] = {
 
     // TODO automated tests
-    // TODO add transaction
     // TODO verify that toCreate.signature matches toCreate.pubkeyInfo
-    publicKeyExists(toCreate.pubkeyInfo.pubKey) map {
+    val data = entityToString(toCreate)
 
-      case true =>
-        logger.error("unable to create existing public key")
-        None
+    val result = Cypher(
+      s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
+         |RETURN pubKey""".stripMargin
+    ).execute()
 
-      case false =>
-
-        val data = entityToString(toCreate)
-
-        val result = Cypher(
-          s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
-             |RETURN pubKey""".stripMargin
-        ).execute()
-
-        // TODO Future doesn't seem to be necessary...remove?
-        if (!result) {
-          logger.error(s"failed to create public key: publicKey=$toCreate")
-          None
-        } else {
-          Some(toCreate)
-        }
-
+    // TODO Future doesn't seem to be necessary...remove?
+    if (!result) {
+      logger.error(s"failed to create public key: publicKey=$toCreate")
+      Future(None)
+    } else {
+      Future(Some(toCreate))
     }
-  }
-
-  def publicKeyExists(pubKey: String)
-                     (implicit neo4jConnection: Neo4jREST): Future[Boolean] = {
-
-    // TODO automated tests
-    val query = Cypher(
-      s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY} {infoPubKey: {publicKey}})
-         | RETURN count(pubKey) AS pubKeyCount
-       """.stripMargin
-    ).on("publicKey" -> pubKey)
-
-    val count: Long = query.as(scalar[Long].single)
-    val exists = count > 0
-    logger.debug(s"publicKeyExists? $exists (pubKey: '$pubKey')")
-
-    Future(exists)
 
   }
 
   def currentlyValid(hardwareId: String)
-                    (implicit neo4jConnection: Neo4jREST): Future[Set[PublicKey]] = {
+                    (implicit neo4jConnection: Neo4jConnection): Future[Set[PublicKey]] = {
 
     // TODO automated tests
     val now = DateTime.now(DateTimeZone.UTC).toString
