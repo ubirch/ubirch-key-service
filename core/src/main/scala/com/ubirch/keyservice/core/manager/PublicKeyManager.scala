@@ -21,8 +21,7 @@ object PublicKeyManager extends StrictLogging {
   def create(toCreate: PublicKey)
             (implicit neo4jConnection: Neo4jConnection): Future[Option[PublicKey]] = {
 
-    // TODO automated tests
-    // TODO verify that toCreate.signature matches toCreate.pubkeyInfo
+    // TODO verify that toCreate.signature matches toCreate.pubKeyInfo
     val data = entityToString(toCreate)
 
     val result = Cypher(
@@ -30,7 +29,6 @@ object PublicKeyManager extends StrictLogging {
          |RETURN pubKey""".stripMargin
     ).execute()
 
-    // TODO Future doesn't seem to be necessary...remove?
     if (!result) {
       logger.error(s"failed to create public key: publicKey=$toCreate")
       Future(None)
@@ -43,7 +41,6 @@ object PublicKeyManager extends StrictLogging {
   def currentlyValid(hardwareId: String)
                     (implicit neo4jConnection: Neo4jConnection): Future[Set[PublicKey]] = {
 
-    // TODO automated tests
     val now = DateTime.now(DateTimeZone.UTC).toString
     logger.debug(s"now=$now")
     val query = Cypher(
@@ -76,19 +73,19 @@ object PublicKeyManager extends StrictLogging {
   private def toKeyValueMap(publicKey: PublicKey): Map[String, Any] = {
 
     var keyValue: Map[String, Any] = Map(
-      "infoHwDeviceId" -> publicKey.pubkeyInfo.hwDeviceId,
-      "infoPubKey" -> publicKey.pubkeyInfo.pubKey,
-      "infoPubKeyId" -> publicKey.pubkeyInfo.pubKeyId,
-      "infoAlgorithm" -> publicKey.pubkeyInfo.algorithm,
-      "infoCreated" -> publicKey.pubkeyInfo.created,
-      "infoValidNotBefore" -> publicKey.pubkeyInfo.validNotBefore,
+      "infoHwDeviceId" -> publicKey.pubKeyInfo.hwDeviceId,
+      "infoPubKey" -> publicKey.pubKeyInfo.pubKey,
+      "infoPubKeyId" -> publicKey.pubKeyInfo.pubKeyId,
+      "infoAlgorithm" -> publicKey.pubKeyInfo.algorithm,
+      "infoCreated" -> publicKey.pubKeyInfo.created,
+      "infoValidNotBefore" -> publicKey.pubKeyInfo.validNotBefore,
       "signature" -> publicKey.signature
     )
-    if (publicKey.pubkeyInfo.validNotAfter.isDefined) {
-      keyValue += "infoValidNotAfter" -> publicKey.pubkeyInfo.validNotAfter.get
+    if (publicKey.pubKeyInfo.validNotAfter.isDefined) {
+      keyValue += "infoValidNotAfter" -> publicKey.pubKeyInfo.validNotAfter.get
     }
-    if (publicKey.pubkeyInfo.previousPubKey.isDefined) {
-      keyValue += "infoPreviousPubKey" -> publicKey.pubkeyInfo.previousPubKey.get
+    if (publicKey.pubKeyInfo.previousPubKeyId.isDefined) {
+      keyValue += "infoPreviousPubKeyId" -> publicKey.pubKeyInfo.previousPubKeyId.get
     }
     if (publicKey.previousPubKeySignature.isDefined) {
       keyValue += "previousPubKeySignature" -> publicKey.previousPubKeySignature.get
@@ -129,7 +126,7 @@ object PublicKeyManager extends StrictLogging {
         case dateTimeString: String => Some(DateTime.parse(dateTimeString))
       }
 
-      val previousPublicKey = props.getOrElse("infoPreviousPubKey", "--UNDEFINED--").asInstanceOf[String] match {
+      val previousPublicKeyId = props.getOrElse("infoPreviousPubKeyId", "--UNDEFINED--").asInstanceOf[String] match {
         case "--UNDEFINED--" => None
         case s: String => Some(s)
       }
@@ -140,12 +137,12 @@ object PublicKeyManager extends StrictLogging {
       }
 
       PublicKey(
-        pubkeyInfo = PublicKeyInfo(
+        pubKeyInfo = PublicKeyInfo(
           hwDeviceId = props("infoHwDeviceId").asInstanceOf[String],
           pubKey = props("infoPubKey").asInstanceOf[String],
           pubKeyId = props("infoPubKeyId").asInstanceOf[String],
           algorithm = props("infoAlgorithm").asInstanceOf[String],
-          previousPubKey = previousPublicKey,
+          previousPubKeyId = previousPublicKeyId,
           created = DateTime.parse(props("infoCreated").asInstanceOf[String]),
           validNotBefore = DateTime.parse(props("infoValidNotBefore").asInstanceOf[String]),
           validNotAfter = validNotAfter

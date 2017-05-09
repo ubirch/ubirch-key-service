@@ -10,7 +10,7 @@ case class PublicKeyInfo(hwDeviceId: String,
                          pubKey: String,
                          pubKeyId: String, // hash of "pubKey" (algorithm tends to depend on "algorithm"
                          algorithm: String,
-                         previousPubKey: Option[String],
+                         previousPubKeyId: Option[String],
                          created: DateTime,
                          validNotBefore: DateTime,
                          validNotAfter: Option[DateTime] = None

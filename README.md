@@ -279,6 +279,7 @@ more details here: https://github.com/scoverage/sbt-scoverage
 
 #### Delete
 
+    MATCH (n)-[r]-(m) DELETE n, r, m // delete all nodes with a relationship to a nother node
     MATCH (n) DELETE n // all nodes
     MATCH (n: PublicKey) DELETE n // all public keys
 

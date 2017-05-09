@@ -4,7 +4,7 @@ package com.ubirch.key.model.rest
   * author: cvandrei
   * since: 2017-04-27
   */
-case class PublicKey(pubkeyInfo: PublicKeyInfo,
+case class PublicKey(pubKeyInfo: PublicKeyInfo,
                      signature: String,
                      previousPubKeySignature: Option[String]
                     )

@@ -102,6 +102,7 @@ lazy val server = project
 
 lazy val testTools = (project in file("test-tools"))
   .settings(commonSettings: _*)
+  .dependsOn(config, modelRest)
   .settings(
     name := "test-tools",
     description := "tools useful in automated tests",
@@ -135,9 +136,10 @@ lazy val depServer = Seq(
 
 lazy val depCore = Seq(
   akkaActor,
-  ubirchResponse,
   json4sNative,
+  ubirchCrypto,
   ubirchJson,
+  ubirchResponse,
   anormCypher,
   scalatest % "test"
 ) ++ scalaLogging
@@ -156,7 +158,10 @@ lazy val depModelDb = Seq(
 
 lazy val depTestTools = Seq(
   json4sNative,
+  ubirchCrypto,
   ubirchJsonAutoConvert,
+  ubirchUuid,
+  anormCypher,
   scalatest
 ) ++ scalaLogging
 
@@ -203,12 +208,14 @@ lazy val excludedLoggers = Seq(
 )
 
 lazy val ubirchConfig = ubirchUtilG %% "config" % "0.1" excludeAll (excludedLoggers: _*)
+lazy val ubirchCrypto = ubirchUtilG %% "crypto" % "0.3.3" excludeAll (excludedLoggers: _*)
 lazy val ubirchDate = ubirchUtilG %% "date" % "0.1" excludeAll(excludedLoggers: _*)
 lazy val ubirchJson = ubirchUtilG %% "json" % "0.3.4" excludeAll (excludedLoggers: _*)
 lazy val ubirchJsonAutoConvert = ubirchUtilG %% "json-auto-convert" % "0.3.4" excludeAll (excludedLoggers: _*)
 lazy val ubirchRestAkkaHttp = ubirchUtilG %% "rest-akka-http" % "0.3.4" excludeAll (excludedLoggers: _*)
 lazy val ubirchRestAkkaHttpTest = ubirchUtilG %% "rest-akka-http-test" % "0.3.4" excludeAll (excludedLoggers: _*)
 lazy val ubirchResponse = ubirchUtilG %% "response-util" % "0.1.3" excludeAll (excludedLoggers: _*)
+lazy val ubirchUuid = ubirchUtilG %% "uuid" % "0.1.1" excludeAll (excludedLoggers: _*)
 
 lazy val anormCypher = "org.anormcypher" %% "anormcypher" % "0.9.1"
 
