@@ -30,35 +30,7 @@ object PublicKeyManager extends StrictLogging {
 
       case false =>
 
-        var keyValue: Map[String, Any] = Map(
-          "infoHwDeviceId" -> toCreate.pubkeyInfo.hwDeviceId,
-          "infoPubKey" -> toCreate.pubkeyInfo.pubKey,
-          "infoAlgorithm" -> toCreate.pubkeyInfo.algorithm,
-          "infoCreated" -> toCreate.pubkeyInfo.created,
-          "infoValidNotBefore" -> toCreate.pubkeyInfo.validNotBefore,
-          "signature" -> toCreate.signature
-        )
-        if (toCreate.pubkeyInfo.validNotAfter.isDefined) {
-          keyValue += "infoValidNotAfter" -> toCreate.pubkeyInfo.validNotAfter.get
-        }
-        if (toCreate.pubkeyInfo.previousPubKey.isDefined) {
-          keyValue += "infoPreviousPubKey" -> toCreate.pubkeyInfo.previousPubKey.get
-        }
-        if (toCreate.previousPubKeySignature.isDefined) {
-          keyValue += "previousPubKeySignature" -> toCreate.previousPubKeySignature.get
-        }
-
-        val data: String = (
-          keyValue map {
-            case (key, value: Int) => s"""$key: $value"""
-            case (key, value: Long) => s"""$key: $value"""
-            case (key, value: Boolean) => s"""$key: $value"""
-            case (key, value: String) => s"""$key: "$value""""
-            case (key, value) => s"""$key: "$value""""
-          }
-            mkString("{", ", ", "}")
-          )
-        logger.debug(s"keyValues.string -- $data")
+        val data = entityToString(toCreate)
 
         val result = Cypher(
           s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
@@ -80,7 +52,6 @@ object PublicKeyManager extends StrictLogging {
                      (implicit neo4jConnection: Neo4jREST): Future[Boolean] = {
 
     // TODO automated tests
-    // TODO does not work yet (always returns false)
     val query = Cypher(
       s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY} {infoPubKey: {publicKey}})
          | RETURN count(pubKey) AS pubKeyCount
@@ -88,7 +59,7 @@ object PublicKeyManager extends StrictLogging {
     ).on("publicKey" -> pubKey)
 
     val count: Long = query.as(scalar[Long].single)
-    val exists = count == 1
+    val exists = count > 0
     logger.debug(s"publicKeyExists? $exists (pubKey: '$pubKey')")
 
     Future(exists)
@@ -159,6 +130,50 @@ object PublicKeyManager extends StrictLogging {
 
     Future(publicKeys.toSet)
 
+  }
+
+  private def toKeyValueMap(publicKey: PublicKey): Map[String, Any] = {
+
+    var keyValue: Map[String, Any] = Map(
+      "infoHwDeviceId" -> publicKey.pubkeyInfo.hwDeviceId,
+      "infoPubKey" -> publicKey.pubkeyInfo.pubKey,
+      "infoAlgorithm" -> publicKey.pubkeyInfo.algorithm,
+      "infoCreated" -> publicKey.pubkeyInfo.created,
+      "infoValidNotBefore" -> publicKey.pubkeyInfo.validNotBefore,
+      "signature" -> publicKey.signature
+    )
+    if (publicKey.pubkeyInfo.validNotAfter.isDefined) {
+      keyValue += "infoValidNotAfter" -> publicKey.pubkeyInfo.validNotAfter.get
+    }
+    if (publicKey.pubkeyInfo.previousPubKey.isDefined) {
+      keyValue += "infoPreviousPubKey" -> publicKey.pubkeyInfo.previousPubKey.get
+    }
+    if (publicKey.previousPubKeySignature.isDefined) {
+      keyValue += "previousPubKeySignature" -> publicKey.previousPubKeySignature.get
+    }
+
+    keyValue
+
+  }
+
+  private def keyValueToString(keyValue: Map[String, Any]): String = {
+
+    val data: String = keyValue map {
+      case (key, value: Int) => s"""$key: $value"""
+      case (key, value: Long) => s"""$key: $value"""
+      case (key, value: Boolean) => s"""$key: $value"""
+      case (key, value: String) => s"""$key: "$value""""
+      case (key, value) => s"""$key: "$value""""
+    } mkString("{", ", ", "}")
+    logger.debug(s"keyValues.string -- $data")
+
+    data
+
+  }
+
+  private def entityToString(publicKey: PublicKey): String = {
+    val keyValue = toKeyValueMap(publicKey)
+    keyValueToString(keyValue)
   }
 
 }
