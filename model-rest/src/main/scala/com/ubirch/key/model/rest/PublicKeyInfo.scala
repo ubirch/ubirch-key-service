@@ -8,7 +8,7 @@ import org.joda.time.DateTime
   */
 case class PublicKeyInfo(hwDeviceId: String,
                          pubKey: String,
-                        // TODO introduce pubKeyId field: hash of pubKey
+                         pubKeyId: String, // hash of "pubKey" (algorithm tends to depend on "algorithm"
                          algorithm: String,
                          previousPubKey: Option[String],
                          created: DateTime,

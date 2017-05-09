@@ -269,7 +269,7 @@ more details here: https://github.com/scoverage/sbt-scoverage
   
   2) create constraints
 
-    `CREATE CONSTRAINT ON (pubKey:PublicKey) ASSERT pubKey.infoPubKey IS UNIQUE`
+    `CREATE CONSTRAINT ON (pubKey:PublicKey) ASSERT pubKey.infoPubKeyId IS UNIQUE`
 
 3) start key-service
 

@@ -78,6 +78,7 @@ object PublicKeyManager extends StrictLogging {
     var keyValue: Map[String, Any] = Map(
       "infoHwDeviceId" -> publicKey.pubkeyInfo.hwDeviceId,
       "infoPubKey" -> publicKey.pubkeyInfo.pubKey,
+      "infoPubKeyId" -> publicKey.pubkeyInfo.pubKeyId,
       "infoAlgorithm" -> publicKey.pubkeyInfo.algorithm,
       "infoCreated" -> publicKey.pubkeyInfo.created,
       "infoValidNotBefore" -> publicKey.pubkeyInfo.validNotBefore,
@@ -142,6 +143,7 @@ object PublicKeyManager extends StrictLogging {
         pubkeyInfo = PublicKeyInfo(
           hwDeviceId = props("infoHwDeviceId").asInstanceOf[String],
           pubKey = props("infoPubKey").asInstanceOf[String],
+          pubKeyId = props("infoPubKeyId").asInstanceOf[String],
           algorithm = props("infoAlgorithm").asInstanceOf[String],
           previousPubKey = previousPublicKey,
           created = DateTime.parse(props("infoCreated").asInstanceOf[String]),
