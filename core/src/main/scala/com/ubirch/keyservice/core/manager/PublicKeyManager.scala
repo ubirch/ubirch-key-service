@@ -18,6 +18,13 @@ import scala.language.postfixOps
   */
 object PublicKeyManager extends StrictLogging {
 
+  /**
+    * Persist a [[PublicKey]].
+    *
+    * @param toCreate        public key to persist
+    * @param neo4jConnection Neo4j connection
+    * @return persisted public key; None if something went wrong
+    */
   def create(toCreate: PublicKey)
             (implicit neo4jConnection: Neo4jConnection): Future[Option[PublicKey]] = {
 
@@ -38,6 +45,13 @@ object PublicKeyManager extends StrictLogging {
 
   }
 
+  /**
+    * Gives us a Set of all currently valid public keys for a given hardware id.
+    *
+    * @param hardwareId      hardware id for which to search for currently valid keys
+    * @param neo4jConnection Neo4j connection
+    * @return currently valid public keys; empty if none are found
+    */
   def currentlyValid(hardwareId: String)
                     (implicit neo4jConnection: Neo4jConnection): Future[Set[PublicKey]] = {
 
