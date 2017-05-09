@@ -271,6 +271,17 @@ more details here: https://github.com/scoverage/sbt-scoverage
 
     ./sbt server/run
 
+### Useful Cypher Queries
+
+#### Delete
+
+    MATCH (n) DELETE n // all nodes
+    MATCH (n: PublicKey) DELETE n // all public keys
+
+#### List
+
+    MATCH (pubKey: PublicKey) RETURN pubKey // all public keys
+
 
 ## Create Docker Image
 

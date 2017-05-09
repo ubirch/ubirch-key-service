@@ -6,7 +6,7 @@ import com.ubirch.key.model.db.Neo4jLabels
 import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo}
 
 import org.anormcypher.CypherParser._
-import org.anormcypher.{Cypher, Neo4jREST, NeoNode}
+import org.anormcypher.{Cypher, CypherResultRow, Neo4jREST, NeoNode}
 import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -22,6 +22,7 @@ object PublicKeyManager extends StrictLogging {
             (implicit neo4jConnection: Neo4jREST): Future[Option[PublicKey]] = {
 
     // TODO automated tests
+    // TODO add transaction
     publicKeyExists(toCreate.pubkeyInfo.pubKey) map {
 
       case true =>
@@ -86,49 +87,16 @@ object PublicKeyManager extends StrictLogging {
       "hwDeviceId" -> hardwareId,
       "now" -> now
     )
-    val result = query()
+    val result: Seq[CypherResultRow] = query()
 
     logger.debug(s"found ${result.size} results for hardwareId=$hardwareId")
-    for (foo <- result) {
-      logger.debug(s"(hardwareId=$hardwareId) row=$foo")
+    for (row <- result) {
+      logger.debug(s"(hardwareId=$hardwareId) row=$row")
     }
 
-    val publicKeys: Seq[PublicKey] = result map { row =>
+    val publicKeys: Set[PublicKey] = mapToPublicKey(result)
 
-      val props = row[NeoNode]("pubKey").props
-
-      val validNotAfter = props.getOrElse("infoValidNotAfter", "--UNDEFINED--").asInstanceOf[String] match {
-        case "--UNDEFINED--" => None
-        case dateTimeString: String => Some(DateTime.parse(dateTimeString))
-      }
-
-      val previousPublicKey = props.getOrElse("infoPreviousPubKey", "--UNDEFINED--").asInstanceOf[String] match {
-        case "--UNDEFINED--" => None
-        case s: String => Some(s)
-      }
-
-      val previousPublicKeySignature = props.getOrElse("previousPubKeySignature", "--UNDEFINED--").asInstanceOf[String] match {
-        case "--UNDEFINED--" => None
-        case s: String => Some(s)
-      }
-
-      PublicKey(
-        pubkeyInfo = PublicKeyInfo(
-          hwDeviceId = props("infoHwDeviceId").asInstanceOf[String],
-          pubKey = props("infoPubKey").asInstanceOf[String],
-          algorithm = props("infoAlgorithm").asInstanceOf[String],
-          previousPubKey = previousPublicKey,
-          created = DateTime.parse(props("infoCreated").asInstanceOf[String]),
-          validNotBefore = DateTime.parse(props("infoValidNotBefore").asInstanceOf[String]),
-          validNotAfter = validNotAfter
-        ),
-        signature = props("signature").asInstanceOf[String],
-        previousPubKeySignature = previousPublicKeySignature
-      )
-
-    }
-
-    Future(publicKeys.toSet)
+    Future(publicKeys)
 
   }
 
@@ -174,6 +142,45 @@ object PublicKeyManager extends StrictLogging {
   private def entityToString(publicKey: PublicKey): String = {
     val keyValue = toKeyValueMap(publicKey)
     keyValueToString(keyValue)
+  }
+
+  private def mapToPublicKey(result: Seq[CypherResultRow]): Set[PublicKey] = {
+
+    result map { row =>
+
+      val props = row[NeoNode]("pubKey").props
+
+      val validNotAfter = props.getOrElse("infoValidNotAfter", "--UNDEFINED--").asInstanceOf[String] match {
+        case "--UNDEFINED--" => None
+        case dateTimeString: String => Some(DateTime.parse(dateTimeString))
+      }
+
+      val previousPublicKey = props.getOrElse("infoPreviousPubKey", "--UNDEFINED--").asInstanceOf[String] match {
+        case "--UNDEFINED--" => None
+        case s: String => Some(s)
+      }
+
+      val previousPublicKeySignature = props.getOrElse("previousPubKeySignature", "--UNDEFINED--").asInstanceOf[String] match {
+        case "--UNDEFINED--" => None
+        case s: String => Some(s)
+      }
+
+      PublicKey(
+        pubkeyInfo = PublicKeyInfo(
+          hwDeviceId = props("infoHwDeviceId").asInstanceOf[String],
+          pubKey = props("infoPubKey").asInstanceOf[String],
+          algorithm = props("infoAlgorithm").asInstanceOf[String],
+          previousPubKey = previousPublicKey,
+          created = DateTime.parse(props("infoCreated").asInstanceOf[String]),
+          validNotBefore = DateTime.parse(props("infoValidNotBefore").asInstanceOf[String]),
+          validNotAfter = validNotAfter
+        ),
+        signature = props("signature").asInstanceOf[String],
+        previousPubKeySignature = previousPublicKeySignature
+      )
+
+    } toSet
+
   }
 
 }
