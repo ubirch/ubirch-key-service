@@ -3,8 +3,9 @@ package com.ubirch.keyService.testTools.db.neo4j
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.keyservice.config.{Config, Neo4jConfig}
+import com.ubirch.keyservice.util.neo4j.Neo4jUtils
 
-import org.anormcypher.{Cypher, Neo4jConnection, Neo4jREST}
+import org.anormcypher.{Neo4jConnection, Neo4jREST}
 import org.scalatest.{AsyncFeatureSpec, BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
 
 import play.api.libs.ws.WSClient
@@ -36,65 +37,20 @@ trait Neo4jSpec extends AsyncFeatureSpec
 
   override protected def beforeEach(): Unit = {
 
-    dropAllConstraints()
-    createConstraints()
-
-    val deletedRelationships = Cypher("MATCH (n)-[r]-(m) DELETE n, r, m").execute()
-    if (!deletedRelationships) {
-      fail("failed to delete nodes in a relationship (and the relationships)")
-    } else {
-      logger.info("Neo4j clean up: deleted nodes in a relationship (including relationships)")
+    if (!Neo4jUtils.dropAllConstraints()) {
+      fail("failed to drop all constraints")
     }
 
-    val deletedFreeNodes = Cypher("MATCH (n) DELETE n").execute()
-    if (!deletedFreeNodes) {
-      fail(s"failed to delete free nodes ($deletedFreeNodes)")
-    } else {
-      logger.info("Neo4j clean up: deleted free nodes")
+    if (!Neo4jUtils.createConstraints()) {
+      fail("failed to create constraints")
+    }
+
+    if (!Neo4jUtils.deleteAllNodesAndRelationships()) {
+      fail("failed to delete nodes and possible relationships")
     }
 
   }
 
   override protected def afterAll(): Unit = wsClient.close()
-
-  private def dropAllConstraints(): Unit = {
-
-    queryConstraints() foreach { constraint =>
-      if (Cypher(s"DROP $constraint").execute()) {
-        logger.info(s"dropped constraint: $constraint")
-      } else {
-        fail(s"failed to drop constraint: $constraint")
-      }
-
-    }
-
-  }
-
-  private def queryConstraints(): Seq[String] = {
-
-    Cypher("CALL db.constraints()")() map { row =>
-      row[String]("description")
-    }
-
-  }
-
-  private def createConstraints() = {
-
-    // TODO extract constraint list and creation
-    val constraintPubKeyIdUnique = "CONSTRAINT ON (pubKey:PublicKey) ASSERT pubKey.infoPubKeyId IS UNIQUE"
-
-    val constraints = Set(
-      constraintPubKeyIdUnique
-    )
-
-    constraints foreach { constraint =>
-      if (Cypher(s"CREATE $constraint").execute()) {
-        logger.info(s"created constraint: $constraint")
-      } else {
-        fail("failed to create constraint")
-      }
-    }
-
-  }
 
 }

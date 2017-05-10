@@ -247,6 +247,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
   private def createKeys(pubKeys: PublicKey*): Future[Boolean] = {
 
+    // TODO copy to test-tools-ext?
     val resultsFuture = pubKeys map {
       PublicKeyManager.create(_) map {
         case None => false
