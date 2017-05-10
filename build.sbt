@@ -52,9 +52,11 @@ lazy val config = project
 
 lazy val cmdtools = project
   .settings(commonSettings: _*)
-  .dependsOn(config, testTools)
+  .dependsOn(config, util)
   .settings(
-    description := "command line tools"
+    description := "command line tools",
+    libraryDependencies ++= depCmdTools,
+    resolvers ++= anormCypherResolvers
   )
 
 lazy val core = project
@@ -106,19 +108,49 @@ lazy val testTools = (project in file("test-tools"))
   .settings(
     name := "test-tools",
     description := "tools useful in automated tests",
-    libraryDependencies ++= depTestTools
+    libraryDependencies ++= depTestTools,
+    resolvers ++= anormCypherResolvers
   )
 
 lazy val util = project
   .settings(commonSettings: _*)
+  .dependsOn()
   .settings(
     description := "utils",
-    libraryDependencies ++= depUtils
+    libraryDependencies ++= depUtils,
+    resolvers ++= anormCypherResolvers
   )
 
 /*
  * MODULE DEPENDENCIES
  ********************************************************/
+
+lazy val depCmdTools = Seq(
+  anormCypher
+) ++ scalaLogging
+
+lazy val depCore = Seq(
+  akkaActor,
+  json4sNative,
+  ubirchCrypto,
+  ubirchJson,
+  ubirchResponse,
+  anormCypher,
+  ubirchFutures % "test",
+  scalatest % "test"
+) ++ scalaLogging
+
+lazy val depModelDb = Seq(
+  ubirchDate,
+  ubirchJsonAutoConvert,
+  json4sNative
+)
+
+lazy val depModelRest = Seq(
+  ubirchDate,
+  ubirchJsonAutoConvert,
+  json4sNative
+)
 
 lazy val depServer = Seq(
 
@@ -132,29 +164,6 @@ lazy val depServer = Seq(
   ubirchJsonAutoConvert,
   ubirchResponse
 
-)
-
-lazy val depCore = Seq(
-  akkaActor,
-  json4sNative,
-  ubirchCrypto,
-  ubirchJson,
-  ubirchResponse,
-  anormCypher,
-  ubirchFutures % "test",
-  scalatest % "test"
-) ++ scalaLogging
-
-lazy val depModelRest = Seq(
-  ubirchDate,
-  ubirchJsonAutoConvert,
-  json4sNative
-)
-
-lazy val depModelDb = Seq(
-  ubirchDate,
-  ubirchJsonAutoConvert,
-  json4sNative
 )
 
 lazy val depTestTools = Seq(

@@ -20,7 +20,9 @@ is only possible if you control the private key, too).
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("snapshots")
+  Resolver.sonatypeRepo("snapshots"),
+  "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
+  "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
   "com.ubirch.key" %% "cmdtools" % "0.1.0-SNAPSHOT"
@@ -87,11 +89,26 @@ libraryDependencies ++= Seq(
 )
 ```
 
+### `test-tools`
+
+```scala
+resolvers ++= Seq(
+  Resolver.sonatypeRepo("snapshots"),
+  "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
+  "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
+)
+libraryDependencies ++= Seq(
+  "com.ubirch.key" %% "test-tools" % "0.1.0-SNAPSHOT"
+)
+```
+
 ### `util`
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("snapshots")
+  Resolver.sonatypeRepo("snapshots"),
+  "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
+  "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
   "com.ubirch.key" %% "util" % "0.1.0-SNAPSHOT"
@@ -258,8 +275,6 @@ more details here: https://github.com/scoverage/sbt-scoverage
 
 
 ## Local Setup
-
-(**NOTE** we might go with the embedded server for loca development)
 
 1) download and install [Neo4j 3.1.x](https://neo4j.com/download/community-edition/) (community edition)
 

@@ -43,6 +43,7 @@ object Boot extends App with StrictLogging {
     https = neo4jConfig.https
   )
 
+  // TODO init/update Neo4j constraints (see InitData)
   val bindingFuture = start()
   registerShutdownHooks()
 
