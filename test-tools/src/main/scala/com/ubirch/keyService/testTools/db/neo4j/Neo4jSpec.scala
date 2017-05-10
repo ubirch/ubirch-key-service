@@ -36,6 +36,9 @@ trait Neo4jSpec extends AsyncFeatureSpec
 
   override protected def beforeEach(): Unit = {
 
+    dropAllConstraints()
+    createConstraints()
+
     val deletedRelationships = Cypher("MATCH (n)-[r]-(m) DELETE n, r, m").execute()
     if (!deletedRelationships) {
       fail("failed to delete nodes in a relationship (and the relationships)")
@@ -53,5 +56,45 @@ trait Neo4jSpec extends AsyncFeatureSpec
   }
 
   override protected def afterAll(): Unit = wsClient.close()
+
+  private def dropAllConstraints(): Unit = {
+
+    queryConstraints() foreach { constraint =>
+      if (Cypher(s"DROP $constraint").execute()) {
+        logger.info(s"dropped constraint: $constraint")
+      } else {
+        fail(s"failed to drop constraint: $constraint")
+      }
+
+    }
+
+  }
+
+  private def queryConstraints(): Seq[String] = {
+
+    Cypher("CALL db.constraints()")() map { row =>
+      row[String]("description")
+    }
+
+  }
+
+  private def createConstraints() = {
+
+    // TODO extract constraint list and creation
+    val constraintPubKeyIdUnique = "CONSTRAINT ON (pubKey:PublicKey) ASSERT pubKey.infoPubKeyId IS UNIQUE"
+
+    val constraints = Set(
+      constraintPubKeyIdUnique
+    )
+
+    constraints foreach { constraint =>
+      if (Cypher(s"CREATE $constraint").execute()) {
+        logger.info(s"created constraint: $constraint")
+      } else {
+        fail("failed to create constraint")
+      }
+    }
+
+  }
 
 }
