@@ -6,6 +6,8 @@ import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
 import com.ubirch.util.futures.FutureUtil
 import com.ubirch.util.uuid.UUIDUtil
 
+import org.joda.time.{DateTime, DateTimeZone}
+
 import scala.concurrent.Future
 
 /**
@@ -156,9 +158,63 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
     }
 
-    // TODO test case: two keys: first currently valid, second not valid (notValidBefore > now) --> find first
+    scenario("two keys: first currently valid, second not valid (validNotBefore > now) --> find first") {
 
-    // TODO test case: two keys: first currently valid, second not valid (notValidAfter < now) --> find first
+      // prepare
+      val hardwareId = UUIDUtil.uuidStr
+
+      val pubKey1 = TestDataGenerator.publicKey(infoHwDeviceId = hardwareId)
+      val pubKey2 = TestDataGenerator.publicKey(
+        infoHwDeviceId = hardwareId,
+        infoValidNotBefore = DateTime.now.plusDays(1)
+      )
+
+      createKeys(pubKey1, pubKey2) flatMap {
+
+        case false => fail("failed to create public keys during preparation")
+
+        case true =>
+
+          // test
+          PublicKeyManager.currentlyValid(hardwareId) map { result =>
+
+            // verify
+            result shouldBe Set(pubKey1)
+
+          }
+
+      }
+
+    }
+
+    scenario("two keys: first currently valid, second not valid (validNotAfter < now) --> find first") {
+
+      // prepare
+      val hardwareId = UUIDUtil.uuidStr
+
+      val pubKey1 = TestDataGenerator.publicKey(infoHwDeviceId = hardwareId)
+      val pubKey2 = TestDataGenerator.publicKey(
+        infoHwDeviceId = hardwareId,
+        infoValidNotAfter = Some(DateTime.now(DateTimeZone.UTC).minusMillis(100))
+      )
+
+      createKeys(pubKey1, pubKey2) flatMap {
+
+        case false => fail("failed to create public keys during preparation")
+
+        case true =>
+
+          // test
+          PublicKeyManager.currentlyValid(hardwareId) map { result =>
+
+            // verify
+            result shouldBe Set(pubKey1)
+
+          }
+
+      }
+
+    }
 
     scenario("two keys: both currently valid (with different hardware ids) --> find first") {
 
