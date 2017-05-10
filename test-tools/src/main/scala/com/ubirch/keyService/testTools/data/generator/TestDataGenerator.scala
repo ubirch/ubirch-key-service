@@ -6,6 +6,8 @@ import com.ubirch.util.uuid.UUIDUtil
 
 import org.joda.time.{DateTime, DateTimeZone}
 
+import scala.util.Random
+
 /**
   * author: cvandrei
   * since: 2017-05-09
@@ -26,7 +28,7 @@ object TestDataGenerator {
                    ): PublicKeyInfo = {
 
     val pubKeyToUse = pubKey match {
-      case None => s"some-public-key-$hwDeviceId"
+      case None => s"some-public-key-$hwDeviceId-${Random.nextLong()}"
       case Some(s) => s
     }
 
@@ -36,7 +38,7 @@ object TestDataGenerator {
     }
 
     val previousPubKeyToUse = pubKey match {
-      case None => s"previous-public-key-$hwDeviceId"
+      case None => s"previous-public-key-$hwDeviceId-${Random.nextLong()}"
       case Some(s) => s
     }
 
