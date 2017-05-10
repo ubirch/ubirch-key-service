@@ -41,12 +41,12 @@ trait Neo4jSpec extends AsyncFeatureSpec
       fail("failed to drop all constraints")
     }
 
-    if (!Neo4jUtils.createConstraints()) {
-      fail("failed to create constraints")
-    }
-
     if (!Neo4jUtils.deleteAllNodesAndRelationships()) {
       fail("failed to delete nodes and possible relationships")
+    }
+
+    if (!Neo4jUtils.createConstraints()) {
+      fail("failed to create constraints")
     }
 
   }
