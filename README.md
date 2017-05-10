@@ -241,7 +241,7 @@ If the server has problems the response is:
 
 This service has the following dependencies:
 
-* Neo4j 3.1.x (needs some constraints listed in `Local Setup`)
+* Neo4j 3.1.x (requires constraints as created by `InitData`)
 
 
 ## Automated Tests
@@ -267,9 +267,15 @@ more details here: https://github.com/scoverage/sbt-scoverage
 
   1) first time setup: set the password to "neo4jneo4j" (as configured in application.base.conf)
   
-  2) create constraints
+  2) prepare database
+  
+    1) clear database
+    
+      `./sbt "cmdtools/runMain com.ubirch.keyservice.cmd.Neo4jDelete"`
+    
+    2) create constraints
 
-    `CREATE CONSTRAINT ON (pubKey:PublicKey) ASSERT pubKey.infoPubKeyId IS UNIQUE`
+      `./sbt "cmdtools/runMain com.ubirch.keyservice.cmd.InitData"`
 
 3) start key-service
 
