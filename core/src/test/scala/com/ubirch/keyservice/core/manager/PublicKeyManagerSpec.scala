@@ -127,13 +127,65 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
     }
 
-    // TODO test case: two keys: both currently valid (without notValidAfter) --> find both
+    scenario("two keys: both currently valid (without notValidAfter) --> find both") {
+
+      // prepare
+      val hardwareId = UUIDUtil.uuidStr
+
+      val pubKey1 = TestDataGenerator.publicKeyMandatoryOnly(infoHwDeviceId = hardwareId)
+      pubKey1.pubKeyInfo.validNotAfter should be('isEmpty)
+
+      val pubKey2 = TestDataGenerator.publicKeyMandatoryOnly(infoHwDeviceId = hardwareId)
+      pubKey2.pubKeyInfo.validNotAfter should be('isEmpty)
+
+      createKeys(pubKey1, pubKey2) flatMap {
+
+        case false => fail("failed to create public keys during preparation")
+
+        case true =>
+
+          // test
+          PublicKeyManager.currentlyValid(hardwareId) map { result =>
+
+            // verify
+            result shouldBe Set(pubKey1, pubKey2)
+
+          }
+
+      }
+
+    }
 
     // TODO test case: two keys: first currently valid, second not valid (notValidBefore > now) --> find first
 
     // TODO test case: two keys: first currently valid, second not valid (notValidAfter < now) --> find first
 
-    // TODO test case: two keys: both currently valid (with different hardware ids) --> find first
+    scenario("two keys: both currently valid (with different hardware ids) --> find first") {
+
+      // prepare
+      val hardwareId1 = UUIDUtil.uuidStr
+      val hardwareId2 = UUIDUtil.uuidStr
+
+      val pubKey1 = TestDataGenerator.publicKey(infoHwDeviceId = hardwareId1)
+      val pubKey2 = TestDataGenerator.publicKey(infoHwDeviceId = hardwareId2)
+
+      createKeys(pubKey1, pubKey2) flatMap {
+
+        case false => fail("failed to create public keys during preparation")
+
+        case true =>
+
+          // test
+          PublicKeyManager.currentlyValid(hardwareId1) map { result =>
+
+            // verify
+            result shouldBe Set(pubKey1)
+
+          }
+
+      }
+
+    }
 
   }
 
