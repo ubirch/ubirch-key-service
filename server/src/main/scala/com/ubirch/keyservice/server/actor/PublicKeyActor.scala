@@ -1,7 +1,10 @@
 package com.ubirch.keyservice.server.actor
 
 import com.ubirch.key.model.rest.{PublicKey, PublicKeys}
+import com.ubirch.key.model._
 import com.ubirch.keyservice.core.manager.PublicKeyManager
+import com.ubirch.keyservice.server.actor.util.ModelUtil
+import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
 
 import org.anormcypher.Neo4jConnection
@@ -21,11 +24,17 @@ class PublicKeyActor(implicit neo4jConnection: Neo4jConnection) extends Actor
 
     case create: CreatePublicKey =>
       val sender = context.sender()
-      PublicKeyManager.create(create.publicKey) map (sender ! _)
+      val pubKeyWithId = ModelUtil.withPubKeyId(create.publicKey)
+      val dbPublicKey = Json4sUtil.any2any[db.PublicKey](pubKeyWithId)
+      PublicKeyManager.create(dbPublicKey) map { dbPubKey =>
+        sender ! (dbPubKey map Json4sUtil.any2any[rest.PublicKey])
+      }
 
     case queryCurrentlyValid: QueryCurrentlyValid =>
       val sender = context.sender()
-      PublicKeyManager.currentlyValid(queryCurrentlyValid.hardwareId) map (sender ! PublicKeys(_))
+      PublicKeyManager.currentlyValid(queryCurrentlyValid.hardwareId) map { dbPubKeys =>
+        sender ! PublicKeys(dbPubKeys map Json4sUtil.any2any[rest.PublicKey])
+      }
 
     case _ =>
       log.error("unknown message (PublicKeyActor)")

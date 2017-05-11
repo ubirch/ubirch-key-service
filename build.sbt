@@ -61,7 +61,7 @@ lazy val cmdtools = project
 
 lazy val core = project
   .settings(commonSettings: _*)
-  .dependsOn(modelDb, modelRest, util, testTools % "test")
+  .dependsOn(modelDb, util, testTools % "test")
   .settings(
     description := "business logic",
     libraryDependencies ++= depCore,
@@ -87,7 +87,7 @@ lazy val modelRest = (project in file("model-rest"))
 lazy val server = project
   .settings(commonSettings: _*)
   .settings(mergeStrategy: _*)
-  .dependsOn(config, core, modelRest, util)
+  .dependsOn(config, core, modelDb, modelRest, util, testTools % "test")
   .enablePlugins(DockerPlugin)
   .settings(
     description := "REST interface and Akka HTTP specific code",
@@ -104,7 +104,7 @@ lazy val server = project
 
 lazy val testTools = (project in file("test-tools"))
   .settings(commonSettings: _*)
-  .dependsOn(config, modelRest, util)
+  .dependsOn(config, modelDb, modelRest, util)
   .settings(
     name := "test-tools",
     description := "tools useful in automated tests",

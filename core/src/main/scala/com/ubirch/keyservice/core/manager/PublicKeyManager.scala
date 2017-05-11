@@ -3,7 +3,7 @@ package com.ubirch.keyservice.core.manager
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.key.model.db.Neo4jLabels
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo}
+import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo}
 
 import org.anormcypher.{Cypher, CypherResultRow, Neo4jConnection, NeoNode}
 import org.joda.time.{DateTime, DateTimeZone}
@@ -21,15 +21,15 @@ object PublicKeyManager extends StrictLogging {
   /**
     * Persist a [[PublicKey]].
     *
-    * @param toCreate        public key to persist
+    * @param pubKey        public key to persist
     * @param neo4jConnection Neo4j connection
     * @return persisted public key; None if something went wrong
     */
-  def create(toCreate: PublicKey)
+  def create(pubKey: PublicKey)
             (implicit neo4jConnection: Neo4jConnection): Future[Option[PublicKey]] = {
 
-    // TODO verify that toCreate.signature matches toCreate.pubKeyInfo
-    val data = entityToString(toCreate)
+    // TODO verify that pubKey.signature matches JSON of pubKey.pubKeyInfo (while ignoring pubKeyInfo.pubKeyId)
+    val data = entityToString(pubKey)
 
     val result = Cypher(
       s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
@@ -37,10 +37,10 @@ object PublicKeyManager extends StrictLogging {
     ).execute()
 
     if (!result) {
-      logger.error(s"failed to create public key: publicKey=$toCreate")
+      logger.error(s"failed to create public key: publicKey=$pubKey")
       Future(None)
     } else {
-      Future(Some(toCreate))
+      Future(Some(pubKey))
     }
 
   }

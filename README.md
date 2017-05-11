@@ -137,11 +137,12 @@ If not healthy the server response is:
 #### Create
 
     curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{
-      "pubkeyInfo": {
+      "pubKeyInfo": {
         "hwDeviceId": "some-id-asdf", // String (not always a UUID)
         "pubKey": "string", // base64
+        "pubKeyId": "string", // (optional) typically the hash of "pubKey" (algorithm tends to depend on "algorithm") but can also be the _pubKey_, too (useful for ECC keys whose hash would otherwise be longer than the actual key)
         "algorithm": "RSA4096", // check X.509 re: constants
-        "previousPubKey": "...", // String - full pub key (optional)
+        "previousPubKeyId": "string", // (optional) id of previous pub key
         "created": "2017-04-26T17:18:00.000Z+02:00",
         "validNotBefore": "2017-04-26T17:18:00.000Z+02:00",
         "validNotAfter": "2019-04-26T17:18:00.000Z+02:00" // (optional)
@@ -154,11 +155,12 @@ If successful the response is:
 
     200
     {
-      "pubkeyInfo": {
+      "pubKeyInfo": {
         "hwDeviceId": "some-id-asdf", // String (not always a UUID)
         "pubKey": "string", // base64
+        "pubKeyId": "string", // (optional) typically the hash of "pubKey" (algorithm tends to depend on "algorithm") but can also be the _pubKey_, too (useful for ECC keys whose hash would otherwise be longer than the actual key)
         "algorithm": "RSA4096", // check X.509 re: constants
-        "previousPubKey": "...", // String - full pub key (optional)
+        "previousPubKeyId": "...", // (optional) String - pub key id
         "created": "2017-04-26T17:18:00.000Z+02:00",
         "validNotBefore": "2017-04-26T17:18:00.000Z+02:00",
         "validNotAfter": "2019-04-26T17:18:00.000Z+02:00" // (optional)
@@ -205,11 +207,12 @@ If currently valid public keys were found the response is:
     200
     [
       {
-        "pubkeyInfo": {
+        "pubKeyInfo": {
           "hwDeviceId": "some-id-asdf", // String (not always a UUID)
           "pubKey": "string", // base64
+          "pubKeyId": "string", // (optional) typically the hash of "pubKey" (algorithm tends to depend on "algorithm") but can also be the _pubKey_, too (useful for ECC keys whose hash would otherwise be longer than the actual key)
           "algorithm": "RSA4096", // check X.509 re: constants
-          "previousPubKey": "...", // String - full pub key (optional)
+          "previousPubKeyId": "...", // (optional) pub key id
           "created": "2017-04-26T17:18:00.000Z+02:00",
           "validNotBefore": "2017-04-26T17:18:00.000Z+02:00",
           "validNotAfter": "2019-04-26T17:18:00.000Z+02:00" // (optional)

@@ -12,7 +12,7 @@ import scala.util.Random
   * author: cvandrei
   * since: 2017-05-09
   */
-object TestDataGenerator {
+object TestDataGeneratorRest {
 
   /**
     * Generate a [[PublicKeyInfo]] with all fields set.
@@ -50,7 +50,7 @@ object TestDataGenerator {
     PublicKeyInfo(
       hwDeviceId = hwDeviceId,
       pubKey = pubKeyToUse,
-      pubKeyId = pubKeyIdToUse,
+      pubKeyId = Some(pubKeyIdToUse),
       algorithm = algorithm,
       previousPubKeyId = previousPubKeyIdToUse,
       created = created,
@@ -70,7 +70,6 @@ object TestDataGenerator {
     */
   def publicKeyInfoMandatoryOnly(hwDeviceId: String = UUIDUtil.uuidStr,
                                  pubKey: Option[String] = None,
-                                 pubKeyId: Option[String] = None,
                                  algorithm: String = "RSA4096",
                                  created: DateTime = DateTime.now(DateTimeZone.UTC),
                                  validNotBefore: DateTime = DateTime.now(DateTimeZone.UTC)
@@ -79,13 +78,12 @@ object TestDataGenerator {
     publicKeyInfo(
       hwDeviceId = hwDeviceId,
       pubKey = pubKey,
-      pubKeyId = pubKeyId,
       algorithm = algorithm,
       previousPubKeyId = None,
       created = created,
       validNotBefore = validNotBefore,
       validNotAfter = None
-    ).copy(previousPubKeyId = None, validNotAfter = None)
+    ).copy(pubKeyId = None, previousPubKeyId = None, validNotAfter = None)
 
   }
 
@@ -152,7 +150,7 @@ object TestDataGenerator {
       infoValidNotBefore = infoValidNotBefore
     )
 
-    val info = pubKey.pubKeyInfo.copy(previousPubKeyId = None, validNotAfter = None)
+    val info = pubKey.pubKeyInfo.copy(pubKeyId = None, previousPubKeyId = None, validNotAfter = None)
 
     pubKey.copy(previousPubKeySignature = None, pubKeyInfo = info)
 

@@ -1,7 +1,7 @@
 package com.ubirch.keyservice.core.manager
 
-import com.ubirch.key.model.rest.PublicKey
-import com.ubirch.keyService.testTools.data.generator.TestDataGenerator
+import com.ubirch.key.model.db.PublicKey
+import com.ubirch.keyService.testTools.data.generator.TestDataGeneratorDb
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
 import com.ubirch.util.futures.FutureUtil
 import com.ubirch.util.uuid.UUIDUtil
@@ -21,7 +21,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
     scenario("public key does not exist (PublicKey with all fields set)") {
 
       // prepare
-      val publicKey = TestDataGenerator.publicKey()
+      val publicKey = TestDataGeneratorDb.publicKey()
 
       // test
       PublicKeyManager.create(publicKey) map {
@@ -36,7 +36,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
     scenario("public key exists (PublicKey with all fields set)") {
 
       // prepare
-      val publicKey = TestDataGenerator.publicKey()
+      val publicKey = TestDataGeneratorDb.publicKey()
       PublicKeyManager.create(publicKey) flatMap {
 
         case None => fail(s"failed to create existing key: $publicKey")
@@ -60,7 +60,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
     scenario("public key does not exist (PublicKey with only mandatory fields set)") {
 
       // prepare
-      val publicKey = TestDataGenerator.publicKeyMandatoryOnly()
+      val publicKey = TestDataGeneratorDb.publicKeyMandatoryOnly()
 
       // test
       PublicKeyManager.create(publicKey) map {
@@ -75,7 +75,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
     scenario("public key exists (PublicKey with only mandatory fields set)") {
 
       // prepare
-      val publicKey = TestDataGenerator.publicKeyMandatoryOnly()
+      val publicKey = TestDataGeneratorDb.publicKeyMandatoryOnly()
       PublicKeyManager.create(publicKey) flatMap {
 
         case None => fail(s"failed to create existing key: $publicKey")
@@ -105,10 +105,10 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       // prepare
       val hardwareId = UUIDUtil.uuidStr
 
-      val pubKey1 = TestDataGenerator.publicKey(infoHwDeviceId = hardwareId)
+      val pubKey1 = TestDataGeneratorDb.publicKey(infoHwDeviceId = hardwareId)
       pubKey1.pubKeyInfo.validNotAfter should be('isDefined)
 
-      val pubKey2 = TestDataGenerator.publicKey(infoHwDeviceId = hardwareId)
+      val pubKey2 = TestDataGeneratorDb.publicKey(infoHwDeviceId = hardwareId)
       pubKey2.pubKeyInfo.validNotAfter should be('isDefined)
 
       createKeys(pubKey1, pubKey2) flatMap {
@@ -134,10 +134,10 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       // prepare
       val hardwareId = UUIDUtil.uuidStr
 
-      val pubKey1 = TestDataGenerator.publicKeyMandatoryOnly(infoHwDeviceId = hardwareId)
+      val pubKey1 = TestDataGeneratorDb.publicKeyMandatoryOnly(infoHwDeviceId = hardwareId)
       pubKey1.pubKeyInfo.validNotAfter should be('isEmpty)
 
-      val pubKey2 = TestDataGenerator.publicKeyMandatoryOnly(infoHwDeviceId = hardwareId)
+      val pubKey2 = TestDataGeneratorDb.publicKeyMandatoryOnly(infoHwDeviceId = hardwareId)
       pubKey2.pubKeyInfo.validNotAfter should be('isEmpty)
 
       createKeys(pubKey1, pubKey2) flatMap {
@@ -163,8 +163,8 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       // prepare
       val hardwareId = UUIDUtil.uuidStr
 
-      val pubKey1 = TestDataGenerator.publicKey(infoHwDeviceId = hardwareId)
-      val pubKey2 = TestDataGenerator.publicKey(
+      val pubKey1 = TestDataGeneratorDb.publicKey(infoHwDeviceId = hardwareId)
+      val pubKey2 = TestDataGeneratorDb.publicKey(
         infoHwDeviceId = hardwareId,
         infoValidNotBefore = DateTime.now.plusDays(1)
       )
@@ -192,8 +192,8 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       // prepare
       val hardwareId = UUIDUtil.uuidStr
 
-      val pubKey1 = TestDataGenerator.publicKey(infoHwDeviceId = hardwareId)
-      val pubKey2 = TestDataGenerator.publicKey(
+      val pubKey1 = TestDataGeneratorDb.publicKey(infoHwDeviceId = hardwareId)
+      val pubKey2 = TestDataGeneratorDb.publicKey(
         infoHwDeviceId = hardwareId,
         infoValidNotAfter = Some(DateTime.now(DateTimeZone.UTC).minusMillis(100))
       )
@@ -222,8 +222,8 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       val hardwareId1 = UUIDUtil.uuidStr
       val hardwareId2 = UUIDUtil.uuidStr
 
-      val pubKey1 = TestDataGenerator.publicKey(infoHwDeviceId = hardwareId1)
-      val pubKey2 = TestDataGenerator.publicKey(infoHwDeviceId = hardwareId2)
+      val pubKey1 = TestDataGeneratorDb.publicKey(infoHwDeviceId = hardwareId1)
+      val pubKey2 = TestDataGeneratorDb.publicKey(infoHwDeviceId = hardwareId2)
 
       createKeys(pubKey1, pubKey2) flatMap {
 
