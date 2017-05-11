@@ -18,7 +18,7 @@ object Neo4jUtils extends StrictLogging {
     val results = Neo4jConstraints.constraints map { constraint =>
 
       if (Cypher(s"CREATE $constraint").execute()) {
-        logger.info(s"created constraint: $constraint")
+        logger.info(s"created constraint (or it already existed): $constraint")
         true
       } else {
         logger.error("failed to create constraint")

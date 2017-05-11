@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.keyservice.config.Config
 import com.ubirch.keyservice.server.route.MainRoute
+import com.ubirch.keyservice.util.neo4j.Neo4jUtils
 
 import org.anormcypher.{Neo4jConnection, Neo4jREST}
 
@@ -43,7 +44,8 @@ object Boot extends App with StrictLogging {
     https = neo4jConfig.https
   )
 
-  // TODO init/update Neo4j constraints (see InitData)
+  Neo4jUtils.createConstraints()
+
   val bindingFuture = start()
   registerShutdownHooks()
 
