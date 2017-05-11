@@ -311,4 +311,4 @@ more details here: https://github.com/scoverage/sbt-scoverage
 
 ## Create Docker Image
 
-    ./sbt server/docker
+    ./goBuild.sh assembly
