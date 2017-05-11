@@ -16,6 +16,12 @@ object InitData extends CmdBase {
       logger.error("failed to create Neo4j constraints")
     }
 
+    if (Neo4jUtils.createIndices()) {
+      logger.info("created Neo4j indices")
+    } else {
+      logger.error("failed to create Neo4j indices")
+    }
+
     close()
 
   }

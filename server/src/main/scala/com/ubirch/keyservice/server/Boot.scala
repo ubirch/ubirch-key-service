@@ -45,6 +45,7 @@ object Boot extends App with StrictLogging {
   )
 
   Neo4jUtils.createConstraints()
+  Neo4jUtils.createIndices()
 
   val bindingFuture = start()
   registerShutdownHooks()

@@ -258,7 +258,7 @@ If the server has problems the response is:
 
 This service has the following dependencies:
 
-* Neo4j 3.1.x (requires constraints as created by `InitData`)
+* Neo4j 3.1.x (constraints and indices are created during server startup)
 
 
 ## Automated Tests

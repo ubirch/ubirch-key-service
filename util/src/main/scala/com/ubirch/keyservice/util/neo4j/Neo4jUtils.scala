@@ -15,13 +15,32 @@ object Neo4jUtils extends StrictLogging {
   def createConstraints()
                        (implicit neo4jConnection: Neo4jConnection, ec: ExecutionContext): Boolean = {
 
-    val results = Neo4jConstraints.constraints map { constraint =>
+    val results = Neo4jSchema.constraints map { constraint =>
 
       if (Cypher(s"CREATE $constraint").execute()) {
         logger.info(s"created constraint (or it already existed): $constraint")
         true
       } else {
         logger.error("failed to create constraint")
+        false
+      }
+
+    }
+
+    results.forall(b => b)
+
+  }
+
+  def createIndices()
+                   (implicit neo4jConnection: Neo4jConnection, ec: ExecutionContext): Boolean = {
+
+    val results = Neo4jSchema.indices map { index =>
+
+      if (Cypher(s"CREATE $index").execute()) {
+        logger.info(s"created index (or it already existed): $index")
+        true
+      } else {
+        logger.error("failed to create index")
         false
       }
 
@@ -50,10 +69,38 @@ object Neo4jUtils extends StrictLogging {
 
   }
 
+  def dropAllIndices()
+                    (implicit neo4jConnection: Neo4jConnection, ec: ExecutionContext): Boolean = {
+
+    val results = queryIndices() map { index =>
+
+      if (Cypher(s"DROP $index").execute()) {
+        logger.info(s"dropped index: $index")
+        true
+      } else {
+        logger.error(s"failed to drop index: $index")
+        false
+      }
+
+    }
+
+    results.forall(b => b)
+
+  }
+
   def queryConstraints()
                       (implicit neo4jConnection: Neo4jConnection, ec: ExecutionContext): Seq[String] = {
 
     Cypher("CALL db.constraints()")() map { row =>
+      row[String]("description")
+    }
+
+  }
+
+  def queryIndices()
+                  (implicit neo4jConnection: Neo4jConnection, ec: ExecutionContext): Seq[String] = {
+
+    Cypher("call db.indexes()")() map { row =>
       row[String]("description")
     }
 

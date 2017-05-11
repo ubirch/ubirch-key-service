@@ -11,9 +11,15 @@ object Neo4jDelete extends CmdBase {
   override def run(): Unit = {
 
     if (Neo4jUtils.dropAllConstraints()) {
-      logger.info("drop all Neo4j constraints")
+      logger.info("dropped all Neo4j constraints")
     } else {
       logger.error("failed to drop all Neo4j constraints")
+    }
+
+    if (Neo4jUtils.dropAllIndices()) {
+      logger.info("dropped all Neo4j indices")
+    } else {
+      logger.error("failed to drop all Neo4j indices")
     }
 
     if (Neo4jUtils.deleteAllNodesAndRelationships()) {
