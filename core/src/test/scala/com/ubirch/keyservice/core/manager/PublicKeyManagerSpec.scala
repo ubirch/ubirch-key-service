@@ -57,6 +57,62 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
     }
 
+    scenario("publicKey.info.pubKey already exists (PublicKey with all fields set)") {
+
+      // prepare
+      val publicKey1 = TestDataGeneratorDb.publicKey()
+
+      PublicKeyManager.create(publicKey1) flatMap {
+
+        case None => fail(s"failed to create key during preparation: $publicKey1")
+
+        case Some(result: PublicKey) =>
+
+          result shouldBe publicKey1
+
+          val publicKey2 = TestDataGeneratorDb.publicKey(infoPubKey = Some(publicKey1.pubKeyInfo.pubKey))
+          publicKey2.pubKeyInfo.pubKey shouldBe publicKey1.pubKeyInfo.pubKey
+
+          // test
+          PublicKeyManager.create(publicKey2) map {
+
+            // verify
+            _ shouldBe None
+
+          }
+
+      }
+
+    }
+
+    scenario("publicKey.info.pubKeyId already exists (PublicKey with all fields set)") {
+
+      // prepare
+      val publicKey1 = TestDataGeneratorDb.publicKey()
+
+      PublicKeyManager.create(publicKey1) flatMap {
+
+        case None => fail(s"failed to create key during preparation: $publicKey1")
+
+        case Some(result: PublicKey) =>
+
+          result shouldBe publicKey1
+
+          val publicKey2 = TestDataGeneratorDb.publicKey(infoPubKeyId = Some(publicKey1.pubKeyInfo.pubKeyId))
+          publicKey2.pubKeyInfo.pubKeyId shouldBe publicKey1.pubKeyInfo.pubKeyId
+
+          // test
+          PublicKeyManager.create(publicKey2) map {
+
+            // verify
+            _ shouldBe None
+
+          }
+
+      }
+
+    }
+
     scenario("public key does not exist (PublicKey with only mandatory fields set)") {
 
       // prepare
