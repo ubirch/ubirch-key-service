@@ -1,0 +1,12 @@
+//step 1: Bootstrapping
+
+{
+  "v": "1",
+  "signature": "{payloadSignature}",
+  "p": {
+    "removedPubKey": "{previousPubKey}",
+    "deviceId": "{UUID}",
+    "pubKey": "{pubkey}",
+    "timestamp": "{timestamp}"
+  }
+}
