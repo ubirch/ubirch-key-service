@@ -9,9 +9,9 @@ is only possible if you control the private key, too).
 
 ## Release History
 
-### Version 0.2.0 (tbd)
+### Version 0.1.1 (tbd)
 
-* tbd
+* update Akka Http to 10.0.6
 
 ### Version 0.1.0 (2017-05-11)
 
