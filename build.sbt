@@ -114,7 +114,7 @@ lazy val testTools = (project in file("test-tools"))
 
 lazy val util = project
   .settings(commonSettings: _*)
-  .dependsOn()
+  .dependsOn(modelDb)
   .settings(
     description := "utils",
     libraryDependencies ++= depUtils,
@@ -135,6 +135,7 @@ lazy val depCore = Seq(
   ubirchCrypto,
   ubirchJson,
   ubirchResponse,
+  ubirchUuid,
   anormCypher,
   ubirchFutures % "test",
   scalatest % "test"
@@ -143,12 +144,14 @@ lazy val depCore = Seq(
 lazy val depModelDb = Seq(
   ubirchDate,
   ubirchJsonAutoConvert,
+  ubirchUuid,
   json4sNative
 )
 
 lazy val depModelRest = Seq(
   ubirchDate,
   ubirchJsonAutoConvert,
+  ubirchUuid,
   json4sNative
 )
 
@@ -176,6 +179,8 @@ lazy val depTestTools = Seq(
 ) ++ scalaLogging
 
 lazy val depUtils = Seq(
+  ubirchUuid,
+  ubirchCrypto,
   anormCypher
 ) ++ scalaLogging
 
@@ -219,7 +224,7 @@ lazy val excludedLoggers = Seq(
 )
 
 lazy val ubirchConfig = ubirchUtilG %% "config" % "0.1" excludeAll (excludedLoggers: _*)
-lazy val ubirchCrypto = ubirchUtilG %% "crypto" % "0.3.3" excludeAll (excludedLoggers: _*)
+lazy val ubirchCrypto = ubirchUtilG %% "crypto" % "0.3.4" excludeAll (excludedLoggers: _*)
 lazy val ubirchDate = ubirchUtilG %% "date" % "0.1" excludeAll (excludedLoggers: _*)
 lazy val ubirchFutures = ubirchUtilG %% "futures" % "0.1.1" excludeAll (excludedLoggers: _*)
 lazy val ubirchJson = ubirchUtilG %% "json" % "0.3.4" excludeAll (excludedLoggers: _*)
