@@ -16,16 +16,16 @@ import scala.concurrent.Future
   */
 class PublicKeyManagerSpec extends Neo4jSpec {
 
-  val (pubKey, privKey) = EccUtil.generateEccKeyPairEncoded
-
   feature("create()") {
 
     scenario("public key does not exist (PublicKey with all fields set)") {
 
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
       // prepare
       val publicKey = TestDataGeneratorDb.createPublicKey(
-        privateKey = privKey,
-        infoPubKey = pubKey
+        privateKey = privKey1,
+        infoPubKey = pubKey1
       )
 
       // test
@@ -40,8 +40,10 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
     scenario("public key exists (PublicKey with all fields set)") {
 
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
       // prepare
-      val publicKey = TestDataGeneratorDb.createPublicKey(privateKey = privKey, infoPubKey = pubKey)
+      val publicKey = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1)
       PublicKeyManager.create(publicKey) flatMap {
 
         case None => fail(s"failed to create existing key: $publicKey")
@@ -64,8 +66,10 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
     scenario("publicKey.info.pubKey already exists (PublicKey with all fields set)") {
 
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
       // prepare
-      val publicKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey, infoPubKey = pubKey)
+      val publicKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1)
 
       PublicKeyManager.create(publicKey1) flatMap {
 
@@ -75,7 +79,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
           result shouldBe publicKey1
 
-          val publicKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey, infoPubKey = pubKey)
+          val publicKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1)
           publicKey2.pubKeyInfo.pubKey shouldBe publicKey1.pubKeyInfo.pubKey
 
           // test
@@ -93,7 +97,9 @@ class PublicKeyManagerSpec extends Neo4jSpec {
     scenario("publicKey.info.pubKeyId already exists (PublicKey with all fields set)") {
 
       // prepare
-      val publicKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey, infoPubKey = pubKey)
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
+      val publicKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1)
 
       PublicKeyManager.create(publicKey1) flatMap {
 
@@ -103,7 +109,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
           result shouldBe publicKey1
 
-          val publicKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey, infoPubKey = pubKey)
+          val publicKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1)
           publicKey2.pubKeyInfo.pubKeyId shouldBe publicKey1.pubKeyInfo.pubKeyId
 
           // test
@@ -121,7 +127,9 @@ class PublicKeyManagerSpec extends Neo4jSpec {
     scenario("public key does not exist (PublicKey with only mandatory fields set)") {
 
       // prepare
-      val publicKey = TestDataGeneratorDb.publicKeyMandatoryOnly(privateKey = privKey, infoPubKey = pubKey)
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
+      val publicKey = TestDataGeneratorDb.publicKeyMandatoryOnly(privateKey = privKey1, infoPubKey = pubKey1)
 
       // test
       PublicKeyManager.create(publicKey) map {
@@ -136,7 +144,9 @@ class PublicKeyManagerSpec extends Neo4jSpec {
     scenario("public key exists (PublicKey with only mandatory fields set)") {
 
       // prepare
-      val publicKey = TestDataGeneratorDb.publicKeyMandatoryOnly(privateKey = privKey, infoPubKey = pubKey)
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
+      val publicKey = TestDataGeneratorDb.publicKeyMandatoryOnly(privateKey = privKey1, infoPubKey = pubKey1)
       PublicKeyManager.create(publicKey) flatMap {
 
         case None => fail(s"failed to create existing key: $publicKey")
@@ -164,15 +174,18 @@ class PublicKeyManagerSpec extends Neo4jSpec {
     scenario("two keys: both currently valid (with notValidAfter) --> find both") {
 
       // prepare
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
+      val (pubKey2, privKey2) = EccUtil.generateEccKeyPairEncoded
       val hardwareId = UUIDUtil.uuidStr
 
-      val pubKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey, infoPubKey = pubKey, infoHwDeviceId = hardwareId)
-      pubKey1.pubKeyInfo.validNotAfter should be('isDefined)
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId)
+      pKey1.pubKeyInfo.validNotAfter should be('isDefined)
 
-      val pubKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey, infoPubKey = pubKey, infoHwDeviceId = hardwareId)
-      pubKey2.pubKeyInfo.validNotAfter should be('isDefined)
+      val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId)
+      pKey2.pubKeyInfo.validNotAfter should be('isDefined)
 
-      createKeys(pubKey1, pubKey2) flatMap {
+      createKeys(pKey1, pKey2) flatMap {
 
         case false => fail("failed to create public keys during preparation")
 
@@ -182,7 +195,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
           PublicKeyManager.currentlyValid(hardwareId) map { result =>
 
             // verify
-            result shouldBe Set(pubKey1, pubKey2)
+            result shouldBe Set(pKey1, pKey2)
 
           }
 
@@ -193,15 +206,18 @@ class PublicKeyManagerSpec extends Neo4jSpec {
     scenario("two keys: both currently valid (without notValidAfter) --> find both") {
 
       // prepare
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
+      val (pubKey2, privKey2) = EccUtil.generateEccKeyPairEncoded
       val hardwareId = UUIDUtil.uuidStr
 
-      val pubKey1 = TestDataGeneratorDb.publicKeyMandatoryOnly(privateKey = privKey, infoPubKey = pubKey, infoHwDeviceId = hardwareId)
-      pubKey1.pubKeyInfo.validNotAfter should be('isEmpty)
+      val pKey1 = TestDataGeneratorDb.publicKeyMandatoryOnly(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId)
+      pKey1.pubKeyInfo.validNotAfter should be('isEmpty)
 
-      val pubKey2 = TestDataGeneratorDb.publicKeyMandatoryOnly(privateKey = privKey, infoPubKey = pubKey, infoHwDeviceId = hardwareId)
-      pubKey2.pubKeyInfo.validNotAfter should be('isEmpty)
+      val pKey2 = TestDataGeneratorDb.publicKeyMandatoryOnly(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId)
+      pKey2.pubKeyInfo.validNotAfter should be('isEmpty)
 
-      createKeys(pubKey1, pubKey2) flatMap {
+      createKeys(pKey1, pKey2) flatMap {
 
         case false => fail("failed to create public keys during preparation")
 
@@ -211,7 +227,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
           PublicKeyManager.currentlyValid(hardwareId) map { result =>
 
             // verify
-            result shouldBe Set(pubKey1, pubKey2)
+            result shouldBe Set(pKey1, pKey2)
 
           }
 
@@ -222,17 +238,20 @@ class PublicKeyManagerSpec extends Neo4jSpec {
     scenario("two keys: first currently valid, second not valid (validNotBefore > now) --> find first") {
 
       // prepare
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
+      val (pubKey2, privKey2) = EccUtil.generateEccKeyPairEncoded
       val hardwareId = UUIDUtil.uuidStr
 
-      val pubKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey, infoPubKey = pubKey, infoHwDeviceId = hardwareId)
-      val pubKey2 = TestDataGeneratorDb.createPublicKey(
-        privateKey = privKey,
-        infoPubKey = pubKey,
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId)
+      val pKey2 = TestDataGeneratorDb.createPublicKey(
+        privateKey = privKey2,
+        infoPubKey = pubKey2,
         infoHwDeviceId = hardwareId,
         infoValidNotBefore = DateTime.now.plusDays(1)
       )
 
-      createKeys(pubKey1, pubKey2) flatMap {
+      createKeys(pKey1, pKey2) flatMap {
 
         case false => fail("failed to create public keys during preparation")
 
@@ -242,7 +261,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
           PublicKeyManager.currentlyValid(hardwareId) map { result =>
 
             // verify
-            result shouldBe Set(pubKey1)
+            result shouldBe Set(pKey1)
 
           }
 
@@ -253,17 +272,20 @@ class PublicKeyManagerSpec extends Neo4jSpec {
     scenario("two keys: first currently valid, second not valid (validNotAfter < now) --> find first") {
 
       // prepare
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
+      val (pubKey2, privKey2) = EccUtil.generateEccKeyPairEncoded
       val hardwareId = UUIDUtil.uuidStr
 
-      val pubKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey, infoPubKey = pubKey, infoHwDeviceId = hardwareId)
-      val pubKey2 = TestDataGeneratorDb.createPublicKey(
-        privateKey = privKey,
-        infoPubKey = pubKey,
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId)
+      val pKey2 = TestDataGeneratorDb.createPublicKey(
+        privateKey = privKey2,
+        infoPubKey = pubKey2,
         infoHwDeviceId = hardwareId,
         infoValidNotAfter = Some(DateTime.now(DateTimeZone.UTC).minusMillis(100))
       )
 
-      createKeys(pubKey1, pubKey2) flatMap {
+      createKeys(pKey1, pKey2) flatMap {
 
         case false => fail("failed to create public keys during preparation")
 
@@ -273,7 +295,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
           PublicKeyManager.currentlyValid(hardwareId) map { result =>
 
             // verify
-            result shouldBe Set(pubKey1)
+            result shouldBe Set(pKey1)
 
           }
 
@@ -284,13 +306,16 @@ class PublicKeyManagerSpec extends Neo4jSpec {
     scenario("two keys: both currently valid (with different hardware ids) --> find first") {
 
       // prepare
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
+      val (pubKey2, privKey2) = EccUtil.generateEccKeyPairEncoded
       val hardwareId1 = UUIDUtil.uuidStr
       val hardwareId2 = UUIDUtil.uuidStr
 
-      val pubKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey, infoPubKey = pubKey, infoHwDeviceId = hardwareId1)
-      val pubKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey, infoPubKey = pubKey, infoHwDeviceId = hardwareId2)
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
+      val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId2)
 
-      createKeys(pubKey1, pubKey2) flatMap {
+      createKeys(pKey1, pKey2) flatMap {
 
         case false => fail("failed to create public keys during preparation")
 
@@ -300,7 +325,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
           PublicKeyManager.currentlyValid(hardwareId1) map { result =>
 
             // verify
-            result shouldBe Set(pubKey1)
+            result shouldBe Set(pKey1)
 
           }
 
@@ -313,8 +338,8 @@ class PublicKeyManagerSpec extends Neo4jSpec {
   private def createKeys(pubKeys: PublicKey*): Future[Boolean] = {
 
     // TODO copy to test-tools-ext?
-    val resultsFuture = pubKeys map {
-      PublicKeyManager.create(_) map {
+    val resultsFuture = pubKeys map { pubKey =>
+      PublicKeyManager.create(pubKey = pubKey) map {
         case None => false
         case Some(_: PublicKey) => true
       }

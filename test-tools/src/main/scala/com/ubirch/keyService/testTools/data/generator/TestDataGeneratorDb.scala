@@ -129,7 +129,8 @@ object TestDataGeneratorDb {
       infoPubKeyId = infoPubKeyId,
       infoAlgorithm = infoAlgorithm,
       infoCreated = infoCreated,
-      infoValidNotBefore = infoValidNotBefore
+      infoValidNotBefore = infoValidNotBefore,
+      infoValidNotAfter = None
     )
 
     pubKey
