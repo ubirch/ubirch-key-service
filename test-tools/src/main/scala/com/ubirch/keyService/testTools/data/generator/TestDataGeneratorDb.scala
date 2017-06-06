@@ -1,12 +1,11 @@
 package com.ubirch.keyService.testTools.data.generator
 
+import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.crypto.hash.HashUtil
 import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo}
+import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
 import com.ubirch.util.uuid.UUIDUtil
-
 import org.joda.time.{DateTime, DateTimeZone}
-
-import scala.util.Random
 
 /**
   * author: cvandrei
@@ -18,46 +17,29 @@ object TestDataGeneratorDb {
     * Generate a [[PublicKeyInfo]] with all fields set.
     */
   def publicKeyInfo(hwDeviceId: String = UUIDUtil.uuidStr,
-                    pubKey: Option[String] = None,
-                    pubKeyId: Option[String] = None,
-                    algorithm: String = "RSA4096",
+                    pubKey: String,
+                    pubKeyId: String = UUIDUtil.uuidStr,
+                    algorithm: String = "ed25519-sha-512",
                     previousPubKeyId: Option[String] = None,
                     created: DateTime = DateTime.now(DateTimeZone.UTC),
                     validNotBefore: DateTime = DateTime.now(DateTimeZone.UTC),
                     validNotAfter: Option[DateTime] = None
                    ): PublicKeyInfo = {
 
-    val pubKeyToUse = pubKey match {
-      case None => s"some-public-key-$hwDeviceId-${Random.nextLong()}"
-      case Some(s) => s
-    }
+    val pubKeyToUse = pubKey
 
-    val pubKeyIdToUse = pubKeyId match {
-      case None => HashUtil.sha256HexString(pubKeyToUse)
-      case Some(s) => s
-    }
+    val pubKeyIdToUse = HashUtil.sha256HexString(pubKeyToUse)
 
-    val previousPubKeyToUse = pubKey match {
-      case None => s"previous-public-key-$hwDeviceId-${Random.nextLong()}"
-      case Some(s) => s
-    }
-
-    val previousPubKeyIdToUse = pubKeyId match {
-      case None => Some(HashUtil.sha256HexString(previousPubKeyToUse))
-      case Some(s) => Some(s)
-    }
 
     PublicKeyInfo(
       hwDeviceId = hwDeviceId,
       pubKey = pubKeyToUse,
       pubKeyId = pubKeyIdToUse,
       algorithm = algorithm,
-      previousPubKeyId = previousPubKeyIdToUse,
       created = created,
       validNotBefore = validNotBefore,
       validNotAfter = validNotAfter
     )
-
   }
 
   /**
@@ -69,9 +51,9 @@ object TestDataGeneratorDb {
     * </li>
     */
   def publicKeyInfoMandatoryOnly(hwDeviceId: String = UUIDUtil.uuidStr,
-                                 pubKey: Option[String] = None,
-                                 pubKeyId: Option[String] = None,
-                                 algorithm: String = "RSA4096",
+                                 pubKey: String,
+                                 pubKeyId: String = UUIDUtil.uuidStr,
+                                 algorithm: String = "ed25519-sha-512",
                                  created: DateTime = DateTime.now(DateTimeZone.UTC),
                                  validNotBefore: DateTime = DateTime.now(DateTimeZone.UTC)
                                 ): PublicKeyInfo = {
@@ -85,41 +67,39 @@ object TestDataGeneratorDb {
       created = created,
       validNotBefore = validNotBefore,
       validNotAfter = None
-    ).copy(previousPubKeyId = None, validNotAfter = None)
-
+    )
   }
 
   /**
     * Generates a [[PublicKey]] for test purposes. All fields will have values.
     */
-  def publicKey(signature: String = "some-signature",
-                previousPubKeySignature: Option[String] = None,
-                infoHwDeviceId: String = UUIDUtil.uuidStr,
-                infoPubKey: Option[String] = None,
-                infoPubKeyId: Option[String] = None,
-                infoAlgorithm: String = "RSA4096",
-                infoPreviousPubKeyId: Option[String] = None,
-                infoCreated: DateTime = DateTime.now(DateTimeZone.UTC),
-                infoValidNotBefore: DateTime = DateTime.now(DateTimeZone.UTC),
-                infoValidNotAfter: Option[DateTime] = Some(DateTime.now(DateTimeZone.UTC).plusDays(7))
-               ): PublicKey = {
+  def createPublicKey(privateKey: String,
+                      infoPubKey: String,
+                      infoHwDeviceId: String = UUIDUtil.uuidStr,
+                      infoPubKeyId: String = UUIDUtil.uuidStr,
+                      infoAlgorithm: String = "ed25519-sha-512",
+                      infoPreviousPubKeyId: Option[String] = None,
+                      infoCreated: DateTime = DateTime.now(DateTimeZone.UTC),
+                      infoValidNotBefore: DateTime = DateTime.now(DateTimeZone.UTC),
+                      infoValidNotAfter: Option[DateTime] = Some(DateTime.now(DateTimeZone.UTC).plusDays(7))
+                     ): PublicKey = {
 
     val pubKeyInfo = publicKeyInfo(
       hwDeviceId = infoHwDeviceId,
       pubKey = infoPubKey,
       pubKeyId = infoPubKeyId,
       algorithm = infoAlgorithm,
-      previousPubKeyId = infoPreviousPubKeyId,
       created = infoCreated,
       validNotBefore = infoValidNotBefore,
       validNotAfter = infoValidNotAfter
     )
 
-    val previousPubKeySigToUse = Some(s"previous-pub-key-signature-${UUIDUtil.uuidStr}")
+    val pubKeyInfoString = PublicKeyUtil.publicKeyInfo2String(pubKeyInfo).get
+    val signature = EccUtil.signPayload(privateKey, pubKeyInfoString)
+
     PublicKey(
       pubKeyInfo = pubKeyInfo,
-      signature = signature,
-      previousPubKeySignature = previousPubKeySigToUse
+      signature = signature
     )
 
   }
@@ -133,29 +113,27 @@ object TestDataGeneratorDb {
     * <ul>pubKeyInfo.validNotAfter</ul>
     * </li>
     */
-  def publicKeyMandatoryOnly(signature: String = "some-signature",
+  def publicKeyMandatoryOnly(privateKey: String,
                              infoHwDeviceId: String = UUIDUtil.uuidStr,
-                             infoPubKey: Option[String] = None,
-                             infoPubKeyId: Option[String] = None,
-                             infoAlgorithm: String = "RSA4096",
+                             infoPubKey: String,
+                             infoPubKeyId: String = UUIDUtil.uuidStr,
+                             infoAlgorithm: String = "ed25519-sha-512",
                              infoCreated: DateTime = DateTime.now(DateTimeZone.UTC),
                              infoValidNotBefore: DateTime = DateTime.now(DateTimeZone.UTC)
                             ): PublicKey = {
 
-    val pubKey = publicKey(
-      signature = signature,
+
+    val pubKey = createPublicKey(privateKey = privateKey,
       infoHwDeviceId = infoHwDeviceId,
       infoPubKey = infoPubKey,
       infoPubKeyId = infoPubKeyId,
       infoAlgorithm = infoAlgorithm,
       infoCreated = infoCreated,
-      infoValidNotBefore = infoValidNotBefore
+      infoValidNotBefore = infoValidNotBefore,
+      infoValidNotAfter = None
     )
 
-    val info = pubKey.pubKeyInfo.copy(previousPubKeyId = None, validNotAfter = None)
-
-    pubKey.copy(previousPubKeySignature = None, pubKeyInfo = info)
-
+    pubKey
   }
 
 }
