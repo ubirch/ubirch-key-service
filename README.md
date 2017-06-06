@@ -11,7 +11,8 @@ is only possible if you control the private key, too).
 
 ### Version 0.1.2 (tbd)
 
-* tbd
+* introduce endpoint `/api/authService/v1/check`
+* update to sbt 0.13.15
 
 ### Version 0.1.1 (2017-05-18)
 

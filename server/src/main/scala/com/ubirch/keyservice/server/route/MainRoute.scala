@@ -23,7 +23,9 @@ class MainRoute(implicit neo4jConnection: Neo4jConnection) {
         pathPrefix(RouteConstants.currentVersion) {
 
           pubKey.route ~
-            pathEndOrSingleSlash {
+          path(RouteConstants.check) {
+            welcome.route
+          } ~ pathEndOrSingleSlash {
               welcome.route
             }
 
