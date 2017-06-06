@@ -129,14 +129,15 @@ libraryDependencies ++= Seq(
 
 ## REST Methods
 
-### Welcome / Health
+### Welcome / Health / Check
 
     curl localhost:8095/
     curl localhost:8095/api/keyService/v1
+    curl localhost:8095/api/keyService/v1/check
 
 If healthy the server response is:
 
-    200 {"version":"1.0","status":"OK","message":"Welcome to the ubirchKeyService"}
+    200 {"version":"1.0","status":"OK","message":"Welcome to the ubirchKeyService ( $GO_PIPELINE_NAME / $GO_PIPELINE_LABEL / $GO_PIPELINE_REVISION )"}
 
 If not healthy the server response is:
 
