@@ -14,6 +14,8 @@ is only possible if you control the private key, too).
 * introduce endpoint `/api/authService/v1/check`
 * update to sbt 0.13.15
 * added `PublicKeyUtil`
+* update _com.ubirch.util:json_ to version 0.4.0
+* update _com.ubirch.util:response-util_ to version 0.1.6
 
 ### Version 0.1.1 (2017-05-18)
 
