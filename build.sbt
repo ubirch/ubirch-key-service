@@ -5,7 +5,6 @@ concurrentRestrictions in Global := Seq(
   Tags.limit(Tags.Test, 1)
 )
 
-val projectVersion = "0.1.0-SNAPSHOT"
 lazy val commonSettings = Seq(
 
   scalaVersion := "2.11.8",
@@ -17,7 +16,7 @@ lazy val commonSettings = Seq(
     url("https://github.com/ubirch/ubirch-key-service"),
     "scm:git:git@github.com:ubirch/ubirch-key-service.git"
   )),
-  version := "0.1.2-SNAPSHOT",
+  version := "0.1.2",
   test in assembly := {},
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases"),
