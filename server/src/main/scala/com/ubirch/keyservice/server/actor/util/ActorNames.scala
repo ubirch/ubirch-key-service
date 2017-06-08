@@ -7,5 +7,6 @@ package com.ubirch.keyservice.server.actor.util
 object ActorNames {
 
   final val PUB_KEY = "pub-key-actor"
+  final val DEEP_CHECK = "deep-check-actor"
 
 }

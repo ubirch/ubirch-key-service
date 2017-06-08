@@ -9,13 +9,14 @@ is only possible if you control the private key, too).
 
 ## Release History
 
-### Version 0.1.2 (tbd)
+### Version 0.1.2 (2017-06-??)
 
 * introduce endpoint `/api/authService/v1/check`
 * update to sbt 0.13.15
 * added `PublicKeyUtil`
 * update _com.ubirch.util:json_ to version 0.4.0
 * update _com.ubirch.util:response-util_ to version 0.1.6
+* introduce endpoint `/api/userService/v1/deepCheck`
 
 ### Version 0.1.1 (2017-05-18)
 
@@ -144,6 +145,18 @@ If healthy the server response is:
 If not healthy the server response is:
 
     400 {"version":"1.0","status":"NOK","message":"$ERROR_MESSAGE"}
+
+### Deep Check / Server Health
+
+    curl localhost:8092/api/keyService/v1/deepCheck
+
+If healthy the response is:
+
+    200 {"version":"1.0","status":"OK","messages":[]}
+
+If not healthy the status is "NOK" and the `messages` array not empty:
+
+    500 {"version":"1.0","status":"NOK","messages":["unable to connect to the database"]}
 
 
 ### Public Key
