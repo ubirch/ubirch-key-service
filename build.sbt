@@ -5,7 +5,6 @@ concurrentRestrictions in Global := Seq(
   Tags.limit(Tags.Test, 1)
 )
 
-val projectVersion = "0.1.0-SNAPSHOT"
 lazy val commonSettings = Seq(
 
   scalaVersion := "2.11.8",
@@ -17,7 +16,7 @@ lazy val commonSettings = Seq(
     url("https://github.com/ubirch/ubirch-key-service"),
     "scm:git:git@github.com:ubirch/ubirch-key-service.git"
   )),
-  version := "0.1.1",
+  version := "0.1.2",
   test in assembly := {},
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases"),
@@ -114,7 +113,7 @@ lazy val testTools = (project in file("test-tools"))
 
 lazy val util = project
   .settings(commonSettings: _*)
-  .dependsOn()
+  .dependsOn(modelDb)
   .settings(
     description := "utils",
     libraryDependencies ++= depUtils,
@@ -135,6 +134,7 @@ lazy val depCore = Seq(
   ubirchCrypto,
   ubirchJson,
   ubirchResponse,
+  ubirchUuid,
   anormCypher,
   ubirchFutures % "test",
   scalatest % "test"
@@ -142,13 +142,15 @@ lazy val depCore = Seq(
 
 lazy val depModelDb = Seq(
   ubirchDate,
-  ubirchJsonAutoConvert,
+  ubirchJson,
+  ubirchUuid,
   json4sNative
 )
 
 lazy val depModelRest = Seq(
   ubirchDate,
-  ubirchJsonAutoConvert,
+  ubirchJson,
+  ubirchUuid,
   json4sNative
 )
 
@@ -161,7 +163,6 @@ lazy val depServer = Seq(
 
   anormCypher,
 
-  ubirchJsonAutoConvert,
   ubirchResponse
 
 )
@@ -169,13 +170,15 @@ lazy val depServer = Seq(
 lazy val depTestTools = Seq(
   json4sNative,
   ubirchCrypto,
-  ubirchJsonAutoConvert,
+  ubirchJson,
   ubirchUuid,
   anormCypher,
   scalatest
 ) ++ scalaLogging
 
 lazy val depUtils = Seq(
+  ubirchUuid,
+  ubirchCrypto,
   anormCypher
 ) ++ scalaLogging
 
@@ -219,14 +222,13 @@ lazy val excludedLoggers = Seq(
 )
 
 lazy val ubirchConfig = ubirchUtilG %% "config" % "0.1" excludeAll (excludedLoggers: _*)
-lazy val ubirchCrypto = ubirchUtilG %% "crypto" % "0.3.3" excludeAll (excludedLoggers: _*)
+lazy val ubirchCrypto = ubirchUtilG %% "crypto" % "0.3.4" excludeAll (excludedLoggers: _*)
 lazy val ubirchDate = ubirchUtilG %% "date" % "0.1" excludeAll (excludedLoggers: _*)
 lazy val ubirchFutures = ubirchUtilG %% "futures" % "0.1.1" excludeAll (excludedLoggers: _*)
-lazy val ubirchJson = ubirchUtilG %% "json" % "0.3.4" excludeAll (excludedLoggers: _*)
-lazy val ubirchJsonAutoConvert = ubirchUtilG %% "json-auto-convert" % "0.3.4" excludeAll (excludedLoggers: _*)
+lazy val ubirchJson = ubirchUtilG %% "json" % "0.4.0" excludeAll (excludedLoggers: _*)
 lazy val ubirchRestAkkaHttp = ubirchUtilG %% "rest-akka-http" % "0.3.6" excludeAll (excludedLoggers: _*)
 lazy val ubirchRestAkkaHttpTest = ubirchUtilG %% "rest-akka-http-test" % "0.3.6" excludeAll (excludedLoggers: _*)
-lazy val ubirchResponse = ubirchUtilG %% "response-util" % "0.1.4" excludeAll (excludedLoggers: _*)
+lazy val ubirchResponse = ubirchUtilG %% "response-util" % "0.1.6" excludeAll (excludedLoggers: _*)
 lazy val ubirchUuid = ubirchUtilG %% "uuid" % "0.1.1" excludeAll (excludedLoggers: _*)
 
 lazy val anormCypher = "org.anormcypher" %% "anormcypher" % "0.9.1"

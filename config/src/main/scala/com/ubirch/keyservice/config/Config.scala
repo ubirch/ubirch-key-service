@@ -29,6 +29,10 @@ object Config extends ConfigBase {
     */
   def timeout: Int = config.getInt(ConfigKeys.TIMEOUT)
 
+  def goPipelineName: String = config.getString(ConfigKeys.GO_PIPELINE_NAME)
+  def goPipelineLabel: String = config.getString(ConfigKeys.GO_PIPELINE_LABEL)
+  def goPipelineRevision: String = config.getString(ConfigKeys.GO_PIPELINE_REVISION)
+
   /*
    * Akka
    ************************************************************************************************/

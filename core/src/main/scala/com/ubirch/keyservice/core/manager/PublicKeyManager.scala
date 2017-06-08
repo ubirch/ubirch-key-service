@@ -2,8 +2,7 @@ package com.ubirch.keyservice.core.manager
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.db.Neo4jLabels
-import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo}
+import com.ubirch.key.model.db.{Neo4jLabels, PublicKey, PublicKeyInfo}
 
 import org.anormcypher.{Cypher, CypherResultRow, Neo4jConnection, NeoNode}
 import org.joda.time.{DateTime, DateTimeZone}
@@ -21,7 +20,7 @@ object PublicKeyManager extends StrictLogging {
   /**
     * Persist a [[PublicKey]].
     *
-    * @param pubKey        public key to persist
+    * @param pubKey          public key to persist
     * @param neo4jConnection Neo4j connection
     * @return persisted public key; None if something went wrong
     */

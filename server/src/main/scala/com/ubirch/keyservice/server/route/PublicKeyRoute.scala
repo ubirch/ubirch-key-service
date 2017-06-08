@@ -8,7 +8,6 @@ import com.ubirch.keyservice.server.actor.util.ActorNames
 import com.ubirch.keyservice.server.actor.{CreatePublicKey, PublicKeyActor, QueryCurrentlyValid}
 import com.ubirch.keyservice.util.server.RouteConstants
 import com.ubirch.util.http.response.ResponseUtil
-import com.ubirch.util.json.MyJsonProtocol
 import com.ubirch.util.rest.akka.directives.CORSDirective
 
 import org.anormcypher.Neo4jConnection
@@ -29,10 +28,10 @@ import scala.util.{Failure, Success}
   * author: cvandrei
   * since: 2017-04-27
   */
-class PublicKeyRoute(implicit neo4jConnection: Neo4jConnection) extends MyJsonProtocol
-  with CORSDirective
-  with ResponseUtil
-  with StrictLogging {
+class PublicKeyRoute(implicit neo4jConnection: Neo4jConnection)
+  extends ResponseUtil
+    with CORSDirective
+    with StrictLogging {
 
   implicit val system = ActorSystem()
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher

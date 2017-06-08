@@ -1,22 +1,36 @@
 package com.ubirch.key.model.db
 
+import com.ubirch.util.uuid.UUIDUtil
 import org.joda.time.DateTime
 
 /**
-  * author: cvandrei
-  * since: 2017-05-11
+  *
+  * @param pubKeyInfo
+  * @param signature
+  * @param previousPubKeySignature
   */
 case class PublicKey(pubKeyInfo: PublicKeyInfo,
                      signature: String,
-                     previousPubKeySignature: Option[String]
+                     previousPubKeySignature: Option[String] = None
                     )
 
+/**
+  *
+  * @param hwDeviceId       hardware id of device which owns the private key
+  * @param pubKey           base 64 encoded public key
+  * @param pubKeyId         unique public key id
+  * @param algorithm        used asymetric crypto algorithm, default is ed25519-sha-512
+  * @param previousPubKeyId unique public key id of previous plublic key
+  * @param created          UTC timestamp of PublicKeyInfo object creation
+  * @param validNotBefore   UTC timestamp since when PublicKey is valid
+  * @param validNotAfter    UTC timestamp until when PublicKey is valid
+  */
 case class PublicKeyInfo(hwDeviceId: String,
                          pubKey: String,
-                         pubKeyId: String,
-                         algorithm: String,
-                         previousPubKeyId: Option[String],
-                         created: DateTime,
-                         validNotBefore: DateTime,
+                         pubKeyId: String = UUIDUtil.uuidStr,
+                         algorithm: String = "ed25519-sha-512",
+                         previousPubKeyId: Option[String] = None,
+                         created: DateTime = new DateTime(),
+                         validNotBefore: DateTime = new DateTime(),
                          validNotAfter: Option[DateTime] = None
                         )

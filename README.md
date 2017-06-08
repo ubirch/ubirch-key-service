@@ -9,6 +9,15 @@ is only possible if you control the private key, too).
 
 ## Release History
 
+### Version 0.1.2 (2017-06-08)
+
+* introduce endpoint `/api/authService/v1/check`
+* update to sbt 0.13.15
+* added `PublicKeyUtil`
+* update _com.ubirch.util:json_ to version 0.4.0
+* update _com.ubirch.util:response-util_ to version 0.1.6
+* introduce endpoint `/api/userService/v1/deepCheck`
+
 ### Version 0.1.1 (2017-05-18)
 
 * update Akka Http to 10.0.6
@@ -30,7 +39,7 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "cmdtools" % "0.1.1"
+  "com.ubirch.key" %% "cmdtools" % "0.1.2"
 )
 ```
 
@@ -41,7 +50,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("releases")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "config" % "0.1.1"
+  "com.ubirch.key" %% "config" % "0.1.2"
 )
 ```
 
@@ -54,7 +63,7 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "core" % "0.1.1"
+  "com.ubirch.key" %% "core" % "0.1.2"
 )
 ```
 
@@ -65,7 +74,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("releases")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "model-db" % "0.1.1"
+  "com.ubirch.key" %% "model-db" % "0.1.2"
 )
 ```
 
@@ -76,7 +85,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("releases")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "model-rest" % "0.1.1"
+  "com.ubirch.key" %% "model-rest" % "0.1.2"
 )
 ```
 
@@ -90,7 +99,7 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "server" % "0.1.1"
+  "com.ubirch.key" %% "server" % "0.1.2"
 )
 ```
 
@@ -103,7 +112,7 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "test-tools" % "0.1.1"
+  "com.ubirch.key" %% "test-tools" % "0.1.2"
 )
 ```
 
@@ -116,25 +125,38 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "util" % "0.1.1"
+  "com.ubirch.key" %% "util" % "0.1.2"
 )
 ```
 
 
 ## REST Methods
 
-### Welcome / Health
+### Welcome / Health / Check
 
     curl localhost:8095/
     curl localhost:8095/api/keyService/v1
+    curl localhost:8095/api/keyService/v1/check
 
 If healthy the server response is:
 
-    200 {"version":"1.0","status":"OK","message":"Welcome to the ubirchKeyService"}
+    200 {"version":"1.0","status":"OK","message":"Welcome to the ubirchKeyService ( $GO_PIPELINE_NAME / $GO_PIPELINE_LABEL / $GO_PIPELINE_REVISION )"}
 
 If not healthy the server response is:
 
     400 {"version":"1.0","status":"NOK","message":"$ERROR_MESSAGE"}
+
+### Deep Check / Server Health
+
+    curl localhost:8092/api/keyService/v1/deepCheck
+
+If healthy the response is:
+
+    200 {"version":"1.0","status":"OK","messages":[]}
+
+If not healthy the status is "NOK" and the `messages` array not empty:
+
+    500 {"version":"1.0","status":"NOK","messages":["unable to connect to the database"]}
 
 
 ### Public Key

@@ -16,6 +16,10 @@ object ConfigKeys {
   final val PORT = s"$CONFIG_PREFIX.port"
   final val TIMEOUT = s"$CONFIG_PREFIX.timeout"
 
+  final val GO_PIPELINE_NAME = s"$CONFIG_PREFIX.gopipelinename"
+  final val GO_PIPELINE_LABEL = s"$CONFIG_PREFIX.gopipelinelabel"
+  final val GO_PIPELINE_REVISION = s"$CONFIG_PREFIX.gopipelinerev"
+
   /*
    * Akka
    *********************************************************************************************/

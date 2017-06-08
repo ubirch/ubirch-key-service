@@ -14,6 +14,7 @@ import akka.http.scaladsl.server.Route
 class MainRoute(implicit neo4jConnection: Neo4jConnection) {
 
   val welcome = new WelcomeRoute {}
+  val deepCheck = new DeepCheckRoute {}
   val pubKey = new PublicKeyRoute {}
 
   val myRoute: Route = {
@@ -23,9 +24,12 @@ class MainRoute(implicit neo4jConnection: Neo4jConnection) {
         pathPrefix(RouteConstants.currentVersion) {
 
           pubKey.route ~
-            pathEndOrSingleSlash {
+            deepCheck.route ~
+            path(RouteConstants.check) {
               welcome.route
-            }
+            } ~ pathEndOrSingleSlash {
+            welcome.route
+          }
 
         }
       }
