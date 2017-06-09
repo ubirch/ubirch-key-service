@@ -9,6 +9,10 @@ is only possible if you control the private key, too).
 
 ## Release History
 
+### Version 0.1.3 (2017-06-09)
+
+* migrate to _com.ubirch.util:deep-check-model:0.1.0_
+
 ### Version 0.1.2 (2017-06-08)
 
 * introduce endpoint `/api/authService/v1/check`
@@ -39,7 +43,7 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "cmdtools" % "0.1.2"
+  "com.ubirch.key" %% "cmdtools" % "0.1.3"
 )
 ```
 
@@ -50,7 +54,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("releases")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "config" % "0.1.2"
+  "com.ubirch.key" %% "config" % "0.1.3"
 )
 ```
 
@@ -63,7 +67,7 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "core" % "0.1.2"
+  "com.ubirch.key" %% "core" % "0.1.3"
 )
 ```
 
@@ -74,7 +78,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("releases")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "model-db" % "0.1.2"
+  "com.ubirch.key" %% "model-db" % "0.1.3"
 )
 ```
 
@@ -85,7 +89,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("releases")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "model-rest" % "0.1.2"
+  "com.ubirch.key" %% "model-rest" % "0.1.3"
 )
 ```
 
@@ -99,7 +103,7 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "server" % "0.1.2"
+  "com.ubirch.key" %% "server" % "0.1.3"
 )
 ```
 
@@ -112,7 +116,7 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "test-tools" % "0.1.2"
+  "com.ubirch.key" %% "test-tools" % "0.1.3"
 )
 ```
 
@@ -125,7 +129,7 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "util" % "0.1.2"
+  "com.ubirch.key" %% "util" % "0.1.3"
 )
 ```
 

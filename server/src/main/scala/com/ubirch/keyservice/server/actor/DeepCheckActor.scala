@@ -1,7 +1,7 @@
 package com.ubirch.keyservice.server.actor
 
 import com.ubirch.keyservice.core.manager.DeepCheckManager
-import com.ubirch.util.model.DeepCheckResponse
+import com.ubirch.util.deepCheck.model.{DeepCheckRequest, DeepCheckResponse}
 
 import org.anormcypher.Neo4jConnection
 
@@ -26,5 +26,3 @@ class DeepCheckActor(implicit neo4jConnection: Neo4jConnection)
   private def deepCheck(): DeepCheckResponse = DeepCheckManager.connectivityCheck()
 
 }
-
-case class DeepCheckRequest()

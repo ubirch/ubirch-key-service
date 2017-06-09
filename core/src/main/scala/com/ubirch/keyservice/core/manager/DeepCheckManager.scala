@@ -1,6 +1,6 @@
 package com.ubirch.keyservice.core.manager
 
-import com.ubirch.util.model.DeepCheckResponse
+import com.ubirch.util.deepCheck.model.DeepCheckResponse
 
 import org.anormcypher.{Cypher, Neo4jConnection}
 
@@ -23,7 +23,7 @@ object DeepCheckManager {
 
       case t: Throwable =>
         DeepCheckResponse(
-          status = "NOK",
+          status = false,
           messages = Seq(t.getMessage)
         )
 
