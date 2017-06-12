@@ -9,6 +9,10 @@ is only possible if you control the private key, too).
 
 ## Release History
 
+### Version 0.1.5 (tbd)
+
+* tbd
+
 ### Version 0.1.4 (2017-06-12)
 
 * endpoint `/api/userService/v1/deepCheck` responds with http status 503 if deep check finds problems
@@ -42,12 +46,12 @@ is only possible if you control the private key, too).
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots"),
   "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "cmdtools" % "0.1.4"
+  "com.ubirch.key" %% "cmdtools" % "0.1.5-SNAPSHOT"
 )
 ```
 
@@ -55,10 +59,10 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases")
+  Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "config" % "0.1.4"
+  "com.ubirch.key" %% "config" % "0.1.5-SNAPSHOT"
 )
 ```
 
@@ -66,12 +70,12 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots"),
   "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "core" % "0.1.4"
+  "com.ubirch.key" %% "core" % "0.1.5-SNAPSHOT"
 )
 ```
 
@@ -79,10 +83,10 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases")
+  Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "model-db" % "0.1.4"
+  "com.ubirch.key" %% "model-db" % "0.1.5-SNAPSHOT"
 )
 ```
 
@@ -90,10 +94,10 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases")
+  Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "model-rest" % "0.1.4"
+  "com.ubirch.key" %% "model-rest" % "0.1.5-SNAPSHOT"
 )
 ```
 
@@ -101,13 +105,13 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots"),
   Resolver.bintrayRepo("hseeberger", "maven"),
   "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "server" % "0.1.4"
+  "com.ubirch.key" %% "server" % "0.1.5-SNAPSHOT"
 )
 ```
 
@@ -115,12 +119,12 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots"),
   "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "test-tools" % "0.1.4"
+  "com.ubirch.key" %% "test-tools" % "0.1.5-SNAPSHOT"
 )
 ```
 
@@ -128,12 +132,12 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots"),
   "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "util" % "0.1.4"
+  "com.ubirch.key" %% "util" % "0.1.5-SNAPSHOT"
 )
 ```
 
