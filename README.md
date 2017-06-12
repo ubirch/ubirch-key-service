@@ -11,7 +11,7 @@ is only possible if you control the private key, too).
 
 ### Version 0.1.4 (tbd)
 
-* tbd
+* endpoint `/api/userService/v1/deepCheck` responds with http status 503 if deep check finds problems
 
 ### Version 0.1.3 (2017-06-09)
 
