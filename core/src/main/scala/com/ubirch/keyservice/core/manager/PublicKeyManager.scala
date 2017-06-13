@@ -80,6 +80,9 @@ object PublicKeyManager extends StrictLogging {
       "hwDeviceId" -> hardwareId,
       "now" -> now
     )
+
+    //@TODO blocking code!!! why not Cypher(...).async() ???
+
     val result: Seq[CypherResultRow] = query()
 
     logger.debug(s"found ${result.size} results for hardwareId=$hardwareId")
