@@ -54,9 +54,9 @@ object Config extends ConfigBase {
 
   private def neo4jPort(): Int = intWithDefault(ConfigKeys.NEO4J_PORT, default = 7474)
 
-  private def neo4jUserName(): String = stringWithDefault(ConfigKeys.NEO4J_USER_NAME, default = "")
+  private def neo4jUserName(): String = stringWithDefault(ConfigKeys.NEO4J_USER_NAME.trim, default = "")
 
-  private def neo4jPassword(): String = stringWithDefault(ConfigKeys.NEO4J_PASSWORD, default = "")
+  private def neo4jPassword(): String = stringWithDefault(ConfigKeys.NEO4J_PASSWORD.trim, default = "")
 
   private def neo4jHttps(): Boolean = booleanWithDefault(ConfigKeys.NEO4J_HTTPS, default = false)
 
