@@ -1,9 +1,9 @@
 package com.ubirch.keyservice.core.manager
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
-
+import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model.db.{Neo4jLabels, PublicKey, PublicKeyInfo}
-
+import com.ubirch.util.json.Json4sUtil
 import org.anormcypher.{Cypher, CypherResultRow, Neo4jConnection, NeoNode}
 import org.joda.time.{DateTime, DateTimeZone}
 
@@ -30,18 +30,28 @@ object PublicKeyManager extends StrictLogging {
     // TODO verify that pubKey.signature matches JSON of pubKey.pubKeyInfo (while ignoring pubKeyInfo.pubKeyId)
     val data = entityToString(pubKey)
 
-    val result = Cypher(
-      s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
-         |RETURN pubKey""".stripMargin
-    ).execute()
-
-    if (!result) {
-      logger.error(s"failed to create public key: publicKey=$pubKey")
-      Future(None)
-    } else {
-      Future(Some(pubKey))
+    val validSignature = Json4sUtil.any2jvalue(pubKey.pubKeyInfo) match {
+      case Some(payload) => EccUtil.validateSignature(pubKey.pubKeyInfo.pubKey, pubKey.signature, Json4sUtil.jvalue2String(payload))
+      case None => false
     }
 
+    if (validSignature) {
+      val result = Cypher(
+        s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
+           |RETURN pubKey""".stripMargin
+      ).execute()
+
+      if (!result) {
+        logger.error(s"failed to create public key: publicKey=$pubKey")
+        Future(None)
+      } else {
+        Future(Some(pubKey))
+      }
+    }
+    else {
+      logger.error(s"invalid signature: publicKey=$pubKey")
+      Future(None)
+    }
   }
 
   /**
