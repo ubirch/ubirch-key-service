@@ -318,21 +318,23 @@ more details here: https://github.com/scoverage/sbt-scoverage
 
 ## Local Setup
 
-1) download and install [Neo4j 3.1.x](https://neo4j.com/download/community-edition/) (community edition)
+1. download and install [Neo4j 3.1.x](https://neo4j.com/download/community-edition/) (community edition)
 
-2) start Neo4j
+1. start Neo4j
 
-  1) first time setup: set the password to "neo4jneo4j" (as configured in application.base.conf)
+    1. first time setup: set the password to "neo4jneo4j" (as configured in application.base.conf)
   
-  2) prepare database
+        1. https://neo4j.com/docs/operations-manual/current/configuration/set-initial-password/
   
-    1) clear database
+    1. prepare database
+  
+    1. clear database
     
-      `./sbt "cmdtools/runMain com.ubirch.keyservice.cmd.Neo4jDelete"`
+    `./sbt "cmdtools/runMain com.ubirch.keyservice.cmd.Neo4jDelete"`
     
-    2) create constraints
+    1. create constraints
 
-      `./sbt "cmdtools/runMain com.ubirch.keyservice.cmd.InitData"`
+    `./sbt "cmdtools/runMain com.ubirch.keyservice.cmd.InitData"`
 
 3) start key-service
 

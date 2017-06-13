@@ -38,6 +38,29 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
     }
 
+    scenario("invalid public key does not exist (PublicKey with all fields set)") {
+
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val (pubKey2, privKey2) = EccUtil.generateEccKeyPairEncoded
+
+      // prepare
+      val publicKey = TestDataGeneratorDb.createPublicKey(
+        privateKey = privKey1,
+        infoPubKey = pubKey1
+      )
+
+      val invalidPublicKey = publicKey.copy(pubKeyInfo = publicKey.pubKeyInfo.copy(pubKey = pubKey2))
+
+      // test
+      PublicKeyManager.create(invalidPublicKey) map {
+
+        case None => succeed
+        case Some(result: PublicKey) => fail(s"created key public key: $publicKey")
+
+      }
+
+    }
+
     scenario("public key exists (PublicKey with all fields set)") {
 
       val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
