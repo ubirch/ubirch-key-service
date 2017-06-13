@@ -17,7 +17,7 @@
     </appender>
 
     <appender name="ELASTIC" class="com.internetitem.logback.elasticsearch.ElasticsearchAppender">
-        <url>http://${ES_LOG_HOST}:${ES_LOG_PORT_HTTP}/_bulk</url>
+        <url>http://${ES_LOG_HOST}:${ES_LOG_PORT}/_bulk</url>
         <index>${ENVID}-key-service-logs-%date{yyyy-MM-dd}</index>
         <type>log</type>
         <loggerName>es-logger</loggerName> <!-- optional -->
