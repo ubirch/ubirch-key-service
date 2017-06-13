@@ -44,6 +44,9 @@ object Boot extends App with StrictLogging {
     https = neo4jConfig.https
   )
 
+  println(">>" + neo4jConfig.userName + "<<")
+  println(">>" + neo4jConfig.password + "<<")
+
   Neo4jUtils.createConstraints()
   Neo4jUtils.createIndices()
 
