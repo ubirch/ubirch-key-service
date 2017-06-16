@@ -12,6 +12,10 @@ is only possible if you control the private key, too).
 ### Version 0.1.5 (tbd)
 
 * queries in `PublicKeyManager` are now asynchronous
+* update json4s to version 3.5.2
+* update to _com.ubirch.util:deep-check-model:0.1.1_
+* update to _com.ubirch.util:json:0.4.1_
+* update to _com.ubirch.util:response-util:0.2.1_
 
 ### Version 0.1.4 (2017-06-12)
 
