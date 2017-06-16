@@ -39,7 +39,7 @@ object PublicKeyManager extends StrictLogging {
       val result = Cypher(
         s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
            |RETURN pubKey""".stripMargin
-      ).execute()
+      ).execute() // TODO use executeAsync() instead?
 
       if (!result) {
         logger.error(s"failed to create public key: publicKey=$pubKey")
@@ -66,7 +66,7 @@ object PublicKeyManager extends StrictLogging {
 
     val now = DateTime.now(DateTimeZone.UTC).toString
     logger.debug(s"now=$now")
-    val query = Cypher(
+    Cypher(
       s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY}  {infoHwDeviceId: {hwDeviceId}})
          |WHERE
          |  {now} > pubKey.infoValidNotBefore
@@ -79,20 +79,16 @@ object PublicKeyManager extends StrictLogging {
     ).on(
       "hwDeviceId" -> hardwareId,
       "now" -> now
-    )
+    ).async() map { result =>
 
-    //@TODO blocking code!!! why not Cypher(...).async() ???
+      logger.debug(s"found ${result.size} results for hardwareId=$hardwareId")
+      for (row <- result) {
+        logger.debug(s"(hardwareId=$hardwareId) row=$row")
+      }
 
-    val result: Seq[CypherResultRow] = query()
+      mapToPublicKey(result)
 
-    logger.debug(s"found ${result.size} results for hardwareId=$hardwareId")
-    for (row <- result) {
-      logger.debug(s"(hardwareId=$hardwareId) row=$row")
     }
-
-    val publicKeys: Set[PublicKey] = mapToPublicKey(result)
-
-    Future(publicKeys)
 
   }
 

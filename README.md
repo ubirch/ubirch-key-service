@@ -11,7 +11,7 @@ is only possible if you control the private key, too).
 
 ### Version 0.1.5 (tbd)
 
-* tbd
+* query in PublicKeyManager.currentlyValid is now asynchronous
 
 ### Version 0.1.4 (2017-06-12)
 
