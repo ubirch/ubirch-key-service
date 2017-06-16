@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.slf4j.StrictLogging
 import com.ubirch.keyservice.config.{Config, Neo4jConfig}
 import com.ubirch.keyservice.util.neo4j.Neo4jUtils
 
-import org.anormcypher.{Neo4jConnection, Neo4jREST}
+import org.anormcypher.Neo4jREST
 import org.scalatest.{AsyncFeatureSpec, BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
 
 import play.api.libs.ws.WSClient
@@ -26,7 +26,7 @@ trait Neo4jSpec extends AsyncFeatureSpec
 
   protected implicit val wsClient: WSClient = NingWSClient()
   protected val neo4jConfig: Neo4jConfig = Config.neo4jConfig()
-  protected implicit val neo4jConnection: Neo4jConnection = Neo4jREST(
+  protected implicit val neo4jREST: Neo4jREST = Neo4jREST(
     host = neo4jConfig.host,
     port = neo4jConfig.port,
     username = neo4jConfig.userName,

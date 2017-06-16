@@ -2,7 +2,7 @@ package com.ubirch.keyservice.server.route
 
 import com.ubirch.keyservice.util.server.RouteConstants
 
-import org.anormcypher.Neo4jConnection
+import org.anormcypher.Neo4jREST
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -11,7 +11,7 @@ import akka.http.scaladsl.server.Route
   * author: cvandrei
   * since: 2017-03-22
   */
-class MainRoute(implicit neo4jConnection: Neo4jConnection) {
+class MainRoute(implicit neo4jREST: Neo4jREST) {
 
   val welcome = new WelcomeRoute {}
   val deepCheck = new DeepCheckRoute {}

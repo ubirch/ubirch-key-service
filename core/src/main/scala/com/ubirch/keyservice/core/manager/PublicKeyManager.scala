@@ -1,10 +1,12 @@
 package com.ubirch.keyservice.core.manager
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
+
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model.db.{Neo4jLabels, PublicKey, PublicKeyInfo}
 import com.ubirch.util.json.Json4sUtil
-import org.anormcypher.{Cypher, CypherResultRow, Neo4jConnection, NeoNode}
+
+import org.anormcypher.{Cypher, CypherResultRow, Neo4jConnection, Neo4jREST, NeoNode}
 import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,12 +22,12 @@ object PublicKeyManager extends StrictLogging {
   /**
     * Persist a [[PublicKey]].
     *
-    * @param pubKey          public key to persist
-    * @param neo4jConnection Neo4j connection
+    * @param pubKey    public key to persist
+    * @param neo4jREST Neo4j connection
     * @return persisted public key; None if something went wrong
     */
   def create(pubKey: PublicKey)
-            (implicit neo4jConnection: Neo4jConnection): Future[Option[PublicKey]] = {
+            (implicit neo4jREST: Neo4jREST): Future[Option[PublicKey]] = {
 
     // TODO verify that pubKey.signature matches JSON of pubKey.pubKeyInfo (while ignoring pubKeyInfo.pubKeyId)
     val data = entityToString(pubKey)
@@ -36,22 +38,25 @@ object PublicKeyManager extends StrictLogging {
     }
 
     if (validSignature) {
-      val result = Cypher(
+
+      Cypher(
         s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
            |RETURN pubKey""".stripMargin
-      ).execute() // TODO use executeAsync() instead?
+      ).executeAsync() map {
 
-      if (!result) {
-        logger.error(s"failed to create public key: publicKey=$pubKey")
-        Future(None)
-      } else {
-        Future(Some(pubKey))
+        case true => Some(pubKey)
+
+        case false =>
+          logger.error(s"failed to create public key: publicKey=$pubKey")
+          None
+
       }
-    }
-    else {
+
+    } else {
       logger.error(s"invalid signature: publicKey=$pubKey")
       Future(None)
     }
+
   }
 
   /**

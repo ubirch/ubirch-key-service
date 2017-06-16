@@ -10,7 +10,7 @@ import com.ubirch.keyservice.util.server.RouteConstants
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.rest.akka.directives.CORSDirective
 
-import org.anormcypher.Neo4jConnection
+import org.anormcypher.Neo4jREST
 
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.server.Route
@@ -28,7 +28,7 @@ import scala.util.{Failure, Success}
   * author: cvandrei
   * since: 2017-04-27
   */
-class PublicKeyRoute(implicit neo4jConnection: Neo4jConnection)
+class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
   extends ResponseUtil
     with CORSDirective
     with StrictLogging {

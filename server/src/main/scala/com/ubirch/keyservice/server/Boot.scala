@@ -8,7 +8,7 @@ import com.ubirch.keyservice.config.Config
 import com.ubirch.keyservice.server.route.MainRoute
 import com.ubirch.keyservice.util.neo4j.Neo4jUtils
 
-import org.anormcypher.{Neo4jConnection, Neo4jREST}
+import org.anormcypher.Neo4jREST
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
@@ -36,7 +36,7 @@ object Boot extends App with StrictLogging {
 
   implicit val wsClient: WSClient = NingWSClient()
   val neo4jConfig = Config.neo4jConfig()
-  implicit val neo4jConnection: Neo4jConnection = Neo4jREST(
+  implicit val neo4jREST: Neo4jREST = Neo4jREST(
     host = neo4jConfig.host,
     port = neo4jConfig.port,
     username = neo4jConfig.userName,
