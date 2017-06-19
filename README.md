@@ -9,6 +9,10 @@ is only possible if you control the private key, too).
 
 ## Release History
 
+### Version 0.1.6 (tbd)
+
+* tbd
+
 ### Version 0.1.5 (2017-06-19)
 
 * queries in `PublicKeyManager` are now asynchronous
