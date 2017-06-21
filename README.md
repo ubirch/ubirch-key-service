@@ -65,6 +65,14 @@ libraryDependencies ++= Seq(
 )
 ```
 
+#### Usage
+
+The REST client class is `KeyServiceClientRest` and the host it connects to needs to be configured:
+
+    ubirchKeyService.client.rest.host = "http://localhost:8095"
+
+It depends on a `play-ws` WSClient. Please refer to the setup of `KeyServiceClientRestSpec` for further details.
+
 ### `cmdtools`
 
 ```scala
