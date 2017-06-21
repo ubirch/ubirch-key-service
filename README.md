@@ -9,9 +9,9 @@ is only possible if you control the private key, too).
 
 ## Release History
 
-### Version 0.1.6 (tbd)
+### Version 0.1.6 (2017-06-21)
 
-* tbd
+* add module `client-rest`
 
 ### Version 0.1.5 (2017-06-19)
 
@@ -49,6 +49,17 @@ is only possible if you control the private key, too).
 
 
 ## Scala Dependencies
+
+### `client-rest`
+
+```scala
+resolvers ++= Seq(
+  Resolver.sonatypeRepo("snapshots")
+)
+libraryDependencies ++= Seq(
+  "com.ubirch.key" %% "client-rest" % "0.1.6-SNAPSHOT"
+)
+```
 
 ### `cmdtools`
 

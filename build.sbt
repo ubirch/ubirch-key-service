@@ -32,6 +32,7 @@ lazy val commonSettings = Seq(
 lazy val keyService = (project in file("."))
   .settings(commonSettings: _*)
   .aggregate(
+    clientRest,
     cmdtools,
     config,
     core,
@@ -40,6 +41,15 @@ lazy val keyService = (project in file("."))
     server,
     testTools,
     util
+  )
+
+lazy val clientRest = (project in file("client-rest"))
+  .settings(commonSettings: _*)
+  .dependsOn(config, modelRest, util, testTools % "test", core % "test")
+  .settings(
+    name := "client-rest",
+    description := "REST client of the key-service",
+    libraryDependencies ++= depClientRest
   )
 
 lazy val config = project
@@ -124,6 +134,11 @@ lazy val util = project
  * MODULE DEPENDENCIES
  ********************************************************/
 
+lazy val depClientRest = Seq(
+  ubirchResponse,
+  ubirchDeepCheckModel
+) ++ playWS /*++ playWSStandalone*/ ++ scalaLogging
+
 lazy val depCmdTools = Seq(
   anormCypher
 ) ++ scalaLogging
@@ -190,6 +205,7 @@ lazy val depUtils = Seq(
 val akkaV = "2.4.18"
 val akkaHttpV = "10.0.6"
 val json4sV = "3.5.2"
+val playV = "2.4.11"
 
 val scalaTestV = "3.0.1"
 
@@ -197,10 +213,16 @@ val scalaTestV = "3.0.1"
 val ubirchUtilG = "com.ubirch.util"
 val json4sG = "org.json4s"
 val akkaG = "com.typesafe.akka"
+val typesafePlayG = "com.typesafe.play"
 
 lazy val scalatest = "org.scalatest" %% "scalatest" % scalaTestV
 
 lazy val json4sNative = json4sG %% "json4s-native" % json4sV
+
+lazy val playWS = Seq(
+  typesafePlayG %% "play-ws" % playV,
+  akkaSlf4j
+)
 
 lazy val scalaLogging = Seq(
   "org.slf4j" % "slf4j-api" % "1.7.21",
