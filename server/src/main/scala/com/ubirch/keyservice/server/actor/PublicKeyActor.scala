@@ -2,6 +2,7 @@ package com.ubirch.keyservice.server.actor
 
 import com.ubirch.key.model._
 import com.ubirch.key.model.rest.{PublicKey, PublicKeys}
+import com.ubirch.keyservice.config.Config
 import com.ubirch.keyservice.core.manager.PublicKeyManager
 import com.ubirch.keyservice.server.actor.util.ModelUtil
 import com.ubirch.util.json.Json4sUtil
@@ -9,7 +10,8 @@ import com.ubirch.util.model.JsonErrorResponse
 
 import org.anormcypher.Neo4jREST
 
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{Actor, ActorLogging, Props}
+import akka.routing.RoundRobinPool
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -40,6 +42,14 @@ class PublicKeyActor(implicit neo4jREST: Neo4jREST) extends Actor
       log.error("unknown message (PublicKeyActor)")
       sender ! JsonErrorResponse(errorType = "UnknownMessage", errorMessage = "unable to handle message")
 
+  }
+
+}
+
+object PublicKeyActor {
+
+  def props()(implicit neo4jREST: Neo4jREST): Props = {
+    new RoundRobinPool(Config.akkaNumberOfWorkers).props(Props(new PublicKeyActor))
   }
 
 }

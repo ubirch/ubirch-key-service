@@ -12,10 +12,9 @@ import com.ubirch.util.rest.akka.directives.CORSDirective
 
 import org.anormcypher.Neo4jREST
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Route
 import akka.pattern.ask
-import akka.routing.RoundRobinPool
 import akka.util.Timeout
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 
@@ -37,7 +36,7 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
   implicit val timeout = Timeout(Config.actorTimeout seconds)
 
-  private val pubKeyActor = system.actorOf(props = new RoundRobinPool(Config.akkaNumberOfWorkers).props(Props(new PublicKeyActor)), name = ActorNames.PUB_KEY)
+  private val pubKeyActor = system.actorOf(PublicKeyActor.props(), ActorNames.PUB_KEY)
 
   val route: Route = {
 

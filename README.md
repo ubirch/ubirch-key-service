@@ -11,7 +11,7 @@ is only possible if you control the private key, too).
 
 ### Version 0.1.7 (tbd)
 
-* tbd
+* refactored actors by adding a `props()` method
 
 ### Version 0.1.6 (2017-06-21)
 
