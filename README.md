@@ -12,6 +12,7 @@ is only possible if you control the private key, too).
 ### Version 0.1.7 (tbd)
 
 * refactored actors by adding a `props()` method
+* updated to _com.ubirch.util:json:0.4.2_ and all ubirch util libs depending on it, too
 
 ### Version 0.1.6 (2017-06-21)
 
