@@ -137,7 +137,7 @@ lazy val util = project
 lazy val depClientRest = Seq(
   ubirchResponse,
   ubirchDeepCheckModel
-) ++ playWS /*++ playWSStandalone*/ ++ scalaLogging
+) ++ playWS ++ scalaLogging
 
 lazy val depCmdTools = Seq(
   anormCypher
