@@ -11,7 +11,7 @@ is only possible if you control the private key, too).
 
 ### Version 0.1.8 (tbd)
 
-* tbd
+* update logging dependencies
 
 ### Version 0.1.7 (2017-06-29)
 
