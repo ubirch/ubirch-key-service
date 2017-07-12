@@ -9,6 +9,10 @@ is only possible if you control the private key, too).
 
 ## Release History
 
+### Version 0.1.9 (tbd)
+
+* tbd
+
 ### Version 0.1.8 (2017-07-12)
 
 * update logging dependencies
