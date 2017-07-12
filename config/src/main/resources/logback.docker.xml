@@ -67,6 +67,8 @@
     </appender>
 
     <logger name="com.ubirch" level="DEBUG"/>
+    <logger name="akka.actor" level="WARN"/>
+    <logger name="com.ning.http" level="INFO"/>
 
     <root level="INFO">
         <!--<appender-ref ref="STDOUT"/>-->
