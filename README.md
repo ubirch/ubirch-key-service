@@ -9,6 +9,12 @@ is only possible if you control the private key, too).
 
 ## Release History
 
+### Version 0.1.10 (2017-07-17)
+
+* update Akka HTTP to 10.0.9
+* update _com.ubirch.util:rest-akka-http(-test)_ to 0.3.8
+* update _com.ubirch.util:response-util_ to 0.2.3
+
 ### Version 0.1.9 (2017-07-17)
 
 * extract `Neo4jSchema` and `Neo4jUtils` to new artifact `com.ubirch.key:utils-neo4j`
