@@ -3,7 +3,7 @@ package com.ubirch.keyService.testTools.db.neo4j
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.keyservice.config.{Config, Neo4jConfig}
-import com.ubirch.keyservice.util.neo4j.Neo4jUtils
+import com.ubirch.keyservice.utils.neo4j.Neo4jUtils
 
 import org.anormcypher.Neo4jREST
 import org.scalatest.{AsyncFeatureSpec, BeforeAndAfterAll, BeforeAndAfterEach, Matchers}

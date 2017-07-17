@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.keyservice.config.Config
 import com.ubirch.keyservice.server.route.MainRoute
-import com.ubirch.keyservice.util.neo4j.Neo4jUtils
+import com.ubirch.keyservice.utils.neo4j.Neo4jUtils
 
 import org.anormcypher.Neo4jREST
 

@@ -11,7 +11,7 @@ is only possible if you control the private key, too).
 
 ### Version 0.1.9 (tbd)
 
-* tbd
+* extract `Neo4jSchema` and `Neo4jUtils` to new artifact `com.ubirch.key:utils-neo4j`
 
 ### Version 0.1.8 (2017-07-12)
 
@@ -173,12 +173,23 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
+  Resolver.sonatypeRepo("snapshots")
+)
+libraryDependencies ++= Seq(
+  "com.ubirch.key" %% "util" % "0.1.9-SNAPSHOT"
+)
+```
+
+### `utils-neo4j`
+
+```scala
+resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots"),
   "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "util" % "0.1.9-SNAPSHOT"
+  "com.ubirch.key" %% "utilsNeo4j" % "0.1.9-SNAPSHOT"
 )
 ```
 

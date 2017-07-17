@@ -61,7 +61,7 @@ lazy val config = project
 
 lazy val cmdtools = project
   .settings(commonSettings: _*)
-  .dependsOn(config, util)
+  .dependsOn(config, util, utilsNeo4j)
   .settings(
     description := "command line tools",
     libraryDependencies ++= depCmdTools,
@@ -96,7 +96,7 @@ lazy val modelRest = (project in file("model-rest"))
 lazy val server = project
   .settings(commonSettings: _*)
   .settings(mergeStrategy: _*)
-  .dependsOn(config, core, modelDb, modelRest, util, testTools % "test")
+  .dependsOn(config, core, modelDb, modelRest, util, utilsNeo4j, testTools % "test")
   .enablePlugins(DockerPlugin)
   .settings(
     description := "REST interface and Akka HTTP specific code",
@@ -113,7 +113,7 @@ lazy val server = project
 
 lazy val testTools = (project in file("test-tools"))
   .settings(commonSettings: _*)
-  .dependsOn(config, modelDb, modelRest, util)
+  .dependsOn(config, modelDb, modelRest, util, utilsNeo4j)
   .settings(
     name := "test-tools",
     description := "tools useful in automated tests",
@@ -126,7 +126,14 @@ lazy val util = project
   .dependsOn(modelDb)
   .settings(
     description := "utils",
-    libraryDependencies ++= depUtils,
+    libraryDependencies ++= depUtils
+  )
+
+lazy val utilsNeo4j = (project in file("util-neo4j"))
+  .settings(commonSettings: _*)
+  .settings(
+    description := "Neo4j utils",
+    libraryDependencies ++= depUtilsNeo4j,
     resolvers ++= anormCypherResolvers
   )
 
@@ -193,7 +200,10 @@ lazy val depTestTools = Seq(
 
 lazy val depUtils = Seq(
   ubirchUuid,
-  ubirchCrypto,
+  ubirchCrypto
+) ++ scalaLogging
+
+lazy val depUtilsNeo4j = Seq(
   anormCypher
 ) ++ scalaLogging
 

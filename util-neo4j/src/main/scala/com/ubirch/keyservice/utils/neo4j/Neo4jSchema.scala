@@ -1,4 +1,4 @@
-package com.ubirch.keyservice.util.neo4j
+package com.ubirch.keyservice.utils.neo4j
 
 /**
   * author: cvandrei
