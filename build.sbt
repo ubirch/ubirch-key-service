@@ -40,7 +40,8 @@ lazy val keyService = (project in file("."))
     modelRest,
     server,
     testTools,
-    util
+    util,
+    utilsNeo4j
   )
 
 lazy val clientRest = (project in file("client-rest"))
@@ -132,6 +133,7 @@ lazy val util = project
 lazy val utilsNeo4j = (project in file("util-neo4j"))
   .settings(commonSettings: _*)
   .settings(
+    name := "utils-neo4j",
     description := "Neo4j utils",
     libraryDependencies ++= depUtilsNeo4j,
     resolvers ++= anormCypherResolvers
