@@ -13,28 +13,14 @@ import com.ubirch.util.model.JsonResponse
 
 import org.joda.time.DateTime
 
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import play.api.libs.ws.ning.NingWSClient
-
 /**
   * author: cvandrei
   * since: 2017-06-20
   */
 class KeyServiceClientRestSpec extends Neo4jSpec {
 
-  implicit val system = ActorSystem()
-  system.registerOnTermination {
-    System.exit(0)
-  }
-  implicit val materializer = ActorMaterializer()
-
-  implicit val ws = NingWSClient()
-
   override def afterAll(): Unit = {
     super.afterAll()
-    ws.close()
-    system.terminate()
   }
 
   feature("check()") {

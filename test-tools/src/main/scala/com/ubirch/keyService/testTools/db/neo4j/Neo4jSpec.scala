@@ -8,6 +8,8 @@ import com.ubirch.keyservice.utils.neo4j.Neo4jUtils
 import org.anormcypher.Neo4jREST
 import org.scalatest.{AsyncFeatureSpec, BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.ning.NingWSClient
 
@@ -24,7 +26,13 @@ trait Neo4jSpec extends AsyncFeatureSpec
   with BeforeAndAfterAll
   with StrictLogging {
 
-  protected implicit val wsClient: WSClient = NingWSClient()
+  implicit val system = ActorSystem()
+  system.registerOnTermination {
+    System.exit(0)
+  }
+  implicit val materializer = ActorMaterializer()
+
+  protected implicit val ws: WSClient = NingWSClient()
   protected val neo4jConfig: Neo4jConfig = Config.neo4jConfig()
   protected implicit val neo4jREST: Neo4jREST = Neo4jREST(
     host = neo4jConfig.host,
@@ -33,6 +41,7 @@ trait Neo4jSpec extends AsyncFeatureSpec
     password = neo4jConfig.password,
     https = neo4jConfig.https
   )
+
   protected implicit val ec: ExecutionContextExecutor = scala.concurrent.ExecutionContext.global
 
   override protected def beforeEach(): Unit = {
@@ -59,6 +68,9 @@ trait Neo4jSpec extends AsyncFeatureSpec
 
   }
 
-  override protected def afterAll(): Unit = wsClient.close()
+  override protected def afterAll(): Unit = {
+    ws.close()
+    system.terminate()
+  }
 
 }

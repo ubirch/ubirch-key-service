@@ -9,6 +9,13 @@ is only possible if you control the private key, too).
 
 ## Release History
 
+### Version 0.1.11 (tbd)
+
+* add `resetDatabase.sh` script
+* update to Akka 2.4.19
+* update to Play 2.5.3
+* update to anormcypher 0.10.0
+
 ### Version 0.1.10 (2017-07-17)
 
 * update Akka HTTP to 10.0.9
@@ -383,18 +390,20 @@ more details here: https://github.com/scoverage/sbt-scoverage
     1. first time setup: set the password to "neo4jneo4j" (as configured in application.base.conf)
   
         1. https://neo4j.com/docs/operations-manual/current/configuration/set-initial-password/
-  
+
     1. prepare database
+    
+        *Running `dev-scripts/resetDatabase.sh` does everything in this step.*
   
-    1. clear database
+        1. clear database
     
-    `./sbt "cmdtools/runMain com.ubirch.keyservice.cmd.Neo4jDelete"`
+            `./sbt "cmdtools/runMain com.ubirch.keyservice.cmd.Neo4jDelete"`
     
-    1. create constraints
+        1. create constraints
 
-    `./sbt "cmdtools/runMain com.ubirch.keyservice.cmd.InitData"`
+            `./sbt "cmdtools/runMain com.ubirch.keyservice.cmd.InitData"`
 
-3) start key-service
+1. start key-service
 
     ./sbt server/run
 
