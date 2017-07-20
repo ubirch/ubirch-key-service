@@ -146,7 +146,7 @@ lazy val utilsNeo4j = (project in file("util-neo4j"))
 lazy val depClientRest = Seq(
   ubirchResponse,
   ubirchDeepCheckModel
-) ++ playWS ++ scalaLogging
+) ++ scalaLogging
 
 lazy val depCmdTools = Seq(
   anormCypher
