@@ -41,7 +41,7 @@ object KeyServiceClientRest extends MyJsonProtocol
 
         res.discardEntityBytes()
         Future(
-          logErrorAndReturnNone(s"$url: code=$code, status=${res.status}")
+          logErrorAndReturnNone(s"check() call to key-service failed: url=$url code=$code, status=${res.status}")
         )
 
     }
@@ -65,7 +65,7 @@ object KeyServiceClientRest extends MyJsonProtocol
 
         res.discardEntityBytes()
         Future(
-          logErrorAndReturnNone(s"$url: code=$code, status=${res.status}")
+          logErrorAndReturnNone(s"deepCheck() call to key-service failed: url=$url code=$code, status=${res.status}")
         )
 
     }
@@ -98,7 +98,7 @@ object KeyServiceClientRest extends MyJsonProtocol
 
             res.discardEntityBytes()
             Future(
-              logErrorAndReturnNone(s"$url: code=$code, status=${res.status}")
+              logErrorAndReturnNone(s"pubKey() call to key-service failed: url=$url code=$code, status=${res.status}")
             )
 
         }
@@ -127,7 +127,7 @@ object KeyServiceClientRest extends MyJsonProtocol
 
         res.discardEntityBytes()
         Future(
-          logErrorAndReturnNone(s"$url: code=$code, status=${res.status}")
+          logErrorAndReturnNone(s"currentlyValidPubKeys() call to key-service failed: url=$url, code=$code, status=${res.status}")
         )
 
     }

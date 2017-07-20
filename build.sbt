@@ -144,6 +144,7 @@ lazy val utilsNeo4j = (project in file("util-neo4j"))
  ********************************************************/
 
 lazy val depClientRest = Seq(
+  akkaHttp,
   ubirchResponse,
   ubirchDeepCheckModel
 ) ++ scalaLogging
