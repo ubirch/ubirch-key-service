@@ -144,9 +144,10 @@ lazy val utilsNeo4j = (project in file("util-neo4j"))
  ********************************************************/
 
 lazy val depClientRest = Seq(
+  akkaHttp,
   ubirchResponse,
   ubirchDeepCheckModel
-) ++ playWS ++ scalaLogging
+) ++ scalaLogging
 
 lazy val depCmdTools = Seq(
   anormCypher
@@ -217,7 +218,7 @@ lazy val depUtilsNeo4j = Seq(
 val akkaV = "2.4.19"
 val akkaHttpV = "10.0.9"
 val json4sV = "3.5.2"
-val playV = "2.5.3"
+val playV = "2.4.11"
 
 val scalaTestV = "3.0.1"
 
@@ -270,7 +271,7 @@ lazy val ubirchRestAkkaHttpTest = ubirchUtilG %% "rest-akka-http-test" % "0.3.8"
 lazy val ubirchResponse = ubirchUtilG %% "response-util" % "0.2.3" excludeAll (excludedLoggers: _*)
 lazy val ubirchUuid = ubirchUtilG %% "uuid" % "0.1.1" excludeAll (excludedLoggers: _*)
 
-lazy val anormCypher = "org.anormcypher" %% "anormcypher" % "0.10.0"
+lazy val anormCypher = "org.anormcypher" %% "anormcypher" % "0.9.1"
 
 /*
  * RESOLVER

@@ -2,17 +2,18 @@ package com.ubirch.keyservice.client.rest
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo}
+import com.ubirch.key.model.rest.PublicKey
 import com.ubirch.keyservice.client.rest.config.KeyClientRestConfig
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
-import com.ubirch.util.json.MyJsonProtocol
+import com.ubirch.util.json.{Json4sUtil, MyJsonProtocol}
 import com.ubirch.util.model.JsonResponse
 
-import org.joda.time.DateTime
 import org.json4s.native.Serialization.read
 
-import play.api.libs.json._
-import play.api.libs.ws.WSClient
+import akka.http.scaladsl.HttpExt
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCode, StatusCodes}
+import akka.stream.Materializer
+import akka.util.ByteString
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -22,109 +23,113 @@ import scala.concurrent.Future
   * since: 2017-06-20
   */
 object KeyServiceClientRest extends MyJsonProtocol
-  with StrictLogging
-  with DefaultReads {
+  with StrictLogging {
 
-  private val dateTimePattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'Z"
-  implicit private val dateFormat = Format[DateTime](Reads.jodaDateReads(dateTimePattern), Writes.jodaDateWrites(dateTimePattern))
-  implicit private val jsonResponseFormat = Json.format[JsonResponse]
-  implicit private val deepCheckFormat = Json.format[DeepCheckResponse]
-  implicit private val publicKeyInfoFormat = Json.format[PublicKeyInfo]
-  implicit private val publicKeyFormat = Json.format[PublicKey]
+  def check()(implicit httpClient: HttpExt, materializer: Materializer): Future[Option[JsonResponse]] = {
 
-  def check()(implicit ws: WSClient): Future[Option[JsonResponse]] = {
 
     val url = KeyClientRestConfig.urlCheck
-    try {
+    httpClient.singleRequest(HttpRequest(uri = url)) flatMap {
 
-      ws.url(url).get() map { res =>
+      case HttpResponse(StatusCodes.OK, _, entity, _) =>
 
-        if (200 == res.status) {
-          logger.debug(s"$url: got check: ${res.body}")
-          res.json.asOpt[JsonResponse]
-        } else {
-          logErrorAndReturnNone(s"$url: status=${res.status}, body=${res.body}")
+        entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
+          Some(read[JsonResponse](body.utf8String))
         }
 
-      }
+      case res@HttpResponse(code, _, _, _) =>
 
-    } catch {
-      case e: Exception => Future(logErrorAndReturnNone(s"$url failed with an Exception", Some(e)))
-      case re: RuntimeException => Future(logErrorAndReturnNone(s"$url failed with a RuntimeException", Some(re)))
+        res.discardEntityBytes()
+        Future(
+          logErrorAndReturnNone(s"check() call to key-service failed: url=$url code=$code, status=${res.status}")
+        )
+
     }
 
   }
 
-  def deepCheck()(implicit ws: WSClient): Future[Option[DeepCheckResponse]] = {
+  def deepCheck()(implicit httpClient: HttpExt, materializer: Materializer): Future[Option[DeepCheckResponse]] = {
+
+    val statusCodes: Set[StatusCode] = Set(StatusCodes.OK, StatusCodes.ServiceUnavailable)
 
     val url = KeyClientRestConfig.urlDeepCheck
-    try {
+    httpClient.singleRequest(HttpRequest(uri = url)) flatMap {
 
-      ws.url(url).get() map { res =>
+      case HttpResponse(status, _, entity, _) if statusCodes.contains(status) =>
 
-        if (Set(200, 503).contains(res.status)) {
-          logger.debug(s"$url: got: ${res.body}")
-          res.json.asOpt[DeepCheckResponse]
-        } else {
-          logErrorAndReturnNone(s"$url: status=${res.status}, body=${res.body}")
+        entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
+          Some(read[DeepCheckResponse](body.utf8String))
         }
 
-      }
+      case res@HttpResponse(code, _, _, _) =>
 
-    } catch {
-      case e: Exception => Future(logErrorAndReturnNone(s"$url failed with an Exception", Some(e)))
-      case re: RuntimeException => Future(logErrorAndReturnNone(s"$url failed with a RuntimeException", Some(re)))
+        res.discardEntityBytes()
+        Future(
+          logErrorAndReturnNone(s"deepCheck() call to key-service failed: url=$url code=$code, status=${res.status}")
+        )
+
     }
 
   }
 
   def pubKey(publicKey: PublicKey)
-            (implicit ws: WSClient): Future[Option[PublicKey]] = {
+            (implicit httpClient: HttpExt, materializer: Materializer): Future[Option[PublicKey]] = {
 
-    val url = KeyClientRestConfig.pubKey
-    try {
+    Json4sUtil.any2String(publicKey) match {
 
-      val json = publicKeyFormat.writes(publicKey)
-      logger.debug(s"pubKey (object): $publicKey")
-      logger.debug(s"pubKey (json): ${Json.prettyPrint(json)}")
-      ws.url(url).post(json) map { res =>
+      case Some(pubKeyJsonString: String) =>
 
-        if (200 == res.status) {
-          logger.debug(s"$url: got: ${res.body}")
-          Some(read[PublicKey](res.json.toString()))
-        } else {
-          logErrorAndReturnNone(s"$url: status=${res.status}, body=${res.body}")
+        logger.debug(s"pubKey (object): $pubKeyJsonString")
+        val url = KeyClientRestConfig.pubKey
+        val req = HttpRequest(
+          method = HttpMethods.POST,
+          uri = url,
+          entity = HttpEntity.Strict(ContentTypes.`application/json`, data = ByteString(pubKeyJsonString))
+        )
+        httpClient.singleRequest(req) flatMap {
+
+          case HttpResponse(StatusCodes.OK, _, entity, _) =>
+
+            entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
+              Some(read[PublicKey](body.utf8String))
+            }
+
+          case res@HttpResponse(code, _, _, _) =>
+
+            res.discardEntityBytes()
+            Future(
+              logErrorAndReturnNone(s"pubKey() call to key-service failed: url=$url code=$code, status=${res.status}")
+            )
+
         }
 
-      }
+      case None =>
+        logger.error(s"failed to to convert input to JSON: publicKey=$publicKey")
+        Future(None)
 
-    } catch {
-      case e: Exception => Future(logErrorAndReturnNone(s"$url failed with an Exception", Some(e)))
-      case re: RuntimeException => Future(logErrorAndReturnNone(s"$url failed with a RuntimeException", Some(re)))
     }
 
   }
 
   def currentlyValidPubKeys(hardwareId: String)
-                           (implicit ws: WSClient): Future[Option[Set[PublicKey]]] = {
+                           (implicit httpClient: HttpExt, materializer: Materializer): Future[Option[Set[PublicKey]]] = {
 
     val url = KeyClientRestConfig.currentlyValidPubKeys(hardwareId)
-    try {
+    httpClient.singleRequest(HttpRequest(uri = url)) flatMap {
 
-      ws.url(url).get() map { res =>
+      case HttpResponse(StatusCodes.OK, _, entity, _) =>
 
-        if (200 == res.status) {
-          logger.debug(s"$url: got: ${res.body}")
-          Some(read[Set[PublicKey]](res.json.toString()))
-        } else {
-          logErrorAndReturnNone(s"$url: status=${res.status}, body=${res.body}")
+        entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
+          Some(read[Set[PublicKey]](body.utf8String))
         }
 
-      }
+      case res@HttpResponse(code, _, _, _) =>
 
-    } catch {
-      case e: Exception => Future(logErrorAndReturnNone(s"$url failed with an Exception", Some(e)))
-      case re: RuntimeException => Future(logErrorAndReturnNone(s"$url failed with a RuntimeException", Some(re)))
+        res.discardEntityBytes()
+        Future(
+          logErrorAndReturnNone(s"currentlyValidPubKeys() call to key-service failed: url=$url, code=$code, status=${res.status}")
+        )
+
     }
 
   }

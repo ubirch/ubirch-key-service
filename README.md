@@ -9,6 +9,13 @@ is only possible if you control the private key, too).
 
 ## Release History
 
+### Version 0.1.12 (tbd)
+
+* revert to Akka 2.4.19
+* revert to Play 2.4.11
+* revert to anormcypher 0.9.1
+* refactor `KeyServiceClientRest` to use Akka Http for the connection
+
 ### Version 0.1.11 (2017-07-18)
 
 * add `resetDatabase.sh` script

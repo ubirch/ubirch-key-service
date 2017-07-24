@@ -19,10 +19,6 @@ import org.joda.time.DateTime
   */
 class KeyServiceClientRestSpec extends Neo4jSpec {
 
-  override def afterAll(): Unit = {
-    super.afterAll()
-  }
-
   feature("check()") {
 
     scenario("check without errors") {
