@@ -9,7 +9,11 @@ is only possible if you control the private key, too).
 
 ## Release History
 
-### Version 0.1.12 (tbd)
+### Version 0.1.13 (tbd)
+
+* tbd
+
+### Version 0.1.12 (2017-07-24)
 
 * revert to Akka 2.4.19
 * revert to Play 2.4.11
