@@ -105,7 +105,7 @@ The REST client class is `KeyServiceClientRest` and the host it connects to need
 
     ubirchKeyService.client.rest.host = "http://localhost:8095"
 
-It depends on a `play-ws` WSClient. Please refer to the setup of `KeyServiceClientRestSpec` for further details.
+It depends on a `akka-http` client. Please refer to the setup of `KeyServiceClientRestSpec` for further details.
 
 ### `cmdtools`
 
