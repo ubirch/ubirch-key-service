@@ -99,6 +99,16 @@ libraryDependencies ++= Seq(
 )
 ```
 
+#### Configuration
+   
+| Config Item                        | Mandatory  | Description       |
+|:-----------------------------------|:-----------|:------------------|
+| ubirchKeyService.client.rest.host  | yes        | key-service host  |
+
+#### Usage
+
+See `com.ubirch.keyservice.client.rest.KeyServiceClientRestSpec` for an example usage.
+
 #### Usage
 
 The REST client class is `KeyServiceClientRest` and the host it connects to needs to be configured:
