@@ -9,7 +9,7 @@ is only possible if you control the private key, too).
 
 ## Release History
 
-### Version 0.1.13 (tbd)
+### Version 0.1.13 (2017-07-27)
 
 * update to `com.ubirch.util:json:0.4.3`
 * update to `com.ubirch.util:deep-check-model:0.1.3`
