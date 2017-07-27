@@ -11,7 +11,9 @@ is only possible if you control the private key, too).
 
 ### Version 0.1.13 (tbd)
 
-* tbd
+* update to `com.ubirch.util:json:0.4.3`
+* update to `com.ubirch.util:deep-check-model:0.1.3`
+* update to `com.ubirch.util:response-util:0.2.4`
 
 ### Version 0.1.12 (2017-07-24)
 
