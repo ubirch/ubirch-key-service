@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.slf4j.StrictLogging
 import com.ubirch.key.model.rest.PublicKey
 import com.ubirch.keyservice.client.rest.config.KeyClientRestConfig
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
+import com.ubirch.util.deepCheck.util.DeepCheckResponseUtil
 import com.ubirch.util.json.{Json4sUtil, MyJsonProtocol}
 import com.ubirch.util.model.JsonResponse
 
@@ -48,7 +49,7 @@ object KeyServiceClientRest extends MyJsonProtocol
 
   }
 
-  def deepCheck()(implicit httpClient: HttpExt, materializer: Materializer): Future[Option[DeepCheckResponse]] = {
+  def deepCheck()(implicit httpClient: HttpExt, materializer: Materializer): Future[DeepCheckResponse] = {
 
     val statusCodes: Set[StatusCode] = Set(StatusCodes.OK, StatusCodes.ServiceUnavailable)
 
@@ -58,14 +59,17 @@ object KeyServiceClientRest extends MyJsonProtocol
       case HttpResponse(status, _, entity, _) if statusCodes.contains(status) =>
 
         entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
-          Some(read[DeepCheckResponse](body.utf8String))
+          read[DeepCheckResponse](body.utf8String)
         }
 
       case res@HttpResponse(code, _, _, _) =>
 
         res.discardEntityBytes()
+        val errorText = s"deepCheck() call to key-service failed: url=$url code=$code, status=${res.status}"
+        logger.error(errorText)
+        val deepCheckRes = DeepCheckResponse(status = false, messages = Seq(errorText))
         Future(
-          logErrorAndReturnNone(s"deepCheck() call to key-service failed: url=$url code=$code, status=${res.status}")
+          DeepCheckResponseUtil.addServicePrefix("key-service", deepCheckRes)
         )
 
     }

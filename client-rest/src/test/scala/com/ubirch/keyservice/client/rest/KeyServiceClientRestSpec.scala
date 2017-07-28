@@ -45,11 +45,10 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
     scenario("check without errors") {
 
       // test
-      KeyServiceClientRest.deepCheck() map {
+      KeyServiceClientRest.deepCheck() map { deepCheckResponse =>
 
         // verify
-        case None => fail("expected a result other than None")
-        case Some(deepCheckResponse: DeepCheckResponse) => deepCheckResponse should be(DeepCheckResponse())
+        deepCheckResponse should be(DeepCheckResponse())
 
       }
 

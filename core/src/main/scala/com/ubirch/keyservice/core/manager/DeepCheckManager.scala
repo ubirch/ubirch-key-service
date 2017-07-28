@@ -1,6 +1,7 @@
 package com.ubirch.keyservice.core.manager
 
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
+import com.ubirch.util.deepCheck.util.DeepCheckResponseUtil
 
 import org.anormcypher.{Cypher, Neo4jConnection}
 
@@ -14,7 +15,7 @@ object DeepCheckManager {
 
   def connectivityCheck()(implicit neo4jConnection: Neo4jConnection): DeepCheckResponse = {
 
-    try {
+    val res = try {
 
       Cypher("MATCH (n) RETURN n LIMIT 1")()
       DeepCheckResponse()
@@ -28,6 +29,8 @@ object DeepCheckManager {
         )
 
     }
+
+    DeepCheckResponseUtil.addServicePrefix("key-service", res)
 
   }
 
