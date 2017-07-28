@@ -9,10 +9,6 @@ is only possible if you control the private key, too).
 
 ## Release History
 
-### Version 0.2.1 (tbd)
-
-* tbd
-
 ### Version 0.2.0 (2017-07-28)
 
 * refactor `KeyServiceClientRest.deepCheck` to return `DeepCheckResponse` (without Option)
