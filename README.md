@@ -11,7 +11,7 @@ is only possible if you control the private key, too).
 
 ### Version 0.2.1 (tbd)
 
-* tbd
+* begin list of valid algorithms
 
 ### Version 0.2.0 (2017-07-28)
 
@@ -286,6 +286,11 @@ If not healthy the status is `false` and the `messages` array not empty:
       "signature": "string", // base64 (self signed)
       "previousPubKeySignature": "..." // (optional)
     }'
+
+Valid _algorithm_s are:
+
+* RSA4096
+* ECC_ED25519
 
 If successful the response is:
 
