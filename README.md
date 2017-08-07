@@ -12,6 +12,7 @@ is only possible if you control the private key, too).
 ### Version 0.2.1 (tbd)
 
 * begin list of valid algorithms
+* fix wrong server port in REST methods doc
 
 ### Version 0.2.0 (2017-07-28)
 
@@ -257,7 +258,7 @@ If not healthy the server response is:
 
 ### Deep Check / Server Health
 
-    curl localhost:8092/api/keyService/v1/deepCheck
+    curl localhost:8095/api/keyService/v1/deepCheck
 
 If healthy the response is:
 
