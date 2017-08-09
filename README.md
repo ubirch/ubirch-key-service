@@ -13,6 +13,7 @@ is only possible if you control the private key, too).
 
 * begin list of valid algorithms
 * fix wrong server port in REST methods doc
+* reduce code duplication by using existing code from `PublicKeyUtil`
 
 ### Version 0.2.0 (2017-07-28)
 

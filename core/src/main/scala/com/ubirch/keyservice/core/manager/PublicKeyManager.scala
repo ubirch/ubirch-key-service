@@ -2,9 +2,8 @@ package com.ubirch.keyservice.core.manager
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model.db.{Neo4jLabels, PublicKey, PublicKeyInfo}
-import com.ubirch.util.json.Json4sUtil
+import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
 
 import org.anormcypher.{Cypher, CypherResultRow, Neo4jConnection, Neo4jREST, NeoNode}
 import org.joda.time.{DateTime, DateTimeZone}
@@ -29,16 +28,9 @@ object PublicKeyManager extends StrictLogging {
   def create(pubKey: PublicKey)
             (implicit neo4jREST: Neo4jREST): Future[Option[PublicKey]] = {
 
-    // TODO verify that pubKey.signature matches JSON of pubKey.pubKeyInfo (while ignoring pubKeyInfo.pubKeyId)
-    val data = entityToString(pubKey)
+    if (PublicKeyUtil.validateSignature(pubKey)) {
 
-    val validSignature = Json4sUtil.any2jvalue(pubKey.pubKeyInfo) match {
-      case Some(payload) => EccUtil.validateSignature(pubKey.pubKeyInfo.pubKey, pubKey.signature, Json4sUtil.jvalue2String(payload))
-      case None => false
-    }
-
-    if (validSignature) {
-
+      val data = entityToString(pubKey)
       Cypher(
         s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
            |RETURN pubKey""".stripMargin
