@@ -31,19 +31,20 @@ If not healthy the status is `false` and the `messages` array not empty:
 
 #### Create
 
-    curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{
+    curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '
+    {
       "pubKeyInfo": {
-        "hwDeviceId": "some-id-asdf", // String (not always a UUID)
-        "pubKey": "string", // base64
-        "pubKeyId": "string", // (optional) typically the hash of "pubKey" (algorithm tends to depend on "algorithm") but can also be the _pubKey_, too (useful for ECC keys whose hash would otherwise be longer than the actual key)
-        "algorithm": "RSA4096", // check X.509 re: constants
-        "previousPubKeyId": "string", // (optional) id of previous pub key
-        "created": "2017-04-26T17:18:00.000Z+02:00",
-        "validNotBefore": "2017-04-26T17:18:00.000Z+02:00",
-        "validNotAfter": "2019-04-26T17:18:00.000Z+02:00" // (optional)
+        "hwDeviceId": "4150473037-547268290-3238389072-173590267", // String (not always a UUID)
+        "pubKey": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=", // base64
+        "pubKeyId": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=",  // Base64
+        "algorithm": "ECC_ED25519", // see list of valid algorithms below
+        "previousPubKeyId": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=",  // (optional) Base64 encoded id of previous pub key 
+        "created": "2017-08-03T09:51:36.000Z",
+        "validNotBefore": "2017-08-03T09:51:36.000Z",
+        "validNotAfter": "2018-02-03T09:51:36.000Z" // (optional)
       },
-      "signature": "string", // base64 (self signed)
-      "previousPubKeySignature": "..." // (optional)
+      "signature": "MfIJEmhbIQBwHK4URdqialGOyeg1ZKyIAGPmy5VZ8Cfim4hnu3c4SAzHdhHuu4UY0XP3BWgPRVXmf8/mv8s3Dw==", // Base64 (self signed)
+      "previousPubKeySignature": "MfIJEmhbIQBwHK4URdqialGOyeg1ZKyIAGPmy5VZ8Cfim4hnu3c4SAzHdhHuu4UY0XP3BWgPRVXmf8/mv8s3Dw==" // (optional) Base64 (self signed)
     }'
 
 Valid _algorithm_s are:
@@ -51,22 +52,22 @@ Valid _algorithm_s are:
 * RSA4096
 * ECC_ED25519
 
-If successful the response is:
+If successful the response is exactly the key from the request:
 
     200
     {
       "pubKeyInfo": {
-        "hwDeviceId": "some-id-asdf", // String (not always a UUID)
-        "pubKey": "string", // base64
-        "pubKeyId": "string", // (optional) typically the hash of "pubKey" (algorithm tends to depend on "algorithm") but can also be the _pubKey_, too (useful for ECC keys whose hash would otherwise be longer than the actual key)
-        "algorithm": "RSA4096", // check X.509 re: constants
-        "previousPubKeyId": "...", // (optional) String - pub key id
-        "created": "2017-04-26T17:18:00.000Z+02:00",
-        "validNotBefore": "2017-04-26T17:18:00.000Z+02:00",
-        "validNotAfter": "2019-04-26T17:18:00.000Z+02:00" // (optional)
+        "hwDeviceId": "4150473037-547268290-3238389072-173590267",
+        "pubKey": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=",
+        "pubKeyId": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=",
+        "algorithm": "ECC_ED25519",
+        "previousPubKeyId": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=", 
+        "created": "2017-08-03T09:51:36.000Z",
+        "validNotBefore": "2017-08-03T09:51:36.000Z",
+        "validNotAfter": "2018-02-03T09:51:36.000Z"
       },
-      "signature": "string", // base64 (self signed)
-      "previousPubKeySignature": "..." // (optional)
+      "signature": "MfIJEmhbIQBwHK4URdqialGOyeg1ZKyIAGPmy5VZ8Cfim4hnu3c4SAzHdhHuu4UY0XP3BWgPRVXmf8/mv8s3Dw==",
+      "previousPubKeySignature": "MfIJEmhbIQBwHK4URdqialGOyeg1ZKyIAGPmy5VZ8Cfim4hnu3c4SAzHdhHuu4UY0XP3BWgPRVXmf8/mv8s3Dw=="
     }
 
 In case of an error the response is:

@@ -6,6 +6,7 @@
 * fix wrong server port in REST methods doc
 * reduce code duplication by using existing code from `PublicKeyUtil`
 * moved some of README's documentation to separate files in newly created folder _docs_
+* improved documentation of method: _POST /pubkey_
 
 ### Version 0.2.0 (2017-07-28)
 
