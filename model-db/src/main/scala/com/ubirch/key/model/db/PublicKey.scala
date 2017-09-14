@@ -25,12 +25,13 @@ case class PublicKey(pubKeyInfo: PublicKeyInfo,
   * @param validNotBefore   UTC timestamp since when PublicKey is valid
   * @param validNotAfter    UTC timestamp until when PublicKey is valid
   */
-case class PublicKeyInfo(hwDeviceId: String,
-                         pubKey: String,
-                         pubKeyId: String = UUIDUtil.uuidStr,
-                         algorithm: String = "ed25519-sha-512",
-                         previousPubKeyId: Option[String] = None,
-                         created: DateTime = new DateTime(),
-                         validNotBefore: DateTime = new DateTime(),
-                         validNotAfter: Option[DateTime] = None
+case class PublicKeyInfo(
+                          algorithm: String = "ed25519-sha-512",
+                          created: DateTime = new DateTime(),
+                          hwDeviceId: String,
+                          previousPubKeyId: Option[String] = None,
+                          pubKey: String,
+                          pubKeyId: String = UUIDUtil.uuidStr,
+                          validNotAfter: Option[DateTime] = None,
+                          validNotBefore: DateTime = new DateTime()
                         )
