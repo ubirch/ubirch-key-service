@@ -3,11 +3,14 @@ package com.ubirch.keyService.testTools.db.neo4j
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.keyservice.config.{Config, Neo4jConfig}
-import com.ubirch.keyservice.util.neo4j.Neo4jUtils
+import com.ubirch.keyservice.utils.neo4j.Neo4jUtils
 
 import org.anormcypher.Neo4jREST
 import org.scalatest.{AsyncFeatureSpec, BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.{Http, HttpExt}
+import akka.stream.ActorMaterializer
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.ning.NingWSClient
 
@@ -23,6 +26,14 @@ trait Neo4jSpec extends AsyncFeatureSpec
   with BeforeAndAfterEach
   with BeforeAndAfterAll
   with StrictLogging {
+
+  implicit val system = ActorSystem()
+  system.registerOnTermination {
+    System.exit(0)
+  }
+  implicit val materializer = ActorMaterializer()
+
+  implicit val httpClient: HttpExt = Http()
 
   protected implicit val wsClient: WSClient = NingWSClient()
   protected val neo4jConfig: Neo4jConfig = Config.neo4jConfig()
@@ -59,6 +70,9 @@ trait Neo4jSpec extends AsyncFeatureSpec
 
   }
 
-  override protected def afterAll(): Unit = wsClient.close()
+  override protected def afterAll(): Unit = {
+    wsClient.close()
+    system.terminate()
+  }
 
 }

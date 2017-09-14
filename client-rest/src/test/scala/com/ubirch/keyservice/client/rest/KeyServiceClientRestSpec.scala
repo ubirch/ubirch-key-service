@@ -13,29 +13,11 @@ import com.ubirch.util.model.JsonResponse
 
 import org.joda.time.DateTime
 
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import play.api.libs.ws.ning.NingWSClient
-
 /**
   * author: cvandrei
   * since: 2017-06-20
   */
 class KeyServiceClientRestSpec extends Neo4jSpec {
-
-  implicit val system = ActorSystem()
-  system.registerOnTermination {
-    System.exit(0)
-  }
-  implicit val materializer = ActorMaterializer()
-
-  implicit val ws = NingWSClient()
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-    ws.close()
-    system.terminate()
-  }
 
   feature("check()") {
 
@@ -63,11 +45,10 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
     scenario("check without errors") {
 
       // test
-      KeyServiceClientRest.deepCheck() map {
+      KeyServiceClientRest.deepCheck() map { deepCheckResponse =>
 
         // verify
-        case None => fail("expected a result other than None")
-        case Some(deepCheckResponse: DeepCheckResponse) => deepCheckResponse should be(DeepCheckResponse())
+        deepCheckResponse should be(DeepCheckResponse())
 
       }
 

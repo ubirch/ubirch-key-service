@@ -1,8 +1,6 @@
 <configuration>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <!-- encoders are assigned the type
-             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
         <encoder>
             <pattern>%date{ISO8601} %-5level - %msg -[%logger{36}] - [%thread]%n</pattern>
         </encoder>
@@ -20,9 +18,11 @@
     <!--</appender>-->
 
     <logger name="com.ubirch" level="DEBUG"/>
+    <logger name="akka.actor" level="WARN"/>
+    <logger name="com.ning.http" level="INFO"/>
 
     <root level="DEBUG">
-        <!--<appender-ref ref="FILE"/>-->
         <appender-ref ref="STDOUT"/>
     </root>
+
 </configuration>

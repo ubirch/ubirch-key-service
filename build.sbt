@@ -16,7 +16,7 @@ lazy val commonSettings = Seq(
     url("https://github.com/ubirch/ubirch-key-service"),
     "scm:git:git@github.com:ubirch/ubirch-key-service.git"
   )),
-  version := "0.1.8-SNAPSHOT",
+  version := "0.2.1-SNAPSHOT",
   test in assembly := {},
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases"),
@@ -40,7 +40,8 @@ lazy val keyService = (project in file("."))
     modelRest,
     server,
     testTools,
-    util
+    util,
+    utilsNeo4j
   )
 
 lazy val clientRest = (project in file("client-rest"))
@@ -61,7 +62,7 @@ lazy val config = project
 
 lazy val cmdtools = project
   .settings(commonSettings: _*)
-  .dependsOn(config, util)
+  .dependsOn(config, util, utilsNeo4j)
   .settings(
     description := "command line tools",
     libraryDependencies ++= depCmdTools,
@@ -96,7 +97,7 @@ lazy val modelRest = (project in file("model-rest"))
 lazy val server = project
   .settings(commonSettings: _*)
   .settings(mergeStrategy: _*)
-  .dependsOn(config, core, modelDb, modelRest, util, testTools % "test")
+  .dependsOn(config, core, modelDb, modelRest, util, utilsNeo4j, testTools % "test")
   .enablePlugins(DockerPlugin)
   .settings(
     description := "REST interface and Akka HTTP specific code",
@@ -113,7 +114,7 @@ lazy val server = project
 
 lazy val testTools = (project in file("test-tools"))
   .settings(commonSettings: _*)
-  .dependsOn(config, modelDb, modelRest, util)
+  .dependsOn(config, modelDb, modelRest, util, utilsNeo4j)
   .settings(
     name := "test-tools",
     description := "tools useful in automated tests",
@@ -126,7 +127,15 @@ lazy val util = project
   .dependsOn(modelDb)
   .settings(
     description := "utils",
-    libraryDependencies ++= depUtils,
+    libraryDependencies ++= depUtils
+  )
+
+lazy val utilsNeo4j = (project in file("util-neo4j"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "utils-neo4j",
+    description := "Neo4j utils",
+    libraryDependencies ++= depUtilsNeo4j,
     resolvers ++= anormCypherResolvers
   )
 
@@ -135,9 +144,10 @@ lazy val util = project
  ********************************************************/
 
 lazy val depClientRest = Seq(
+  akkaHttp,
   ubirchResponse,
   ubirchDeepCheckModel
-) ++ playWS /*++ playWSStandalone*/ ++ scalaLogging
+) ++ scalaLogging
 
 lazy val depCmdTools = Seq(
   anormCypher
@@ -193,7 +203,10 @@ lazy val depTestTools = Seq(
 
 lazy val depUtils = Seq(
   ubirchUuid,
-  ubirchCrypto,
+  ubirchCrypto
+) ++ scalaLogging
+
+lazy val depUtilsNeo4j = Seq(
   anormCypher
 ) ++ scalaLogging
 
@@ -202,12 +215,15 @@ lazy val depUtils = Seq(
  ********************************************************/
 
 // VERSIONS
-val akkaV = "2.4.18"
-val akkaHttpV = "10.0.6"
+val akkaV = "2.4.19"
+val akkaHttpV = "10.0.9"
 val json4sV = "3.5.2"
 val playV = "2.4.11"
 
 val scalaTestV = "3.0.1"
+
+val logbackV = "1.2.3"
+val slf4jV = "1.7.25"
 
 // GROUP NAMES
 val ubirchUtilG = "com.ubirch.util"
@@ -225,12 +241,13 @@ lazy val playWS = Seq(
 )
 
 lazy val scalaLogging = Seq(
-  "org.slf4j" % "slf4j-api" % "1.7.21",
+  "org.slf4j" % "slf4j-api" % slf4jV,
+  "org.slf4j" % "log4j-over-slf4j" % slf4jV,
   "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2" exclude("org.slf4j", "slf4j-api"),
   "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0" exclude("org.slf4j", "slf4j-api"),
-  "ch.qos.logback" % "logback-core" % "1.1.7",
-  "ch.qos.logback" % "logback-classic" % "1.1.7",
-  "com.internetitem" % "logback-elasticsearch-appender" % "1.4"
+  "ch.qos.logback" % "logback-core" % logbackV exclude("org.slf4j", "slf4j-api"),
+  "ch.qos.logback" % "logback-classic" % logbackV exclude("org.slf4j", "slf4j-api"),
+  "com.internetitem" % "logback-elasticsearch-appender" % "1.5" exclude("org.slf4j", "slf4j-api")
 )
 
 lazy val akkaActor = akkaG %% "akka-actor" % akkaV
@@ -246,12 +263,12 @@ lazy val excludedLoggers = Seq(
 lazy val ubirchConfig = ubirchUtilG %% "config" % "0.1" excludeAll (excludedLoggers: _*)
 lazy val ubirchCrypto = ubirchUtilG %% "crypto" % "0.3.4" excludeAll (excludedLoggers: _*)
 lazy val ubirchDate = ubirchUtilG %% "date" % "0.1" excludeAll (excludedLoggers: _*)
-lazy val ubirchDeepCheckModel = ubirchUtilG %% "deep-check-model" % "0.1.2" excludeAll (excludedLoggers: _*)
+lazy val ubirchDeepCheckModel = ubirchUtilG %% "deep-check-model" % "0.2.0" excludeAll (excludedLoggers: _*)
 lazy val ubirchFutures = ubirchUtilG %% "futures" % "0.1.1" excludeAll (excludedLoggers: _*)
-lazy val ubirchJson = ubirchUtilG %% "json" % "0.4.2" excludeAll (excludedLoggers: _*)
-lazy val ubirchRestAkkaHttp = ubirchUtilG %% "rest-akka-http" % "0.3.6" excludeAll (excludedLoggers: _*)
-lazy val ubirchRestAkkaHttpTest = ubirchUtilG %% "rest-akka-http-test" % "0.3.6" excludeAll (excludedLoggers: _*)
-lazy val ubirchResponse = ubirchUtilG %% "response-util" % "0.2.2" excludeAll (excludedLoggers: _*)
+lazy val ubirchJson = ubirchUtilG %% "json" % "0.4.3" excludeAll (excludedLoggers: _*)
+lazy val ubirchRestAkkaHttp = ubirchUtilG %% "rest-akka-http" % "0.3.8" excludeAll (excludedLoggers: _*)
+lazy val ubirchRestAkkaHttpTest = ubirchUtilG %% "rest-akka-http-test" % "0.3.8" excludeAll (excludedLoggers: _*)
+lazy val ubirchResponse = ubirchUtilG %% "response-util" % "0.2.4" excludeAll (excludedLoggers: _*)
 lazy val ubirchUuid = ubirchUtilG %% "uuid" % "0.1.1" excludeAll (excludedLoggers: _*)
 
 lazy val anormCypher = "org.anormcypher" %% "anormcypher" % "0.9.1"

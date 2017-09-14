@@ -1,4 +1,4 @@
-package com.ubirch.keyservice.util.neo4j
+package com.ubirch.keyservice.utils.neo4j
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
