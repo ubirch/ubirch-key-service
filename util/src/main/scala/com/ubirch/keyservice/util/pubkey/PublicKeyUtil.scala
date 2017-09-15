@@ -1,5 +1,7 @@
 package com.ubirch.keyservice.util.pubkey
 
+import java.security.spec.InvalidKeySpecException
+
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.crypto.ecc.EccUtil
@@ -28,7 +30,13 @@ object PublicKeyUtil extends StrictLogging {
       case Some(publicKeyInfoString) =>
         //TODO added prevPubKey signature check!!!
         logger.debug(s"publicKeyInfoString: '$publicKeyInfoString'")
-        EccUtil.validateSignature(publicKeyInfo.pubKey, publicKey.signature, publicKeyInfoString)
+        try {
+          EccUtil.validateSignature(publicKeyInfo.pubKey, publicKey.signature, publicKeyInfoString)
+        } catch {
+          case e: InvalidKeySpecException =>
+            logger.error("failed to validate signature", e)
+            false
+        }
 
       case None => false
 
