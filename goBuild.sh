@@ -65,7 +65,8 @@ function build_container() {
       docker build --pull -t ubirch/$CURRENT_SERVICE_NAME:v$GO_PIPELINE_LABEL .
   else
       # build with GoCD
-      docker build --pull -t ubirch/$CURRENT_SERVICE_NAME:v$GO_PIPELINE_LABEL --build-arg GO_PIPELINE_NAME=$GO_PIPELINE_NAME \
+      docker build --pull -t ubirch/$CURRENT_SERVICE_NAME:v$GO_PIPELINE_LABEL \
+      --build-arg GO_PIPELINE_NAME=$GO_PIPELINE_NAME \
       --build-arg GO_PIPELINE_LABEL=$GO_PIPELINE_LABEL \
       --build-arg GO_PIPELINE_COUNTER=$GO_PIPELINE_COUNTER \
       --build-arg GO_STAGE_COUNTER=$GO_STAGE_COUNTER \
