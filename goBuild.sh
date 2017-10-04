@@ -69,7 +69,7 @@ function build_container() {
       --build-arg GO_PIPELINE_LABEL=$GO_PIPELINE_LABEL \
       --build-arg GO_PIPELINE_COUNTER=$GO_PIPELINE_COUNTER \
       --build-arg GO_STAGE_COUNTER=$GO_STAGE_COUNTER \
-      --build-arg GO_REVISION_GIT=$GO_REVISION_SBT_GIT .
+      --build-arg GO_REVISION_GIT=$GO_REVISION_GIT .
   fi
 
   if [ $? -ne 0 ]; then
