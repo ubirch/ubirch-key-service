@@ -91,6 +91,13 @@ function container_tag () {
 
 }
 
+function container_tag_stable () {
+    docker pull tracklecontainerregistry-on.azurecr.io/ubirch-key-service:v$GO_PIPELINE_LABEL
+    docker tag tracklecontainerregistry-on.azurecr.io/ubirch-key-service:v$GO_PIPELINE_LABEL tracklecontainerregistry-on.azurecr.io/ubirch-key-service:stable
+    docker push tracklecontainerregistry-on.azurecr.io/ubirch-key-service:stable
+
+}
+
 case "$1" in
     build)
         init
@@ -105,8 +112,11 @@ case "$1" in
     containertag)
         container_tag
         ;;
+    containertagstable)
+        container_tag_stable
+        ;;
     *)
-        echo "Usage: $0 {build|assembly|containerbuild|containertag}"
+        echo "Usage: $0 {build|assembly|containerbuild|containertag|containertagstable}"
         exit 1
 esac
 
