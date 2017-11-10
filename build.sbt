@@ -182,16 +182,12 @@ lazy val depModelRest = Seq(
 )
 
 lazy val depServer = Seq(
-
   akkaSlf4j,
   akkaHttp,
   ubirchRestAkkaHttp,
   ubirchRestAkkaHttpTest % "test",
-
   anormCypher,
-
   ubirchResponse
-
 )
 
 lazy val depTestTools = Seq(
