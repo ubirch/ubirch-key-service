@@ -36,7 +36,7 @@ If not healthy the status is `false` and the `messages` array not empty:
       "pubKeyInfo": {
         "hwDeviceId": "4150473037-547268290-3238389072-173590267", // String (not always a UUID)
         "pubKey": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=", // base64
-        "pubKeyId": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=",  // Base64
+        "pubKeyId": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=",  // (optional) Base64
         "algorithm": "ECC_ED25519", // see list of valid algorithms below
         "previousPubKeyId": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=",  // (optional) Base64 encoded id of previous pub key 
         "created": "2017-08-03T09:51:36.000Z",
