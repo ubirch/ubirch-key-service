@@ -79,6 +79,7 @@ object KeyServiceClientRest extends MyJsonProtocol
   def pubKey(publicKey: PublicKey)
             (implicit httpClient: HttpExt, materializer: Materializer): Future[Option[PublicKey]] = {
 
+    // TODO automated tests
     Json4sUtil.any2String(publicKey) match {
 
       case Some(pubKeyJsonString: String) =>
@@ -114,6 +115,35 @@ object KeyServiceClientRest extends MyJsonProtocol
     }
 
   }
+
+  def findPubKey(publicKey: String)
+               (implicit httpClient: HttpExt, materializer: Materializer): Future[Option[PublicKey]] = {
+
+    logger.debug(s"publicKey: $publicKey")
+    val url = KeyClientRestConfig.findPubKey(publicKey)
+    val req = HttpRequest(
+      method = HttpMethods.GET,
+      uri = url
+    )
+    httpClient.singleRequest(req) flatMap {
+
+      case HttpResponse(StatusCodes.OK, _, entity, _) =>
+
+        entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
+          Some(read[PublicKey](body.utf8String))
+        }
+
+      case res@HttpResponse(code, _, _, _) =>
+
+        res.discardEntityBytes()
+        Future(
+          logErrorAndReturnNone(s"findPubKey() call to key-service failed: url=$url code=$code, status=${res.status}")
+        )
+
+    }
+
+  }
+
 
   def currentlyValidPubKeys(hardwareId: String)
                            (implicit httpClient: HttpExt, materializer: Materializer): Future[Option[Set[PublicKey]]] = {

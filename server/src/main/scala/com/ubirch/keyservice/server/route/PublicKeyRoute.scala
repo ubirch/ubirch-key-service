@@ -3,11 +3,13 @@ package com.ubirch.keyservice.server.route
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.key.model.rest.{PublicKey, PublicKeys}
+import com.ubirch.key.model._
 import com.ubirch.keyservice.config.Config
 import com.ubirch.keyservice.server.actor.util.ActorNames
-import com.ubirch.keyservice.server.actor.{CreatePublicKey, PublicKeyActor, QueryCurrentlyValid}
+import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, PublicKeyActor, QueryCurrentlyValid}
 import com.ubirch.keyservice.util.server.RouteConstants
 import com.ubirch.util.http.response.ResponseUtil
+import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.rest.akka.directives.CORSDirective
 
 import org.anormcypher.Neo4jREST
@@ -57,6 +59,14 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
 
           get {
             queryCurrentlyValid(hardwareId)
+          }
+
+        }
+      } ~ path(Segment) { pubKeyString =>
+        respondWithCORS {
+
+          get {
+            findByPublicKey(pubKeyString)
           }
 
         }
@@ -110,6 +120,34 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
           case _ =>
             logger.error("failed to create public key (server error)")
             complete(serverErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key"))
+
+        }
+
+    }
+
+  }
+
+  private def findByPublicKey(publicKey: String): Route = {
+
+    onComplete(pubKeyActor ? ByPublicKey(publicKey)) {
+
+      case Failure(t) =>
+        logger.error("find public key call responded with an unhandled message (check PublicKeyRoute for bugs!!!)", t)
+        complete(serverErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
+
+      case Success(resp) =>
+
+        resp match {
+
+          case Some(createPubKey: db.PublicKey) => complete(Json4sUtil.any2any[rest.PublicKey](createPubKey))
+
+          case None =>
+            logger.error(s"failed to find public key ($publicKey)")
+            complete(requestErrorResponse(errorType = "QueryError", errorMessage = "failed to find public key"))
+
+          case _ =>
+            logger.error("failed to find public key (server error)")
+            complete(serverErrorResponse(errorType = "ServerError", errorMessage = "failed to find public key"))
 
         }
 

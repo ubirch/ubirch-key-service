@@ -89,6 +89,38 @@ object PublicKeyManager extends StrictLogging {
 
   }
 
+  def findByPubKey(pubKey: String)
+                  (implicit neo4jConnection: Neo4jConnection): Future[Option[PublicKey]] = {
+
+    // TODO automated tests
+    logger.debug(s"findByPubKey($pubKey)")
+    Cypher(
+      s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY})
+         |WHERE pubKey.infoPubKey = {infoPubKey}
+         |RETURN pubKey
+       """.stripMargin
+    )
+      .on("infoPubKey" -> pubKey)
+      .async() map { result =>
+
+      logger.debug(s"found ${result.size} results for pubKey=$pubKey")
+      for (row <- result) {
+        logger.debug(s"(pubKey=$pubKey) row=$row")
+      }
+
+      val resultSet = mapToPublicKey(result)
+      if (resultSet.isEmpty) {
+        None
+      } else {
+        Some(resultSet.head)
+      }
+
+    }
+
+  }
+
+  // TODO implement findByHwDeviceId()
+
   private def toKeyValueMap(publicKey: PublicKey): Map[String, Any] = {
 
     var keyValue: Map[String, Any] = Map(

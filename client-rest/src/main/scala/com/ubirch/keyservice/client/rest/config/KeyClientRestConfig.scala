@@ -1,5 +1,7 @@
 package com.ubirch.keyservice.client.rest.config
 
+import java.net.URLEncoder
+
 import com.ubirch.keyservice.util.server.RouteConstants
 import com.ubirch.util.config.ConfigBase
 
@@ -21,6 +23,10 @@ object KeyClientRestConfig extends ConfigBase {
   val urlDeepCheck = s"$host${RouteConstants.pathDeepCheck}"
 
   val pubKey = s"$host${RouteConstants.pathPubKey}"
+
+  def findPubKey(pubKeyString: String) = {
+    s"$pubKey/${URLEncoder.encode(pubKeyString, "UTF-8")}"
+  }
 
   def currentlyValidPubKeys(hardwareId: String) = s"$host${RouteConstants.pathPubKeyCurrentHardwareId(hardwareId)}"
 

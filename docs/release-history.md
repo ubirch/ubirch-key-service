@@ -8,6 +8,7 @@
 * moved some of README's documentation to separate files in newly created folder _docs_
 * improved documentation of method: _POST /pubkey_
 * `PublicKeyUtil.validateSignature` catches `InvalidKeySpecException` now
+* added endpoint `/api/keyService/v1/pubkey/$PUB_KEY`
 
 ### Version 0.2.0 (2017-07-28)
 

@@ -112,6 +112,54 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
 
   }
 
+  feature("findPubKey()") {
+
+    scenario("key does not exist --> find nothing") {
+
+      // prepare
+      val (pubKey1, _) = EccUtil.generateEccKeyPairEncoded
+
+      // test
+      KeyServiceClientRest.findPubKey(pubKey1) map { result =>
+
+        // verify
+        result shouldBe 'isEmpty
+
+      }
+
+    }
+
+    scenario("key exists --> find it") {
+
+      // prepare
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val publicKey = TestDataGeneratorDb.createPublicKey(
+        privateKey = privKey1,
+        infoPubKey = pubKey1,
+        infoValidNotBefore = DateTime.now.minusDays(1),
+        infoValidNotAfter = Some(DateTime.now.plusDays(1))
+      )
+      PublicKeyManager.create(publicKey) flatMap {
+
+        case None => fail("failed to prepare public key")
+
+        case Some(pubKeyDb: PublicKey) =>
+
+          // test
+          KeyServiceClientRest.findPubKey(pubKey1) map { result =>
+
+            // verify
+            val expected = Some(Json4sUtil.any2any[rest.PublicKey](pubKeyDb))
+            result shouldBe expected
+
+          }
+
+      }
+
+    }
+
+  }
+
   feature("currentlyValidPubKeys()") {
 
     scenario("has no keys") {

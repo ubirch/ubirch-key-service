@@ -146,3 +146,63 @@ If the server has problems the response is:
         "errorMessage": "failed to query public keys"
       }
     }
+
+#### Query Public Keys by publicKey
+
+    curl localhost:8095/api/keyService/v1/pubkey/$PUB_KEY
+
+If no currently valid public keys were found the response is:
+
+    400
+    {
+      "apiVersion": "1.0.0",
+      "status": "NOK",
+      "error": {
+        "errorId": "QueryError",
+        "errorMessage": "failed to find public key"
+      }
+    }
+
+If currently valid public keys were found the response is:
+
+    200
+    [
+      {
+        "pubKeyInfo": {
+          "hwDeviceId": "some-id-asdf", // String (not always a UUID)
+          "pubKey": "string", // base64
+          "pubKeyId": "string", // (optional) typically the hash of "pubKey" (algorithm tends to depend on "algorithm") but can also be the _pubKey_, too (useful for ECC keys whose hash would otherwise be longer than the actual key)
+          "algorithm": "RSA4096", // check X.509 re: constants
+          "previousPubKeyId": "...", // (optional) pub key id
+          "created": "2017-04-26T17:18:00.000Z+02:00",
+          "validNotBefore": "2017-04-26T17:18:00.000Z+02:00",
+          "validNotAfter": "2019-04-26T17:18:00.000Z+02:00" // (optional)
+        },
+        "signature": "string", // base64 (self signed)
+        "previousPubKeySignature": "..." // (optional)
+      }
+    ]
+
+In case of an error the response is:
+
+    400
+    {
+      "apiVersion": "1.0.0",
+      "status": "NOK",
+      "error": {
+        "errorId": "QueryError",
+        "errorMessage": "failed to find public key"
+      }
+    }
+
+If the server has problems the response is:
+
+    500
+    {
+      "apiVersion": "1.0.0",
+      "status": "NOK",
+      "error": {
+        "errorId": "ServerError",
+        "errorMessage": "failed to find public key"
+      }
+    }
