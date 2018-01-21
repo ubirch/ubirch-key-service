@@ -1,23 +1,23 @@
 package com.ubirch.keyservice.server.route
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.Route
+import akka.pattern.ask
+import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.StrictLogging
-import com.ubirch.key.model.rest.{PublicKey, PublicKeys}
 import com.ubirch.key.model._
+import com.ubirch.key.model.rest.{PublicKey, PublicKeys}
 import com.ubirch.keyservice.config.Config
 import com.ubirch.keyservice.server.actor.util.ActorNames
 import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, PublicKeyActor, QueryCurrentlyValid}
 import com.ubirch.keyservice.util.server.RouteConstants
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.Json4sUtil
-import com.ubirch.util.rest.akka.directives.CORSDirective
-import org.anormcypher.Neo4jREST
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Route
-import akka.pattern.ask
-import akka.util.Timeout
 import com.ubirch.util.model.JsonErrorResponse
+import com.ubirch.util.rest.akka.directives.CORSDirective
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
+import org.anormcypher.Neo4jREST
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
@@ -113,17 +113,21 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
 
       case Failure(t) =>
         logger.error("query currently valid public keys call responded with an unhandled message (check PublicKeyRoute for bugs!!!)", t)
-        complete(serverErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
+        complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
 
       case Success(resp) =>
 
         resp match {
 
-          case publicKeys: PublicKeys => complete(publicKeys.publicKeys)
+          case publicKeys: PublicKeys =>
+            complete(publicKeys.publicKeys)
+
+          case jr: JsonErrorResponse =>
+            complete(StatusCodes.BadRequest -> jr)
 
           case _ =>
             logger.error("failed to create public key (server error)")
-            complete(serverErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key"))
+            complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key"))
 
         }
 
@@ -137,7 +141,7 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
 
       case Failure(t) =>
         logger.error("find public key call responded with an unhandled message (check PublicKeyRoute for bugs!!!)", t)
-        complete(serverErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
+        complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
 
       case Success(resp) =>
 
@@ -147,11 +151,11 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
 
           case None =>
             logger.error(s"failed to find public key ($publicKey)")
-            complete(requestErrorResponse(errorType = "QueryError", errorMessage = "failed to find public key"))
+            complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "QueryError", errorMessage = "failed to find public key"))
 
           case _ =>
             logger.error("failed to find public key (server error)")
-            complete(serverErrorResponse(errorType = "ServerError", errorMessage = "failed to find public key"))
+            complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to find public key"))
 
         }
 
