@@ -1,0 +1,14 @@
+{
+  "pubKeyInfo": {
+    "hwDeviceId": "0000419b3e009513-09702800454e5934",
+    "pubKey": "SP/Dg1GnFcKuLxkIUg4siULy0Uzse8EdFInVI4wGIzI=",
+    "pubKeyId": "",
+    "algorithm": "ECC_ED25519",
+    "previousPubKeyId": "",
+    "created": "2018-01-21T18:33:37.000Z",
+    "validNotBefore": "2018-01-21T18:33:37.000Z",
+    "validNotAfter": "2019-01-21T18:33:37.000Z"
+  },
+  "signature": "SP/Dg1GnFcKuLxkIUg4siULy0Uzse8EdFInVI4wGIzI=",
+  "previousPubKeySignature": ""
+}

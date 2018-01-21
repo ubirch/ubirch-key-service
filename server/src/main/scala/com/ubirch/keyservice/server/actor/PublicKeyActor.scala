@@ -1,5 +1,7 @@
 package com.ubirch.keyservice.server.actor
 
+import akka.actor.{Actor, ActorLogging, Props}
+import akka.routing.RoundRobinPool
 import com.ubirch.key.model._
 import com.ubirch.key.model.rest.{PublicKey, PublicKeys}
 import com.ubirch.keyservice.config.Config
@@ -7,11 +9,7 @@ import com.ubirch.keyservice.core.manager.PublicKeyManager
 import com.ubirch.keyservice.server.actor.util.ModelUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
-
 import org.anormcypher.Neo4jREST
-
-import akka.actor.{Actor, ActorLogging, Props}
-import akka.routing.RoundRobinPool
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -28,8 +26,14 @@ class PublicKeyActor(implicit neo4jREST: Neo4jREST) extends Actor
       val sender = context.sender()
       val pubKeyWithId = ModelUtil.withPubKeyId(create.publicKey)
       val dbPublicKey = Json4sUtil.any2any[db.PublicKey](pubKeyWithId)
-      PublicKeyManager.create(dbPublicKey) map { dbPubKey =>
-        sender ! (dbPubKey map Json4sUtil.any2any[rest.PublicKey])
+      try {
+        PublicKeyManager.create(dbPublicKey) map { dbPubKey =>
+          sender ! (dbPubKey map Json4sUtil.any2any[rest.PublicKey])
+        }
+      }
+      catch {
+        case e: Exception =>
+          sender ! JsonErrorResponse(errorType = "Invalid Input", errorMessage = e.getMessage)
       }
 
     case queryCurrentlyValid: QueryCurrentlyValid =>
@@ -40,7 +44,7 @@ class PublicKeyActor(implicit neo4jREST: Neo4jREST) extends Actor
 
     case byPublicKey: ByPublicKey =>
       val sender = context.sender()
-      PublicKeyManager.findByPubKey(byPublicKey.publicKey) map ( sender ! _)
+      PublicKeyManager.findByPubKey(byPublicKey.publicKey) map (sender ! _)
 
     case _ =>
       log.error("unknown message (PublicKeyActor)")

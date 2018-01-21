@@ -1,7 +1,6 @@
 package com.ubirch.keyservice.server.route
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
-
 import com.ubirch.key.model.rest.{PublicKey, PublicKeys}
 import com.ubirch.key.model._
 import com.ubirch.keyservice.config.Config
@@ -11,13 +10,13 @@ import com.ubirch.keyservice.util.server.RouteConstants
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.rest.akka.directives.CORSDirective
-
 import org.anormcypher.Neo4jREST
-
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.pattern.ask
 import akka.util.Timeout
+import com.ubirch.util.model.JsonErrorResponse
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 
 import scala.concurrent.ExecutionContextExecutor
@@ -87,15 +86,19 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
 
         resp match {
 
-          case Some(createPubKey: PublicKey) => complete(createPubKey)
+          case Some(createPubKey: PublicKey) =>
+            complete(createPubKey)
 
+          case jr: JsonErrorResponse =>
+            logger.error(s"failed to create public key ${jr.errorMessage}")
+            complete(StatusCodes.BadRequest -> jr)
           case None =>
             logger.error("failed to create public key (None)")
-            complete(requestErrorResponse(errorType = "CreateError", errorMessage = "failed to create public key"))
+            complete(StatusCodes.BadRequest -> requestErrorResponse(errorType = "CreateError", errorMessage = "failed to create public key"))
 
           case _ =>
             logger.error("failed to create public key (server error)")
-            complete(serverErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key"))
+            complete(StatusCodes.InternalServerError -> serverErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key"))
 
         }
 
