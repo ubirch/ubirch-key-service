@@ -1,14 +1,14 @@
 {
   "pubKeyInfo": {
     "hwDeviceId": "0000419b3e009513-09702800454e5934",
-    "pubKey": "SP/Dg1GnFcKuLxkIUg4siULy0Uzse8EdFInVI4wGIzI=",
+    "pubKey": "pO5IbDLuLQdWBmAYVlUrLz582n11dqa1DjbE33EoAF0=",
     "pubKeyId": "",
     "algorithm": "ECC_ED25519",
     "previousPubKeyId": "",
-    "created": "2018-01-21T18:33:37.000Z",
-    "validNotBefore": "2018-01-21T18:33:37.000Z",
-    "validNotAfter": "2019-01-21T18:33:37.000Z"
+    "created": "2018-01-21T19:42:16.000Z",
+    "validNotBefore": "2018-01-21T19:42:16.000Z",
+    "validNotAfter": "2019-01-21T19:42:16.000Z"
   },
-  "signature": "SP/Dg1GnFcKuLxkIUg4siULy0Uzse8EdFInVI4wGIzI=",
+  "signature": "1k4dbv81eDEbhZyVze6UubzXiA6wJ94UVjrwXK6p+vYXOdUUrWC5R2SjhgWf9QN1ayB8rH71TYmt0SQc/wJEBA==",
   "previousPubKeySignature": ""
 }

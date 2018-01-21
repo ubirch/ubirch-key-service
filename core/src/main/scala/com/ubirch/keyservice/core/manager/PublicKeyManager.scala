@@ -1,11 +1,9 @@
 package com.ubirch.keyservice.core.manager
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
-
 import com.ubirch.key.model.db.{Neo4jLabels, PublicKey, PublicKeyInfo}
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
-
-import org.anormcypher.{Cypher, CypherResultRow, Neo4jConnection, Neo4jREST, NeoNode}
+import org.anormcypher._
 import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,22 +29,27 @@ object PublicKeyManager extends StrictLogging {
     if (PublicKeyUtil.validateSignature(pubKey)) {
 
       val data = entityToString(pubKey)
-      Cypher(
+      val cypherStr =
         s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
            |RETURN pubKey""".stripMargin
+      Cypher(
+        cypherStr
       ).executeAsync() map {
 
-        case true => Some(pubKey)
+        case true =>
+          Some(pubKey)
 
         case false =>
-          logger.error(s"failed to create public key: publicKey=$pubKey")
-          None
+          val errMsg = s"failed to create publicKey: ${pubKey.pubKeyInfo.pubKey}"
+          logger.error(errMsg)
+          throw new Exception(errMsg)
 
       }
 
     } else {
-      logger.error(s"invalid signature: publicKey=$pubKey")
-      Future(None)
+      val errMsg = s"invalid signature: ${pubKey.signature}"
+      logger.error(errMsg)
+      throw new Exception(errMsg)
     }
 
   }

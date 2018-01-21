@@ -92,13 +92,14 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
           case jr: JsonErrorResponse =>
             logger.error(s"failed to create public key ${jr.errorMessage}")
             complete(StatusCodes.BadRequest -> jr)
+
           case None =>
             logger.error("failed to create public key (None)")
-            complete(StatusCodes.BadRequest -> requestErrorResponse(errorType = "CreateError", errorMessage = "failed to create public key"))
+            complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "CreateError", errorMessage = "failed to create public key"))
 
           case _ =>
             logger.error("failed to create public key (server error)")
-            complete(StatusCodes.InternalServerError -> serverErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key"))
+            complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key"))
 
         }
 
