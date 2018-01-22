@@ -1,6 +1,6 @@
 ## Release History
 
-### Version 0.2.1 (tbd)
+### Version 0.2.1 (2018-01-22)
 
 * begin list of valid algorithms
 * fix wrong server port in REST methods doc
