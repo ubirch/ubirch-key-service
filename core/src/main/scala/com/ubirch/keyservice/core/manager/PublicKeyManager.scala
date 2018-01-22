@@ -26,32 +26,38 @@ object PublicKeyManager extends StrictLogging {
   def create(pubKey: PublicKey)
             (implicit neo4jREST: Neo4jREST): Future[Option[PublicKey]] = {
 
-    if (PublicKeyUtil.validateSignature(pubKey)) {
+    findByPubKey(pubKey.pubKeyInfo.pubKey) flatMap {
+      case Some(pk) =>
+        val errMsg = s"publicKey already exist: ${pubKey.pubKeyInfo.pubKey}"
+        logger.error(errMsg)
+        throw new Exception(errMsg)
+      case None =>
+        if (PublicKeyUtil.validateSignature(pubKey)) {
 
-      val data = entityToString(pubKey)
-      val cypherStr =
-        s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
-           |RETURN pubKey""".stripMargin
-      Cypher(
-        cypherStr
-      ).executeAsync() map {
+          val data = entityToString(pubKey)
+          val cypherStr =
+            s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
+               |RETURN pubKey""".stripMargin
+          Cypher(
+            cypherStr
+          ).executeAsync() map {
 
-        case true =>
-          Some(pubKey)
+            case true =>
+              Some(pubKey)
 
-        case false =>
-          val errMsg = s"failed to create publicKey: ${pubKey.pubKeyInfo.pubKey}"
+            case false =>
+              val errMsg = s"failed to create publicKey: ${pubKey.pubKeyInfo.pubKey}"
+              logger.error(errMsg)
+              throw new Exception(errMsg)
+          }
+
+        } else {
+          val errMsg = s"invalid signature: ${pubKey.signature}"
           logger.error(errMsg)
           throw new Exception(errMsg)
+        }
 
-      }
-
-    } else {
-      val errMsg = s"invalid signature: ${pubKey.signature}"
-      logger.error(errMsg)
-      throw new Exception(errMsg)
     }
-
   }
 
   /**

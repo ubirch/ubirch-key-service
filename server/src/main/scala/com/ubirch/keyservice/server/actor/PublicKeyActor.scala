@@ -29,6 +29,8 @@ class PublicKeyActor(implicit neo4jREST: Neo4jREST) extends Actor
       try {
         PublicKeyManager.create(dbPublicKey) map { dbPubKey =>
           sender ! (dbPubKey map Json4sUtil.any2any[rest.PublicKey])
+        } recover {
+          throw new Exception("create pubkey failed")
         }
       }
       catch {

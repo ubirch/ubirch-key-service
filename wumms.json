@@ -1,11 +1,12 @@
 {
   "pubKeyInfo": {
     "algorithm": "ECC_ED25519",
-    "created": "2018-01-21T21:10:13.000Z",
+    "created": "2018-01-22T10:47:58.000Z",
     "hwDeviceId": "0000419b3e009513-09702800454e5934",
     "pubKey": "ctwQHieI/GUdqR7Df1/75TxoRXii/l8ol5UWqKAIrC4=",
-    "validNotAfter": "2019-01-21T21:10:13.000Z",
-    "validNotBefore": "2018-01-21T21:10:13.000Z"
+    "pubKeyId": "ctwQHieI/GUdqR7Df1/75TxoRXii/l8ol5UWqKAIrC4=",
+    "validNotAfter": "2019-01-22T10:47:58.000Z",
+    "validNotBefore": "2018-01-22T10:47:58.000Z"
   },
-  "signature": "53zRoy8THI+oYWJGOsHyzC9Bf9olTAFe1Xu0Ox6oLY04rCvhCZXaL0sdrM+HP4BE292u9DqHEBsvuuJeIMwPBg=="
+  "signature": "qfpgnNsGCmpt+Fmiu+cBVZjz4Qx7EZAwD72AtdswglXK1ThLAs93kWaie8XVTbo/Jpe5LZGeCnjH85OkmxDyBw=="
 }

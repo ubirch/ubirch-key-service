@@ -80,7 +80,7 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
 
       case Failure(t) =>
         logger.error("create public key call responded with an unhandled message (check PublicKeyRoute for bugs!!!)", t)
-        complete(serverErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
+        complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
 
       case Success(resp) =>
 
