@@ -1,5 +1,9 @@
 ## Release History
 
+### Version 0.2.2 (tbd)
+
+* tbd
+
 ### Version 0.2.1 (2018-01-22)
 
 * begin list of valid algorithms
