@@ -13,6 +13,7 @@
 * improved documentation of method: _POST /pubkey_
 * `PublicKeyUtil.validateSignature` catches `InvalidKeySpecException` now
 * added endpoint `/api/keyService/v1/pubkey/$PUB_KEY`
+* update to `com.ubirch.util:crypto:0.4.2`
 
 ### Version 0.2.0 (2017-07-28)
 
