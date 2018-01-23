@@ -12,6 +12,7 @@ import com.ubirch.util.model.JsonErrorResponse
 import org.anormcypher.Neo4jREST
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success}
 
 /**
   * author: cvandrei
@@ -27,10 +28,11 @@ class PublicKeyActor(implicit neo4jREST: Neo4jREST) extends Actor
       val pubKeyWithId = ModelUtil.withPubKeyId(create.publicKey)
       val dbPublicKey = Json4sUtil.any2any[db.PublicKey](pubKeyWithId)
       try {
-        PublicKeyManager.create(dbPublicKey) map { dbPubKey =>
-          sender ! (dbPubKey map Json4sUtil.any2any[rest.PublicKey])
-        } recover {
-          throw new Exception("create pubkey failed")
+        PublicKeyManager.create(dbPublicKey) onComplete {
+          case Success(dbPubKey) =>
+            sender ! (dbPubKey map Json4sUtil.any2any[rest.PublicKey])
+          case Failure(t) =>
+            sender ! JsonErrorResponse(errorType = "Invalid Input", errorMessage = t.getMessage)
         }
       }
       catch {
