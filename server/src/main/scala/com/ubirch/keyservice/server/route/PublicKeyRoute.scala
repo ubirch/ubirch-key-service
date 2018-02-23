@@ -120,7 +120,7 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
         resp match {
 
           case publicKeys: PublicKeys =>
-            complete(publicKeys.publicKeys)
+            complete(StatusCodes.OK -> publicKeys.publicKeys)
 
           case jr: JsonErrorResponse =>
             complete(StatusCodes.BadRequest -> jr)

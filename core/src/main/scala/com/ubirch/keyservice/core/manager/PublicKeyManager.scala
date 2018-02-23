@@ -94,8 +94,6 @@ object PublicKeyManager extends StrictLogging {
 
       mapToPublicKey(result)
 
-    } recover {
-      throw new Exception("key not found")
     }
   }
 

@@ -43,8 +43,11 @@ class PublicKeyActor(implicit neo4jREST: Neo4jREST) extends Actor
     case queryCurrentlyValid: QueryCurrentlyValid =>
       val sender = context.sender()
       try {
-        PublicKeyManager.currentlyValid(queryCurrentlyValid.hardwareId) map { dbPubKeys =>
-          sender ! PublicKeys(dbPubKeys map Json4sUtil.any2any[rest.PublicKey])
+        PublicKeyManager.currentlyValid(queryCurrentlyValid.hardwareId).onComplete {
+          case Success(dbPubKeys) =>
+            sender ! PublicKeys(dbPubKeys map Json4sUtil.any2any[rest.PublicKey])
+          case Failure(t) =>
+            throw t
         }
       }
       catch {
