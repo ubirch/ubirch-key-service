@@ -269,7 +269,7 @@ lazy val ubirchRestAkkaHttpTest = ubirchUtilG %% "rest-akka-http-test" % "0.3.8"
 lazy val ubirchResponse = ubirchUtilG %% "response-util" % "0.2.4" excludeAll (excludedLoggers: _*)
 lazy val ubirchUuid = ubirchUtilG %% "uuid" % "0.1.1" excludeAll (excludedLoggers: _*)
 
-lazy val anormCypher = "org.anormcypher" %% "anormcypher" % "0.9.1"
+lazy val anormCypher = "org.anormcypher" %% "anormcypher" % "0.10.0"
 
 /*
  * RESOLVER
