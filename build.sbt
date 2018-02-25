@@ -269,7 +269,7 @@ lazy val ubirchRestAkkaHttpTest = ubirchUtilG %% "rest-akka-http-test" % "0.3.8"
 lazy val ubirchResponse = ubirchUtilG %% "response-util" % "0.2.4" excludeAll (excludedLoggers: _*)
 lazy val ubirchUuid = ubirchUtilG %% "uuid" % "0.1.1" excludeAll (excludedLoggers: _*)
 
-lazy val anormCypher = "org.anormcypher" %% "anormcypher" % "0.10.0"
+lazy val anormCypher = "org.anormcypher" %% "anormcypher" % "0.9.1"
 
 /*
  * RESOLVER
@@ -278,6 +278,7 @@ lazy val anormCypher = "org.anormcypher" %% "anormcypher" % "0.10.0"
 lazy val resolverSeebergerJson = Resolver.bintrayRepo("hseeberger", "maven")
 lazy val resolverAnormcypher = "anormcypher" at "http://repo.anormcypher.org/"
 lazy val resolverTypesafeReleases = "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
+
 lazy val anormCypherResolvers = Seq(resolverAnormcypher, resolverTypesafeReleases)
 
 /*
