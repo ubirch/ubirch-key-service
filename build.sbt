@@ -220,8 +220,13 @@ val playV = "2.4.11"
 
 val scalaTestV = "3.0.1"
 
-val logbackV = "1.2.3"
-val slf4jV = "1.7.25"
+lazy val logbackV = "1.2.3"
+lazy val logbackESV = "1.5"
+lazy val slf4jV = "1.7.25"
+lazy val log4jV = "2.9.1"
+lazy val scalaLogV = "3.7.2"
+lazy val scalaLogSLF4JV = "2.1.2"
+
 
 // GROUP NAMES
 val ubirchUtilG = "com.ubirch.util"
@@ -241,11 +246,13 @@ lazy val playWS = Seq(
 lazy val scalaLogging = Seq(
   "org.slf4j" % "slf4j-api" % slf4jV,
   "org.slf4j" % "log4j-over-slf4j" % slf4jV,
-  "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2" exclude("org.slf4j", "slf4j-api"),
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0" exclude("org.slf4j", "slf4j-api"),
-  "ch.qos.logback" % "logback-core" % logbackV exclude("org.slf4j", "slf4j-api"),
-  "ch.qos.logback" % "logback-classic" % logbackV exclude("org.slf4j", "slf4j-api"),
-  "com.internetitem" % "logback-elasticsearch-appender" % "1.5" exclude("org.slf4j", "slf4j-api")
+  "org.slf4j" % "jul-to-slf4j" % slf4jV,
+  "ch.qos.logback" % "logback-core" % logbackV,
+  "ch.qos.logback" % "logback-classic" % logbackV,
+  "net.logstash.logback" % "logstash-logback-encoder" % "4.11",
+  "com.typesafe.scala-logging" %% "scala-logging-slf4j" % scalaLogSLF4JV,
+  "com.typesafe.scala-logging" %% "scala-logging" % scalaLogV,
+  "com.internetitem" % "logback-elasticsearch-appender" % logbackESV
 )
 
 lazy val akkaActor = akkaG %% "akka-actor" % akkaV
