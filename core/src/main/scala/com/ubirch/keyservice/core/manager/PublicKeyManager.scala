@@ -116,12 +116,7 @@ object PublicKeyManager extends StrictLogging {
         logger.debug(s"(pubKey=$pubKey) row=$row")
       }
 
-      val resultSet = mapToPublicKey(result)
-      if (resultSet.isEmpty) {
-        None
-      } else {
-        Some(resultSet.head)
-      }
+      mapToPublicKey(result).headOption
 
     }
 
