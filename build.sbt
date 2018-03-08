@@ -16,7 +16,7 @@ lazy val commonSettings = Seq(
     url("https://github.com/ubirch/ubirch-key-service"),
     "scm:git:git@github.com:ubirch/ubirch-key-service.git"
   )),
-  version := "0.2.2-SNAPSHOT",
+  version := "0.2.2",
   test in assembly := {},
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases"),
@@ -265,9 +265,9 @@ lazy val excludedLoggers = Seq(
   ExclusionRule(organization = "ch.qos.logback")
 )
 
-lazy val ubirchConfig = ubirchUtilG %% "config" % "0.1" excludeAll (excludedLoggers: _*)
+lazy val ubirchConfig = ubirchUtilG %% "config" % "0.2.0" excludeAll (excludedLoggers: _*)
 lazy val ubirchCrypto = ubirchUtilG %% "crypto" % "0.4.2" excludeAll (excludedLoggers: _*)
-lazy val ubirchDate = ubirchUtilG %% "date" % "0.1" excludeAll (excludedLoggers: _*)
+lazy val ubirchDate = ubirchUtilG %% "date" % "0.5.1" excludeAll (excludedLoggers: _*)
 lazy val ubirchDeepCheckModel = ubirchUtilG %% "deep-check-model" % "0.2.0" excludeAll (excludedLoggers: _*)
 lazy val ubirchFutures = ubirchUtilG %% "futures" % "0.1.1" excludeAll (excludedLoggers: _*)
 lazy val ubirchJson = ubirchUtilG %% "json" % "0.4.3" excludeAll (excludedLoggers: _*)
