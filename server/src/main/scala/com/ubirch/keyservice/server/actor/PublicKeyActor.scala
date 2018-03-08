@@ -60,6 +60,10 @@ class PublicKeyActor(implicit neo4jREST: Neo4jREST) extends Actor
       val sender = context.sender()
       PublicKeyManager.findByPubKey(byPublicKey.publicKey) map (sender ! _)
 
+    case deletePubKey: DeletePublicKey =>
+      val sender = context.sender()
+      PublicKeyManager.deleteByPubKey(deletePubKey.publicKey) map (sender ! _)
+
     case _ =>
       log.error("unknown message (PublicKeyActor)")
       sender ! JsonErrorResponse(errorType = "UnknownMessage", errorMessage = "unable to handle message")
@@ -81,3 +85,5 @@ case class CreatePublicKey(publicKey: PublicKey)
 case class QueryCurrentlyValid(hardwareId: String)
 
 case class ByPublicKey(publicKey: String)
+
+case class DeletePublicKey(publicKey: String)

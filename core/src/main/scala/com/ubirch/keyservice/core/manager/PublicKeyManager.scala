@@ -122,6 +122,15 @@ object PublicKeyManager extends StrictLogging {
 
   }
 
+  def deleteByPubKey(pubKey: String)
+                    (implicit neo4jConnection: Neo4jConnection): Future[Boolean] = {
+
+    // TODO automated tests
+    // TODO (TRD-654) implement
+    Future(false)
+
+  }
+
   // TODO implement findByHwDeviceId()
 
   private def toKeyValueMap(publicKey: PublicKey): Map[String, Any] = {
