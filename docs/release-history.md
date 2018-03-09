@@ -1,6 +1,6 @@
 ## Release History
 
-### Version 0.2.3 (tbd)
+### Version 0.3.0 (2018-03-09)
 
 * added endpoint `DELETE /pubkey`
 * added `KeyServiceClientRest.pubKeyDELETE()`
