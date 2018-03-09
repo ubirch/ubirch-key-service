@@ -1,8 +1,11 @@
 package com.ubirch.keyservice.core.manager
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
-import com.ubirch.key.model.db.{Neo4jLabels, PublicKey, PublicKeyInfo}
+
+import com.ubirch.crypto.ecc.EccUtil
+import com.ubirch.key.model.db.{Neo4jLabels, PublicKey, PublicKeyDelete, PublicKeyInfo}
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
+
 import org.anormcypher._
 import org.joda.time.{DateTime, DateTimeZone}
 
@@ -100,7 +103,6 @@ object PublicKeyManager extends StrictLogging {
   def findByPubKey(pubKey: String)
                   (implicit neo4jConnection: Neo4jConnection): Future[Option[PublicKey]] = {
 
-    // TODO automated tests
     logger.debug(s"findByPubKey($pubKey)")
     Cypher(
       s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY})
@@ -118,6 +120,44 @@ object PublicKeyManager extends StrictLogging {
 
       mapToPublicKey(result).headOption
 
+    }
+
+  }
+
+  /**
+    * @param pubKeyDelete          public key to delete
+    * @param neo4jConnection database connection
+    * @return true if deleted (idempotent); false in case of an error (exception or invalid signature)
+    */
+  def deleteByPubKey(pubKeyDelete: PublicKeyDelete)
+                    (implicit neo4jConnection: Neo4jConnection): Future[Boolean] = {
+
+    val validSignature = EccUtil.validateSignature(pubKeyDelete.publicKey, pubKeyDelete.signature, pubKeyDelete.publicKey)
+    if (validSignature) {
+
+      try {
+
+        Cypher(
+          s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY})
+             |WHERE pubKey.infoPubKey = {infoPubKey}
+             |DELETE pubKey
+       """.stripMargin
+        )
+          .on("infoPubKey" -> pubKeyDelete.publicKey)
+          .async() map ( _.isEmpty )
+
+      } catch {
+
+        case e: Exception =>
+
+          logger.error(s"failed to delete publicKey=${pubKeyDelete.publicKey}", e)
+          Future(false)
+
+      }
+
+    } else {
+      logger.error(s"unable to delete public key with invalid signature: $pubKeyDelete")
+      Future(false)
     }
 
   }

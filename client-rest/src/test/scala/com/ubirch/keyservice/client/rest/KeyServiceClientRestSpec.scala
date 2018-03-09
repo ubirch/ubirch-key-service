@@ -3,6 +3,7 @@ package com.ubirch.keyservice.client.rest
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model._
 import com.ubirch.key.model.db.PublicKey
+import com.ubirch.key.model.rest.PublicKeyDelete
 import com.ubirch.keyService.testTools.data.generator.TestDataGeneratorDb
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
 import com.ubirch.keyservice.config.Config
@@ -10,6 +11,7 @@ import com.ubirch.keyservice.core.manager.PublicKeyManager
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonResponse
+import com.ubirch.util.uuid.UUIDUtil
 
 import org.joda.time.DateTime
 
@@ -56,7 +58,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
 
   }
 
-  feature("pubKey()") {
+  feature("pubKeyPOST()") {
 
     scenario("new key") {
 
@@ -71,7 +73,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
       val restPubKey = Json4sUtil.any2any[rest.PublicKey](publicKey)
 
       // test
-      KeyServiceClientRest.pubKey(restPubKey) map { result =>
+      KeyServiceClientRest.pubKeyPOST(restPubKey) map { result =>
 
         // verify
         result should be('isDefined)
@@ -99,10 +101,121 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
         case Some(_: PublicKey) =>
 
           // test
-          KeyServiceClientRest.pubKey(restPubKey) map { result =>
+          KeyServiceClientRest.pubKeyPOST(restPubKey) map { result =>
 
             // verify
             result should be('isEmpty)
+
+          }
+
+      }
+
+    }
+
+  }
+
+  feature("pubKeyDELETE()") {
+
+    scenario("key does not exist; valid signature --> true") {
+
+      // prepare
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
+
+      val pubKeyString = pKey1.pubKeyInfo.pubKey
+      val signature = EccUtil.signPayload(privKey1, pubKeyString)
+      val pubKeyDelete = PublicKeyDelete(
+        publicKey = pubKeyString,
+        signature = signature
+      )
+      EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe true
+
+      // test & verify
+      KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) map (_ shouldBe true)
+
+    }
+
+    scenario("key does not exist; invalid signature --> false") {
+
+      // prepare
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val (_, privKey2) = EccUtil.generateEccKeyPairEncoded
+
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
+
+      val pubKeyString = pKey1.pubKeyInfo.pubKey
+      val signature = EccUtil.signPayload(privKey2, pubKeyString)
+      val pubKeyDelete = PublicKeyDelete(
+        publicKey = pubKeyString,
+        signature = signature
+      )
+      EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe false
+
+      // test & verify
+      KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) map (_ shouldBe false)
+
+    }
+
+    scenario("key exists; invalid signature --> true and delete key") {
+
+      // prepare
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
+
+      val pubKeyString = pKey1.pubKeyInfo.pubKey
+      val signature = EccUtil.signPayload(privKey1, pubKeyString)
+      val pubKeyDelete = PublicKeyDelete(
+        publicKey = pubKeyString,
+        signature = signature
+      )
+      EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe true
+
+      PublicKeyManager.create(pKey1) flatMap {
+
+        case None => fail("failed to prepare public key")
+
+        case Some(_: PublicKey) =>
+
+          // test
+          KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) flatMap { result =>
+
+            // verify
+            result shouldBe true
+            PublicKeyManager.findByPubKey(pubKeyString) map (_ shouldBe 'empty)
+
+          }
+
+      }
+
+    }
+
+    scenario("key exists; invalid signature --> false and don't delete key") {
+
+      // prepare
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val (_, privKey2) = EccUtil.generateEccKeyPairEncoded
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
+
+      val pubKeyString = pKey1.pubKeyInfo.pubKey
+      val signature = EccUtil.signPayload(privKey2, pubKeyString)
+      val pubKeyDelete = PublicKeyDelete(
+        publicKey = pubKeyString,
+        signature = signature
+      )
+      EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe false
+
+      PublicKeyManager.create(pKey1) flatMap {
+
+        case None => fail("failed to prepare public key")
+
+        case Some(_: PublicKey) =>
+
+          // test
+          KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) flatMap { result =>
+
+            // verify
+            result shouldBe false
+            PublicKeyManager.findByPubKey(pubKeyString) map (_ shouldBe Some(pKey1))
 
           }
 

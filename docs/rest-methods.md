@@ -206,3 +206,41 @@ If the server has problems the response is:
         "errorMessage": "failed to find public key"
       }
     }
+
+#### Delete Public Key
+
+Note: example is based on privateKey = "MC8CAQAwCAYDK2VkCgEBBCCHFgxcs/JJ+g94c6tB2MlmML/fZqtkd1r16bUSXXrqGA=="
+
+    curl -XDELETE localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '
+    {
+      "publicKey": "MC0wCAYDK2VkCgEBAyEArTqgHBLwYqyh3h4GUw4VdK7FX2qxx6b2r0tcmwJ+5pw=", // base64
+      "signature": "bK6an5dE9At/WZIuSBSiUqnbid/9XcZAFItfU04q+hCAyWGfIt4dLSf9TGx0/i6eD0Xm9Mb4a8PBCznQvtdRDA==" // Bae64 encoded signature of field _pubKey_
+    }'
+
+If the public key was deleted the response is:
+
+    200
+
+In case of an error the response is:
+
+    400
+    {
+      "apiVersion": "1.0.0",
+      "status": "NOK",
+      "error": {
+        "errorId": "DeleteError",
+        "errorMessage": "failed to delete public key"
+      }
+    }
+
+If the server has problems the response is:
+
+    500
+    {
+      "apiVersion": "1.0.0",
+      "status": "NOK",
+      "error": {
+        "errorId": "ServerError",
+        "errorMessage": "failed to delete public key"
+      }
+    }

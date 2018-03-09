@@ -6,8 +6,9 @@ import akka.http.scaladsl.server.Route
 import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.StrictLogging
+
 import com.ubirch.key.model._
-import com.ubirch.key.model.rest.{PublicKey, PublicKeys}
+import com.ubirch.key.model.rest.{PublicKeyDelete, PublicKey, PublicKeys}
 import com.ubirch.keyservice.config.Config
 import com.ubirch.keyservice.server.actor.util.ActorNames
 import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, PublicKeyActor, QueryCurrentlyValid}
@@ -16,6 +17,7 @@ import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
 import com.ubirch.util.rest.akka.directives.CORSDirective
+
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 import org.anormcypher.Neo4jREST
 
@@ -48,6 +50,10 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
           post {
             entity(as[PublicKey]) { publicKey =>
               createPublicKey(publicKey)
+            }
+          } ~ delete {
+            entity(as[PublicKeyDelete]) { publicKey =>
+              deletePublicKey(publicKey)
             }
           }
 
@@ -156,6 +162,35 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
           case _ =>
             logger.error("failed to find public key (server error)")
             complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to find public key"))
+
+        }
+
+    }
+
+  }
+
+  private def deletePublicKey(publicKeyDelete: PublicKeyDelete): Route = {
+
+    onComplete(pubKeyActor ? publicKeyDelete) {
+
+      case Failure(t) =>
+
+        logger.error("delete public key call responded with an unhandled message (check PublicKeyRoute for bugs!!!)", t)
+        complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
+
+      case Success(resp) =>
+
+        resp match {
+
+          case true => complete(StatusCodes.OK)
+
+          case false =>
+            logger.error(s"failed to delete public key ($publicKeyDelete)")
+            complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "DeleteError", errorMessage = "failed to delete public key"))
+
+          case _ =>
+            logger.error("failed to delete public key (server error)")
+            complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to delete public key"))
 
         }
 
