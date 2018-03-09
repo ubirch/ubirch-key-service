@@ -2,7 +2,7 @@ package com.ubirch.keyservice.client.rest
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.PublicKey
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete}
 import com.ubirch.keyservice.client.rest.config.KeyClientRestConfig
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
 import com.ubirch.util.deepCheck.util.DeepCheckResponseUtil
@@ -76,10 +76,9 @@ object KeyServiceClientRest extends MyJsonProtocol
 
   }
 
-  def pubKey(publicKey: PublicKey)
+  def pubKeyPOST(publicKey: PublicKey)
             (implicit httpClient: HttpExt, materializer: Materializer): Future[Option[PublicKey]] = {
 
-    // TODO automated tests
     Json4sUtil.any2String(publicKey) match {
 
       case Some(pubKeyJsonString: String) =>
@@ -111,6 +110,43 @@ object KeyServiceClientRest extends MyJsonProtocol
       case None =>
         logger.error(s"failed to to convert input to JSON: publicKey=$publicKey")
         Future(None)
+
+    }
+
+  }
+
+  def pubKeyDELETE(publicKeyDelete: PublicKeyDelete)
+            (implicit httpClient: HttpExt, materializer: Materializer): Future[Boolean] = {
+
+    Json4sUtil.any2String(publicKeyDelete) match {
+
+      case Some(pubKeyDeleteString: String) =>
+
+        logger.debug(s"pubKeyDelete (object): $pubKeyDeleteString")
+        val url = KeyClientRestConfig.pubKey
+        val req = HttpRequest(
+          method = HttpMethods.DELETE,
+          uri = url,
+          entity = HttpEntity.Strict(ContentTypes.`application/json`, data = ByteString(pubKeyDeleteString))
+        )
+        httpClient.singleRequest(req) flatMap {
+
+          case res@HttpResponse(StatusCodes.OK, _, entity, _) =>
+
+            res.discardEntityBytes()
+            Future(true)
+
+          case res@HttpResponse(code, _, _, _) =>
+
+            res.discardEntityBytes()
+            logErrorAndReturnNone(s"pubKeyDELETE() call to key-service failed: url=$url code=$code, status=${res.status}")
+            Future(false)
+
+        }
+
+      case None =>
+        logger.error(s"failed to to convert input to JSON: publicKeyDelete=$publicKeyDelete")
+        Future(false)
 
     }
 
