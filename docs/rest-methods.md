@@ -209,13 +209,18 @@ If the server has problems the response is:
 
 #### Delete Public Key
 
-Note: example is based on privateKey = "MC8CAQAwCAYDK2VkCgEBBCCHFgxcs/JJ+g94c6tB2MlmML/fZqtkd1r16bUSXXrqGA=="
+Variables used for this example:
 
-    curl -XDELETE localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '
-    {
-      "publicKey": "MC0wCAYDK2VkCgEBAyEArTqgHBLwYqyh3h4GUw4VdK7FX2qxx6b2r0tcmwJ+5pw=", // base64
-      "signature": "bK6an5dE9At/WZIuSBSiUqnbid/9XcZAFItfU04q+hCAyWGfIt4dLSf9TGx0/i6eD0Xm9Mb4a8PBCznQvtdRDA==" // Bae64 encoded signature of field _pubKey_
-    }'
+* private key: MC8CAQAwCAYDK2VkCgEBBCASdXI/FBS9gFBDFbZ+a3GfVNBANTl2T1eaRnLC1p5DvQ==
+* public key: MC0wCAYDK2VkCgEBAyEAxUQcVYd3dt7jAJBtulZoz8QDftnND2X5//ittJ7XAhs=
+
+````
+curl -XDELETE localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '
+{
+  "publicKey": "MC0wCAYDK2VkCgEBAyEAxUQcVYd3dt7jAJBtulZoz8QDftnND2X5//ittJ7XAhs=", // base64
+  "signature": "/kED2IJKCAyro/szRoylAwaEx3E8U2OFI8zHNB8cEHdxy8JtgoR81YL1X/o7Xzkz30eqNjIsWfhmQNdaIma2Aw==" // Bae64 encoded signature of field _pubKey_
+}'
+````
 
 If the public key was deleted the response is:
 
