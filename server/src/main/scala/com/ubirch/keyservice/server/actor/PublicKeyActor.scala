@@ -3,12 +3,13 @@ package com.ubirch.keyservice.server.actor
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.routing.RoundRobinPool
 import com.ubirch.key.model._
-import com.ubirch.key.model.rest.{PublicKey, PublicKeys}
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys}
 import com.ubirch.keyservice.config.Config
 import com.ubirch.keyservice.core.manager.PublicKeyManager
 import com.ubirch.keyservice.server.actor.util.ModelUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
+
 import org.anormcypher.Neo4jREST
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -24,6 +25,7 @@ class PublicKeyActor(implicit neo4jREST: Neo4jREST) extends Actor
   override def receive: Receive = {
 
     case create: CreatePublicKey =>
+
       val sender = context.sender()
       val pubKeyWithId = ModelUtil.withPubKeyId(create.publicKey)
       val dbPublicKey = Json4sUtil.any2any[db.PublicKey](pubKeyWithId)
@@ -41,6 +43,7 @@ class PublicKeyActor(implicit neo4jREST: Neo4jREST) extends Actor
       }
 
     case queryCurrentlyValid: QueryCurrentlyValid =>
+
       val sender = context.sender()
       try {
         PublicKeyManager.currentlyValid(queryCurrentlyValid.hardwareId).onComplete {
@@ -57,14 +60,18 @@ class PublicKeyActor(implicit neo4jREST: Neo4jREST) extends Actor
       }
 
     case byPublicKey: ByPublicKey =>
+
       val sender = context.sender()
       PublicKeyManager.findByPubKey(byPublicKey.publicKey) map (sender ! _)
 
-    case deletePubKey: DeletePublicKey =>
+    case pubKeyDelete: PublicKeyDelete =>
+
       val sender = context.sender()
-      PublicKeyManager.deleteByPubKey(deletePubKey.publicKey) map (sender ! _)
+      val dbPubKeyDelete = Json4sUtil.any2any[db.PublicKeyDelete](pubKeyDelete)
+      PublicKeyManager.deleteByPubKey(dbPubKeyDelete) map (sender ! _)
 
     case _ =>
+
       log.error("unknown message (PublicKeyActor)")
       sender ! JsonErrorResponse(errorType = "UnknownMessage", errorMessage = "unable to handle message")
 
@@ -85,5 +92,3 @@ case class CreatePublicKey(publicKey: PublicKey)
 case class QueryCurrentlyValid(hardwareId: String)
 
 case class ByPublicKey(publicKey: String)
-
-case class DeletePublicKey(publicKey: String)

@@ -209,10 +209,12 @@ If the server has problems the response is:
 
 #### Delete Public Key
 
+Note: example is based on privateKey = "MC8CAQAwCAYDK2VkCgEBBCCHFgxcs/JJ+g94c6tB2MlmML/fZqtkd1r16bUSXXrqGA=="
+
     curl -XDELETE localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '
     {
-      "publicKey": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=", // base64
-      "signature": "MfIJEmhbIQBwHK4URdqialGOyeg1ZKyIAGPmy5VZ8Cfim4hnu3c4SAzHdhHuu4UY0XP3BWgPRVXmf8/mv8s3Dw==" // Bae64 encoded signature of field _pubKey_
+      "publicKey": "MC0wCAYDK2VkCgEBAyEArTqgHBLwYqyh3h4GUw4VdK7FX2qxx6b2r0tcmwJ+5pw=", // base64
+      "signature": "bK6an5dE9At/WZIuSBSiUqnbid/9XcZAFItfU04q+hCAyWGfIt4dLSf9TGx0/i6eD0Xm9Mb4a8PBCznQvtdRDA==" // Bae64 encoded signature of field _pubKey_
     }'
 
 If the public key was deleted the response is:

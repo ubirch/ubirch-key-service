@@ -11,7 +11,7 @@ import com.ubirch.key.model._
 import com.ubirch.key.model.rest.{PublicKeyDelete, PublicKey, PublicKeys}
 import com.ubirch.keyservice.config.Config
 import com.ubirch.keyservice.server.actor.util.ActorNames
-import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, DeletePublicKey, PublicKeyActor, QueryCurrentlyValid}
+import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, PublicKeyActor, QueryCurrentlyValid}
 import com.ubirch.keyservice.util.server.RouteConstants
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.Json4sUtil
@@ -171,8 +171,7 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
 
   private def deletePublicKey(publicKeyDelete: PublicKeyDelete): Route = {
 
-    // TODO (TRD_654) verify publicKey.signature
-    onComplete(pubKeyActor ? DeletePublicKey(publicKeyDelete.publicKey)) {
+    onComplete(pubKeyActor ? publicKeyDelete) {
 
       case Failure(t) =>
 

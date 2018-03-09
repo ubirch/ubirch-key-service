@@ -2,7 +2,8 @@ package com.ubirch.keyservice.core.manager
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.db.{Neo4jLabels, PublicKey, PublicKeyInfo}
+import com.ubirch.crypto.ecc.EccUtil
+import com.ubirch.key.model.db.{Neo4jLabels, PublicKey, PublicKeyDelete, PublicKeyInfo}
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
 
 import org.anormcypher._
@@ -124,36 +125,39 @@ object PublicKeyManager extends StrictLogging {
   }
 
   /**
-    * @param pubKey          public key to delete
+    * @param pubKeyDelete          public key to delete
     * @param neo4jConnection database connection
-    * @return true if deleted (idempotent); false in case of an error
+    * @return true if deleted (idempotent); false in case of an error (exception or invalid signature)
     */
-  def deleteByPubKey(pubKey: String)
+  def deleteByPubKey(pubKeyDelete: PublicKeyDelete)
                     (implicit neo4jConnection: Neo4jConnection): Future[Boolean] = {
 
-    try {
+    val validSignature = EccUtil.validateSignature(pubKeyDelete.publicKey, pubKeyDelete.signature, pubKeyDelete.publicKey)
+    if (validSignature) {
 
-      Cypher(
-        s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY})
-           |WHERE pubKey.infoPubKey = {infoPubKey}
-           |DELETE pubKey
+      try {
+
+        Cypher(
+          s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY})
+             |WHERE pubKey.infoPubKey = {infoPubKey}
+             |DELETE pubKey
        """.stripMargin
-      )
-        .on("infoPubKey" -> pubKey)
-        .async() map { result =>
+        )
+          .on("infoPubKey" -> pubKeyDelete.publicKey)
+          .async() map ( _.isEmpty )
 
-        logger.debug(s"deleted ${result.size} pubKeys")
-        for (row <- result) {
-          logger.debug(s"(pubKey=$pubKey) row=$row")
-        }
-        result.isEmpty
+      } catch {
+
+        case e: Exception =>
+
+          logger.error(s"failed to delete publicKey=${pubKeyDelete.publicKey}", e)
+          Future(false)
 
       }
 
-    } catch {
-      case e: Exception =>
-        logger.error(s"failed to delete publicKey=$pubKey", e)
-        Future(false)
+    } else {
+      logger.error(s"unable to delete public key with invalid signature: $pubKeyDelete")
+      Future(false)
     }
 
   }
