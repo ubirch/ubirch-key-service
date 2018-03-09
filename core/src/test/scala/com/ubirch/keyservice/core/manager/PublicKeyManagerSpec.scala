@@ -432,9 +432,8 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       // prepare
       val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
-      val hardwareId1 = UUIDUtil.uuidStr
 
-      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
       val pubKeyString = pKey1.pubKeyInfo.pubKey
       val signature = EccUtil.signPayload(privKey1, pubKeyString)
       val pubKeyDelete = PublicKeyDelete(
@@ -473,13 +472,10 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       // prepare
       val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
-
       val (pubKey2, privKey2) = EccUtil.generateEccKeyPairEncoded
-      val hardwareId1 = UUIDUtil.uuidStr
-      val hardwareId2 = UUIDUtil.uuidStr
 
-      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
-      val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId2)
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
+      val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = UUIDUtil.uuidStr)
 
       createKeys(pKey2) flatMap {
 
@@ -514,13 +510,10 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       // prepare
       val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
-
       val (pubKey2, privKey2) = EccUtil.generateEccKeyPairEncoded
-      val hardwareId1 = UUIDUtil.uuidStr
-      val hardwareId2 = UUIDUtil.uuidStr
 
-      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
-      val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId2)
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
+      val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = UUIDUtil.uuidStr)
 
       createKeys(pKey2) flatMap {
 
@@ -555,13 +548,10 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       // prepare
       val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
-
       val (pubKey2, privKey2) = EccUtil.generateEccKeyPairEncoded
-      val hardwareId1 = UUIDUtil.uuidStr
-      val hardwareId2 = UUIDUtil.uuidStr
 
-      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
-      val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId2)
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
+      val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = UUIDUtil.uuidStr)
 
       createKeys(pKey1, pKey2) flatMap {
 
@@ -596,13 +586,10 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       // prepare
       val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
-
       val (pubKey2, privKey2) = EccUtil.generateEccKeyPairEncoded
-      val hardwareId1 = UUIDUtil.uuidStr
-      val hardwareId2 = UUIDUtil.uuidStr
 
-      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
-      val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId2)
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
+      val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = UUIDUtil.uuidStr)
 
       createKeys(pKey1, pKey2) flatMap {
 
