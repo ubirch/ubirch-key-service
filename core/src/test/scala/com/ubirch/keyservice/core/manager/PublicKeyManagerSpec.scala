@@ -358,6 +358,161 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
   }
 
+  feature("findByPubKey()") {
+
+    scenario("database empty; pubKey doesn't exist --> None") {
+
+      // prepare
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val hardwareId1 = UUIDUtil.uuidStr
+
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
+
+      // test & verify
+      PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe 'empty)
+
+    }
+
+    scenario("database not empty; pubKey doesn't exist --> None") {
+
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
+      val (pubKey2, privKey2) = EccUtil.generateEccKeyPairEncoded
+      val hardwareId1 = UUIDUtil.uuidStr
+      val hardwareId2 = UUIDUtil.uuidStr
+
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
+      val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId2)
+
+      createKeys(pKey2) flatMap {
+
+        case false => fail("failed to create public keys during preparation")
+
+        case true =>
+
+          // test & verify
+          PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe 'empty)
+
+      }
+
+    }
+
+    scenario("database not empty; pubKey exists --> Some") {
+
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
+      val (pubKey2, privKey2) = EccUtil.generateEccKeyPairEncoded
+      val hardwareId1 = UUIDUtil.uuidStr
+      val hardwareId2 = UUIDUtil.uuidStr
+
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
+      val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId2)
+
+      createKeys(pKey1, pKey2) flatMap {
+
+        case false => fail("failed to create public keys during preparation")
+
+        case true =>
+
+          val pubKeyString = pKey1.pubKeyInfo.pubKey
+
+          // test & verify
+          PublicKeyManager.findByPubKey(pubKeyString) map( _ shouldBe Some(pKey1) )
+
+      }
+
+    }
+
+  }
+
+  feature("deleteByPubKey()") {
+
+    scenario("database empty; pubKey doesn't exist --> true") {
+
+      // prepare
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val hardwareId1 = UUIDUtil.uuidStr
+
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
+
+      // test
+      PublicKeyManager.deleteByPubKey(pKey1.pubKeyInfo.pubKey) map { result =>
+
+        // test
+        result shouldBe true
+
+      }
+
+    }
+
+    scenario("database not empty; pubKey doesn't exist --> true") {
+
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
+      val (pubKey2, privKey2) = EccUtil.generateEccKeyPairEncoded
+      val hardwareId1 = UUIDUtil.uuidStr
+      val hardwareId2 = UUIDUtil.uuidStr
+
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
+      val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId2)
+
+      createKeys(pKey2) flatMap {
+
+        case false => fail("failed to create public keys during preparation")
+
+        case true =>
+
+          // test
+          PublicKeyManager.deleteByPubKey(pKey1.pubKeyInfo.pubKey) map { result =>
+
+            // verify
+            PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map( _ shouldBe 'empty )
+            PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map( _ shouldBe 'defined )
+
+            result shouldBe true
+
+          }
+
+      }
+
+    }
+
+    scenario("database not empty; pubKey exists --> true") {
+
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
+      val (pubKey2, privKey2) = EccUtil.generateEccKeyPairEncoded
+      val hardwareId1 = UUIDUtil.uuidStr
+      val hardwareId2 = UUIDUtil.uuidStr
+
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
+      val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId2)
+
+      createKeys(pKey1, pKey2) flatMap {
+
+        case false => fail("failed to create public keys during preparation")
+
+        case true =>
+
+          val pubKeyString = pKey1.pubKeyInfo.pubKey
+
+          // test
+          PublicKeyManager.deleteByPubKey(pubKeyString) flatMap { result =>
+
+            // verify
+            PublicKeyManager.findByPubKey(pubKeyString) map( _ shouldBe 'empty )
+            PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map( _ shouldBe 'defined )
+
+            result shouldBe true
+
+          }
+
+      }
+
+    }
+
+  }
+
   private def createKeys(pubKeys: PublicKey*): Future[Boolean] = {
 
     // TODO copy to test-tools-ext?

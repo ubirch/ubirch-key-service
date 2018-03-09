@@ -1,8 +1,10 @@
 package com.ubirch.keyservice.core.manager
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
+
 import com.ubirch.key.model.db.{Neo4jLabels, PublicKey, PublicKeyInfo}
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
+
 import org.anormcypher._
 import org.joda.time.{DateTime, DateTimeZone}
 
@@ -100,7 +102,6 @@ object PublicKeyManager extends StrictLogging {
   def findByPubKey(pubKey: String)
                   (implicit neo4jConnection: Neo4jConnection): Future[Option[PublicKey]] = {
 
-    // TODO automated tests
     logger.debug(s"findByPubKey($pubKey)")
     Cypher(
       s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY})
@@ -122,12 +123,38 @@ object PublicKeyManager extends StrictLogging {
 
   }
 
+  /**
+    * @param pubKey          public key to delete
+    * @param neo4jConnection database connection
+    * @return true if deleted (idempotent); false in case of an error
+    */
   def deleteByPubKey(pubKey: String)
                     (implicit neo4jConnection: Neo4jConnection): Future[Boolean] = {
 
-    // TODO automated tests
-    // TODO (TRD-654) implement
-    Future(false)
+    try {
+
+      Cypher(
+        s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY})
+           |WHERE pubKey.infoPubKey = {infoPubKey}
+           |DELETE pubKey
+       """.stripMargin
+      )
+        .on("infoPubKey" -> pubKey)
+        .async() map { result =>
+
+        logger.debug(s"deleted ${result.size} pubKeys")
+        for (row <- result) {
+          logger.debug(s"(pubKey=$pubKey) row=$row")
+        }
+        result.isEmpty
+
+      }
+
+    } catch {
+      case e: Exception =>
+        logger.error(s"failed to delete publicKey=$pubKey", e)
+        Future(false)
+    }
 
   }
 
