@@ -222,11 +222,13 @@ curl -XDELETE localhost:8095/api/keyService/v1/pubkey -H "Content-Type: applicat
 }'
 ````
 
-If the public key was deleted the response is:
+##### Responses
+
+If the public key was deleted (or didn't exist):
 
     200
 
-In case of an error the response is:
+If the signature's invalid:
 
     400
     {
@@ -238,7 +240,7 @@ In case of an error the response is:
       }
     }
 
-If the server has problems the response is:
+If the server has a problem:
 
     500
     {
