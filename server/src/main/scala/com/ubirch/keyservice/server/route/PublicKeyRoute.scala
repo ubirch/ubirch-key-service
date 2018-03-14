@@ -176,7 +176,7 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
       case Failure(t) =>
 
         logger.error("delete public key call responded with an unhandled message (check PublicKeyRoute for bugs!!!)", t)
-        complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
+        complete(serverErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
 
       case Success(resp) =>
 
@@ -186,11 +186,7 @@ class PublicKeyRoute(implicit neo4jREST: Neo4jREST)
 
           case false =>
             logger.error(s"failed to delete public key ($publicKeyDelete)")
-            complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "DeleteError", errorMessage = "failed to delete public key"))
-
-          case _ =>
-            logger.error("failed to delete public key (server error)")
-            complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to delete public key"))
+            complete(requestErrorResponse(errorType = "DeleteError", errorMessage = "failed to delete public key"))
 
         }
 
