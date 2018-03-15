@@ -169,7 +169,6 @@ object PublicKeyManager extends StrictLogging {
     var keyValue: Map[String, Any] = Map(
       "infoHwDeviceId" -> publicKey.pubKeyInfo.hwDeviceId,
       "infoPubKey" -> publicKey.pubKeyInfo.pubKey,
-      "infoPubKeyId" -> publicKey.pubKeyInfo.pubKeyId,
       "infoAlgorithm" -> publicKey.pubKeyInfo.algorithm,
       "infoCreated" -> publicKey.pubKeyInfo.created,
       "infoValidNotBefore" -> publicKey.pubKeyInfo.validNotBefore,
@@ -180,6 +179,9 @@ object PublicKeyManager extends StrictLogging {
     }
     if (publicKey.pubKeyInfo.previousPubKeyId.isDefined) {
       keyValue += "infoPreviousPubKeyId" -> publicKey.pubKeyInfo.previousPubKeyId.get
+    }
+    if (publicKey.pubKeyInfo.pubKeyId.isDefined) {
+      keyValue += "infoPubKeyId" -> publicKey.pubKeyInfo.previousPubKeyId.get
     }
     if (publicKey.previousPubKeySignature.isDefined) {
       keyValue += "previousPubKeySignature" -> publicKey.previousPubKeySignature.get
@@ -225,6 +227,11 @@ object PublicKeyManager extends StrictLogging {
         case s: String => Some(s)
       }
 
+      val publicKeyId = props.getOrElse("infoPubKeyId", "--UNDEFINED--").asInstanceOf[String] match {
+        case "--UNDEFINED--" => None
+        case s: String => Some(s)
+      }
+
       val previousPublicKeySignature = props.getOrElse("previousPubKeySignature", "--UNDEFINED--").asInstanceOf[String] match {
         case "--UNDEFINED--" => None
         case s: String => Some(s)
@@ -234,7 +241,7 @@ object PublicKeyManager extends StrictLogging {
         pubKeyInfo = PublicKeyInfo(
           hwDeviceId = props("infoHwDeviceId").asInstanceOf[String],
           pubKey = props("infoPubKey").asInstanceOf[String],
-          pubKeyId = props("infoPubKeyId").asInstanceOf[String],
+          pubKeyId = publicKeyId,
           algorithm = props("infoAlgorithm").asInstanceOf[String],
           previousPubKeyId = previousPublicKeyId,
           created = DateTime.parse(props("infoCreated").asInstanceOf[String]),

@@ -20,7 +20,7 @@ object KeyGen extends App {
     created = DateUtil.nowUTC,
     hwDeviceId = UUIDUtil.uuidStr,
     pubKey = publicKey,
-    pubKeyId = publicKey,
+    pubKeyId = Some(publicKey),
     validNotBefore = DateUtil.nowUTC.minusMinutes(1)
   )
   val signature = EccUtil.signPayload(

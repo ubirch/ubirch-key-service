@@ -34,7 +34,7 @@ object TestDataGeneratorDb {
     PublicKeyInfo(
       hwDeviceId = hwDeviceId,
       pubKey = pubKeyToUse,
-      pubKeyId = pubKeyIdToUse,
+      pubKeyId = Some(pubKeyIdToUse),
       algorithm = algorithm,
       created = created,
       validNotBefore = validNotBefore,

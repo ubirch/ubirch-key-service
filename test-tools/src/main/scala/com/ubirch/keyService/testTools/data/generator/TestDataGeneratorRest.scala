@@ -53,7 +53,7 @@ object TestDataGeneratorRest {
       hwDeviceId = hwDeviceId,
       previousPubKeyId = previousPubKeyIdToUse,
       pubKey = pubKeyToUse,
-      pubKeyId = pubKeyIdToUse,
+      pubKeyId = Some(pubKeyIdToUse),
       validNotAfter = validNotAfter,
       validNotBefore = validNotBefore
     )

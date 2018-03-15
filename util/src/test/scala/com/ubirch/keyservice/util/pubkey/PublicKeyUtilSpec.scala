@@ -40,7 +40,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = Some(oldPublicKey),
         pubKey = newPublicKey,
-        pubKeyId = newPublicKey,
+        pubKeyId = Some(newPublicKey),
         validNotAfter = Some(inSixMonths),
         validNotBefore = now
       )
@@ -67,13 +67,13 @@ class PublicKeyUtilSpec extends FeatureSpec
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = None,
         pubKey = newPublicKey,
-        pubKeyId = newPublicKey,
+        pubKeyId = None,
         validNotAfter = None,
         validNotBefore = now
       )
 
       val nowString = dateTimeFormat.print(now)
-      val expected = s"""{"algorithm":"${pubKeyInfo.algorithm}","created":"$nowString","hwDeviceId":"$hardwareDeviceId","pubKey":"$newPublicKey","pubKeyId":"$newPublicKey","validNotBefore":"$nowString"}"""
+      val expected = s"""{"algorithm":"${pubKeyInfo.algorithm}","created":"$nowString","hwDeviceId":"$hardwareDeviceId","pubKey":"$newPublicKey","validNotBefore":"$nowString"}"""
 
       // test & verify
       PublicKeyUtil.publicKeyInfo2String(pubKeyInfo) shouldBe Some(expected)
@@ -99,7 +99,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = Some(oldPublicKey),
         pubKey = newPublicKey,
-        pubKeyId = newPublicKey,
+        pubKeyId = Some(newPublicKey),
         validNotAfter = Some(inSixMonths),
         validNotBefore = now
       )
@@ -132,7 +132,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = Some(oldPublicKey),
         pubKey = newPublicKey,
-        pubKeyId = newPublicKey,
+        pubKeyId = Some(newPublicKey),
         validNotAfter = Some(inSixMonths),
         validNotBefore = now
       )
@@ -163,7 +163,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = None,
         pubKey = newPublicKey,
-        pubKeyId = newPublicKey,
+        pubKeyId = None,
         validNotAfter = None,
         validNotBefore = now
       )
@@ -194,7 +194,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = None,
         pubKey = newPublicKey,
-        pubKeyId = newPublicKey,
+        pubKeyId = None,
         validNotAfter = None,
         validNotBefore = now
       )
@@ -223,7 +223,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = None,
         pubKey = newPublicKey,
-        pubKeyId = newPublicKey,
+        pubKeyId = Some(newPublicKey),
         validNotAfter = None,
         validNotBefore = now
       )
