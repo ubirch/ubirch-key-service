@@ -2,7 +2,9 @@
 
 ### Version 0.3.1 (tbd)
 
-* tbd
+* bugfix: fields in the `rest.PublicKeyInfo` need to be alphabetical or otherwise signature verification fails (order of
+fields needs to be same as in `db.PublicKeyInfo`)
+* field `rest.PublicKeyInfo.pubKeyId` is now mandatory (as it already was in `rest.PublicKeyInfo`)
 
 ### Version 0.3.0 (2018-03-09)
 

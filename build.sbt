@@ -124,7 +124,7 @@ lazy val testTools = (project in file("test-tools"))
 
 lazy val util = project
   .settings(commonSettings: _*)
-  .dependsOn(modelDb)
+  .dependsOn(modelDb, modelRest % "test")
   .settings(
     description := "utils",
     libraryDependencies ++= depUtils
@@ -201,7 +201,8 @@ lazy val depTestTools = Seq(
 
 lazy val depUtils = Seq(
   ubirchUuid,
-  ubirchCrypto
+  ubirchCrypto,
+  scalatest % "test"
 ) ++ scalaLogging
 
 lazy val depUtilsNeo4j = Seq(

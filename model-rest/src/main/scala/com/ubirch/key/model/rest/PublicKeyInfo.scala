@@ -10,12 +10,12 @@ import org.joda.time.DateTime
 /**
   * @param pubKeyId typically the hash of "pubKey" (algorithm tends to depend on "algorithm") but can also be the _pubKey_, too (useful for ECC keys whose hash would otherwise be longer than the actual key)
   */
-case class PublicKeyInfo(hwDeviceId: String,
-                         pubKey: String,
-                         pubKeyId: Option[String] = None,
-                         algorithm: String,
-                         previousPubKeyId: Option[String],
+case class PublicKeyInfo(algorithm: String,
                          created: DateTime,
-                         validNotBefore: DateTime,
-                         validNotAfter: Option[DateTime] = None
+                         hwDeviceId: String,
+                         previousPubKeyId: Option[String],
+                         pubKey: String,
+                         pubKeyId: String,
+                         validNotAfter: Option[DateTime] = None,
+                         validNotBefore: DateTime
                         )
