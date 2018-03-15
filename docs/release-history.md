@@ -5,6 +5,8 @@
 * bugfix: fields in the `rest.PublicKeyInfo` need to be alphabetical or otherwise signature verification fails (order of
 fields needs to be same as in `db.PublicKeyInfo`)
 * field `rest.PublicKeyInfo.pubKeyId` is now mandatory (as it already was in `rest.PublicKeyInfo`)
+* all optional fields in `rest.PublicKey` and `rest.PublicKeyInfo` have default values now
+* improved public key related REST call examples
 
 ### Version 0.3.0 (2018-03-09)
 
