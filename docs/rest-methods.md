@@ -31,44 +31,57 @@ If not healthy the status is `false` and the `messages` array not empty:
 
 #### Create
 
-    curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '
-    {
-      "pubKeyInfo": {
-        "hwDeviceId": "4150473037-547268290-3238389072-173590267", // String (not always a UUID)
-        "pubKey": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=", // base64
-        "pubKeyId": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=",  // (optional) Base64
-        "algorithm": "ECC_ED25519", // see list of valid algorithms below
-        "previousPubKeyId": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=",  // (optional) Base64 encoded id of previous pub key 
-        "created": "2017-08-03T09:51:36.000Z",
-        "validNotBefore": "2017-08-03T09:51:36.000Z",
-        "validNotAfter": "2018-02-03T09:51:36.000Z" // (optional)
-      },
-      "signature": "MfIJEmhbIQBwHK4URdqialGOyeg1ZKyIAGPmy5VZ8Cfim4hnu3c4SAzHdhHuu4UY0XP3BWgPRVXmf8/mv8s3Dw==", // Base64 (self signed)
-      "previousPubKeySignature": "MfIJEmhbIQBwHK4URdqialGOyeg1ZKyIAGPmy5VZ8Cfim4hnu3c4SAzHdhHuu4UY0XP3BWgPRVXmf8/mv8s3Dw==" // (optional) Base64 (self signed)
-    }'
+All examples are based on the following key pair:
+
+* public key  = MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=
+* private key = MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==
+
+*Example with all fields set*
+ 
+* previous public key  = MC0wCAYDK2VkCgEBAyEAgH0cf8WwYiLY/LHtLqhtg7pZaaGI1vNHo4jHDrd6KY0=
+* previous prviate key = MC8CAQAwCAYDK2VkCgEBBCC4LZ5r6ueSbFjqM9bUeZKUwWcSyGx2jBs+m5u97adb0g==
+
+```
+curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '
+{
+  "pubKeyInfo": {
+    "algorithm": "ECC_ED25519",
+    "created": "2018-03-15T21:56:20.819Z",
+    "hwDeviceId": "44394342-0d06-4e90-9d91-c2e3bd5612a4",
+    "previousPubKeyId": "MC0wCAYDK2VkCgEBAyEAgH0cf8WwYiLY/LHtLqhtg7pZaaGI1vNHo4jHDrd6KY0=",
+    "pubKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+    "pubKeyId": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+    "validNotAfter": "2018-09-15T21:56:20.819Z",
+    "validNotBefore": "2018-03-15T21:56:20.819Z"
+  },
+  "signature": "2Dx11qm9aEcfY3iqrqRsckjP4SRjp4T3P1L3UTPq1eYeOXXb7MLXzM7SfnGIPuXtqZK60vSKe8MSUmk3fa3jDw==",
+  "previousPubKeySignature": "YYAif0Wn25+E7Xl+tH00BiwmvCR8ixi1HPrAxOL+1XgebAtlUIqBK5T0uFcdpWzcie0kURCfuHWJgcscH1w0Bw=="
+}'
+```
+
+*Example with only mandatory fields*
+
+```
+curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '
+{
+  "pubKeyInfo": {
+    "algorithm": "ECC_ED25519",
+    "created": "2018-03-15T21:48:32.373Z",
+    "hwDeviceId": "39c023be-9d8f-4a72-a05d-271cb928dbc3",
+    "pubKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+    "pubKeyId": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+    "validNotBefore": "2018-03-15T21:48:32.373Z"
+  },
+  "signature": "0aMQdrSBeyGbuZefhhLyWRmW3mJPIK+Tp4AtgKIg8eEXUCTogH23NeOfhw3PB1I82Mmsn8yCNC0cyMEFMMwABQ=="
+}'
+``` 
 
 Valid _algorithm_s are:
 
 * RSA4096
 * ECC_ED25519
 
-If successful the response is exactly the key from the request:
-
-    200
-    {
-      "pubKeyInfo": {
-        "hwDeviceId": "4150473037-547268290-3238389072-173590267",
-        "pubKey": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=",
-        "pubKeyId": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=",
-        "algorithm": "ECC_ED25519",
-        "previousPubKeyId": "MC0wCAYDK2VkCgEBAyEAovEmQJuiWdrb5hV/mhG1SF9Vul7tRveYZ74Mk+Okjhg=", 
-        "created": "2017-08-03T09:51:36.000Z",
-        "validNotBefore": "2017-08-03T09:51:36.000Z",
-        "validNotAfter": "2018-02-03T09:51:36.000Z"
-      },
-      "signature": "MfIJEmhbIQBwHK4URdqialGOyeg1ZKyIAGPmy5VZ8Cfim4hnu3c4SAzHdhHuu4UY0XP3BWgPRVXmf8/mv8s3Dw==",
-      "previousPubKeySignature": "MfIJEmhbIQBwHK4URdqialGOyeg1ZKyIAGPmy5VZ8Cfim4hnu3c4SAzHdhHuu4UY0XP3BWgPRVXmf8/mv8s3Dw=="
-    }
+If successful the response is exactly the key from the request.
 
 In case of an error the response is:
 
@@ -109,17 +122,14 @@ If currently valid public keys were found the response is:
     [
       {
         "pubKeyInfo": {
-          "hwDeviceId": "some-id-asdf", // String (not always a UUID)
-          "pubKey": "string", // base64
-          "pubKeyId": "string", // (optional) typically the hash of "pubKey" (algorithm tends to depend on "algorithm") but can also be the _pubKey_, too (useful for ECC keys whose hash would otherwise be longer than the actual key)
-          "algorithm": "RSA4096", // check X.509 re: constants
-          "previousPubKeyId": "...", // (optional) pub key id
-          "created": "2017-04-26T17:18:00.000Z+02:00",
-          "validNotBefore": "2017-04-26T17:18:00.000Z+02:00",
-          "validNotAfter": "2019-04-26T17:18:00.000Z+02:00" // (optional)
+          "algorithm": "ECC_ED25519",
+          "created": "2018-03-15T21:48:32.373Z",
+          "hwDeviceId": "39c023be-9d8f-4a72-a05d-271cb928dbc3",
+          "pubKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+          "pubKeyId": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+          "validNotBefore": "2018-03-15T21:48:32.373Z"
         },
-        "signature": "string", // base64 (self signed)
-        "previousPubKeySignature": "..." // (optional)
+        "signature": "0aMQdrSBeyGbuZefhhLyWRmW3mJPIK+Tp4AtgKIg8eEXUCTogH23NeOfhw3PB1I82Mmsn8yCNC0cyMEFMMwABQ=="
       }
     ]
 
@@ -169,17 +179,14 @@ If currently valid public keys were found the response is:
     [
       {
         "pubKeyInfo": {
-          "hwDeviceId": "some-id-asdf", // String (not always a UUID)
-          "pubKey": "string", // base64
-          "pubKeyId": "string", // (optional) typically the hash of "pubKey" (algorithm tends to depend on "algorithm") but can also be the _pubKey_, too (useful for ECC keys whose hash would otherwise be longer than the actual key)
-          "algorithm": "RSA4096", // check X.509 re: constants
-          "previousPubKeyId": "...", // (optional) pub key id
-          "created": "2017-04-26T17:18:00.000Z+02:00",
-          "validNotBefore": "2017-04-26T17:18:00.000Z+02:00",
-          "validNotAfter": "2019-04-26T17:18:00.000Z+02:00" // (optional)
+          "algorithm": "ECC_ED25519",
+          "created": "2018-03-15T21:48:32.373Z",
+          "hwDeviceId": "39c023be-9d8f-4a72-a05d-271cb928dbc3",
+          "pubKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+          "pubKeyId": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+          "validNotBefore": "2018-03-15T21:48:32.373Z"
         },
-        "signature": "string", // base64 (self signed)
-        "previousPubKeySignature": "..." // (optional)
+        "signature": "0aMQdrSBeyGbuZefhhLyWRmW3mJPIK+Tp4AtgKIg8eEXUCTogH23NeOfhw3PB1I82Mmsn8yCNC0cyMEFMMwABQ=="
       }
     ]
 
@@ -209,16 +216,16 @@ If the server has problems the response is:
 
 #### Delete Public Key
 
-Variables used for this example:
+Key pair used for this example:
 
-* private key: MC8CAQAwCAYDK2VkCgEBBCASdXI/FBS9gFBDFbZ+a3GfVNBANTl2T1eaRnLC1p5DvQ==
-* public key: MC0wCAYDK2VkCgEBAyEAxUQcVYd3dt7jAJBtulZoz8QDftnND2X5//ittJ7XAhs=
+* public key  = MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=
+* private key = MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==
 
 ````
 curl -XDELETE localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '
 {
-  "publicKey": "MC0wCAYDK2VkCgEBAyEAxUQcVYd3dt7jAJBtulZoz8QDftnND2X5//ittJ7XAhs=", // base64
-  "signature": "/kED2IJKCAyro/szRoylAwaEx3E8U2OFI8zHNB8cEHdxy8JtgoR81YL1X/o7Xzkz30eqNjIsWfhmQNdaIma2Aw==" // Bae64 encoded signature of field _pubKey_
+  "publicKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=", // base64
+  "signature": "XWBWG1y1HWyVqm3a6pwx21G0kaZcJP/NsSXD7KikLvKDbPT19sCQ8CfWe3YuE3VWReSrUsyA33qRsMV3ioaXBA==" // Bae64 encoded signature of field _pubKey_
 }'
 ````
 

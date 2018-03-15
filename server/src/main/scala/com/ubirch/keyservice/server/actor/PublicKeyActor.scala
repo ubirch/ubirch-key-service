@@ -6,7 +6,6 @@ import com.ubirch.key.model._
 import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys}
 import com.ubirch.keyservice.config.Config
 import com.ubirch.keyservice.core.manager.PublicKeyManager
-import com.ubirch.keyservice.server.actor.util.ModelUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
 
@@ -27,8 +26,7 @@ class PublicKeyActor(implicit neo4jREST: Neo4jREST) extends Actor
     case create: CreatePublicKey =>
 
       val sender = context.sender()
-      val pubKeyWithId = ModelUtil.withPubKeyId(create.publicKey)
-      val dbPublicKey = Json4sUtil.any2any[db.PublicKey](pubKeyWithId)
+      val dbPublicKey = Json4sUtil.any2any[db.PublicKey](create.publicKey)
       try {
         PublicKeyManager.create(dbPublicKey) onComplete {
           case Success(dbPubKey) =>

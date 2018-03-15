@@ -48,14 +48,14 @@ object TestDataGeneratorRest {
     }
 
     PublicKeyInfo(
+      algorithm = algorithm,
+      created = created,
       hwDeviceId = hwDeviceId,
+      previousPubKeyId = previousPubKeyIdToUse,
       pubKey = pubKeyToUse,
       pubKeyId = Some(pubKeyIdToUse),
-      algorithm = algorithm,
-      previousPubKeyId = previousPubKeyIdToUse,
-      created = created,
-      validNotBefore = validNotBefore,
-      validNotAfter = validNotAfter
+      validNotAfter = validNotAfter,
+      validNotBefore = validNotBefore
     )
 
   }
@@ -83,7 +83,7 @@ object TestDataGeneratorRest {
       created = created,
       validNotBefore = validNotBefore,
       validNotAfter = None
-    ).copy(pubKeyId = None, previousPubKeyId = None, validNotAfter = None)
+    ).copy(previousPubKeyId = None, validNotAfter = None)
 
   }
 
@@ -150,7 +150,7 @@ object TestDataGeneratorRest {
       infoValidNotBefore = infoValidNotBefore
     )
 
-    val info = pubKey.pubKeyInfo.copy(pubKeyId = None, previousPubKeyId = None, validNotAfter = None)
+    val info = pubKey.pubKeyInfo.copy(previousPubKeyId = None, validNotAfter = None)
 
     pubKey.copy(previousPubKeySignature = None, pubKeyInfo = info)
 
