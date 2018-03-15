@@ -2,8 +2,8 @@
 
 ### Version 0.3.1 (tbd)
 
-* bugfix: fields in the `rest.PublicKeyInfo` need to be alphabetical or otherwise signature verification fails (order of
-fields needs to be same as in `db.PublicKeyInfo`)
+* bugfix: fields in the `rest.PublicKeyInfo` need to be in alphabetical order or otherwise signature verification failed
+using the `KeyServiceClientRest`
 * all optional fields in `rest.PublicKey` and `rest.PublicKeyInfo` have default values now
 * improved public key related REST call examples
 * field `PublicKeyInfo.pubKeyId` is now optional in DB and REST model
