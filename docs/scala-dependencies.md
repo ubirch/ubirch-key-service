@@ -4,10 +4,10 @@
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases")
+  Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "client-rest" % "0.4.0"
+  "com.ubirch.key" %% "client-rest" % "0.4.1-SNAPSHOT"
 )
 ```
 
@@ -31,12 +31,12 @@ It depends on a `akka-http` client. Please refer to the setup of `KeyServiceClie
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots"),
   "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "cmdtools" % "0.4.0"
+  "com.ubirch.key" %% "cmdtools" % "0.4.1-SNAPSHOT"
 )
 ```
 
@@ -44,10 +44,10 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases")
+  Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "config" % "0.4.0"
+  "com.ubirch.key" %% "config" % "0.4.1-SNAPSHOT"
 )
 ```
 
@@ -55,12 +55,12 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots"),
   "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "core" % "0.4.0"
+  "com.ubirch.key" %% "core" % "0.4.1-SNAPSHOT"
 )
 ```
 
@@ -68,10 +68,10 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases")
+  Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "model-db" % "0.4.0"
+  "com.ubirch.key" %% "model-db" % "0.4.1-SNAPSHOT"
 )
 ```
 
@@ -79,10 +79,10 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases")
+  Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "model-rest" % "0.4.0"
+  "com.ubirch.key" %% "model-rest" % "0.4.1-SNAPSHOT"
 )
 ```
 
@@ -90,13 +90,13 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots"),
   Resolver.bintrayRepo("hseeberger", "maven"),
   "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "server" % "0.4.0"
+  "com.ubirch.key" %% "server" % "0.4.1-SNAPSHOT"
 )
 ```
 
@@ -104,12 +104,12 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots"),
   "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "test-tools" % "0.4.0"
+  "com.ubirch.key" %% "test-tools" % "0.4.1-SNAPSHOT"
 )
 ```
 
@@ -117,10 +117,10 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases")
+  Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "util" % "0.4.0"
+  "com.ubirch.key" %% "util" % "0.4.1-SNAPSHOT"
 )
 ```
 
@@ -128,11 +128,11 @@ libraryDependencies ++= Seq(
 
 ```scala
 resolvers ++= Seq(
-  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots"),
   "anormcypher" at "http://repo.anormcypher.org/", // needed by dependency org.anormcypher:anormcypher
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "utilsNeo4j" % "0.4.0"
+  "com.ubirch.key" %% "utilsNeo4j" % "0.4.1-SNAPSHOT"
 )
 ```

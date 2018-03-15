@@ -1,5 +1,9 @@
 ## Release History
 
+### Version 0.4.1 (tbd)
+
+* tbd
+
 ### Version 0.4.0 (2018-03-16)
 
 * bugfix: fields in the `rest.PublicKeyInfo` need to be in alphabetical order or otherwise signature verification failed
