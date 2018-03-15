@@ -6,7 +6,7 @@ package com.ubirch.key.model.rest
   */
 case class PublicKey(pubKeyInfo: PublicKeyInfo,
                      signature: String,
-                     previousPubKeySignature: Option[String]
+                     previousPubKeySignature: Option[String] = None
                     )
 
 case class PublicKeys(publicKeys: Set[PublicKey])

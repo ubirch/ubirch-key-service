@@ -13,7 +13,7 @@ import org.joda.time.DateTime
 case class PublicKeyInfo(algorithm: String,
                          created: DateTime,
                          hwDeviceId: String,
-                         previousPubKeyId: Option[String],
+                         previousPubKeyId: Option[String] = None,
                          pubKey: String,
                          pubKeyId: String,
                          validNotAfter: Option[DateTime] = None,
