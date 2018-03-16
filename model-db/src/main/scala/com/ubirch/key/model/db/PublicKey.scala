@@ -27,7 +27,7 @@ case class PublicKeyInfo(algorithm: String = "ed25519-sha-512",
                          hwDeviceId: String,
                          previousPubKeyId: Option[String] = None,
                          pubKey: String,
-                         pubKeyId: Option[String] = None,
+                         pubKeyId: String,
                          validNotAfter: Option[DateTime] = None,
                          validNotBefore: DateTime = new DateTime()
                         )

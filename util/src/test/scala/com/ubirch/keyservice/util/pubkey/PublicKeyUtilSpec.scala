@@ -1,16 +1,15 @@
 package com.ubirch.keyservice.util.pubkey
 
 import com.ubirch.crypto.ecc.EccUtil
-import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo}
 import com.ubirch.key.model._
+import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo}
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.{Json4sUtil, JsonFormats}
 import com.ubirch.util.uuid.UUIDUtil
-
 import org.joda.time.format.ISODateTimeFormat
 import org.json4s.Formats
-import org.scalatest.{FeatureSpec, Matchers}
 import org.json4s.native.Serialization.write
+import org.scalatest.{FeatureSpec, Matchers}
 
 /**
   * author: cvandrei
@@ -40,7 +39,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = Some(oldPublicKey),
         pubKey = newPublicKey,
-        pubKeyId = Some(newPublicKey),
+        pubKeyId = newPublicKey,
         validNotAfter = Some(inSixMonths),
         validNotBefore = now
       )
@@ -67,7 +66,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = None,
         pubKey = newPublicKey,
-        pubKeyId = None,
+        pubKeyId = UUIDUtil.uuidStr,
         validNotAfter = None,
         validNotBefore = now
       )
@@ -90,6 +89,7 @@ class PublicKeyUtilSpec extends FeatureSpec
       val (oldPublicKey, oldPrivateKey) = EccUtil.generateEccKeyPairEncoded
       val (newPublicKey, newPrivateKey) = EccUtil.generateEccKeyPairEncoded
       val hardwareDeviceId = UUIDUtil.uuid
+      val newPublicKeyId = UUIDUtil.uuidStr
 
       val now = DateUtil.nowUTC
       val inSixMonths = now.plusMonths(6)
@@ -99,7 +99,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = Some(oldPublicKey),
         pubKey = newPublicKey,
-        pubKeyId = Some(newPublicKey),
+        pubKeyId = newPublicKeyId,
         validNotAfter = Some(inSixMonths),
         validNotBefore = now
       )
@@ -123,6 +123,7 @@ class PublicKeyUtilSpec extends FeatureSpec
       val (oldPublicKey, _) = EccUtil.generateEccKeyPairEncoded
       val (newPublicKey, newPrivateKey) = EccUtil.generateEccKeyPairEncoded
       val hardwareDeviceId = UUIDUtil.uuid
+      val newPublicKeyId = UUIDUtil.uuidStr
 
       val now = DateUtil.nowUTC
       val inSixMonths = now.plusMonths(6)
@@ -132,7 +133,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = Some(oldPublicKey),
         pubKey = newPublicKey,
-        pubKeyId = Some(newPublicKey),
+        pubKeyId = newPublicKeyId,
         validNotAfter = Some(inSixMonths),
         validNotBefore = now
       )
@@ -155,6 +156,7 @@ class PublicKeyUtilSpec extends FeatureSpec
       val (_, oldPrivateKey) = EccUtil.generateEccKeyPairEncoded
       val (newPublicKey, newPrivateKey) = EccUtil.generateEccKeyPairEncoded
       val hardwareDeviceId = UUIDUtil.uuid
+      val newPublicKeyId = UUIDUtil.uuidStr
 
       val now = DateUtil.nowUTC
       val pubKeyInfo = PublicKeyInfo(
@@ -163,7 +165,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = None,
         pubKey = newPublicKey,
-        pubKeyId = None,
+        pubKeyId = newPublicKeyId,
         validNotAfter = None,
         validNotBefore = now
       )
@@ -186,6 +188,7 @@ class PublicKeyUtilSpec extends FeatureSpec
       // prepare
       val (newPublicKey, newPrivateKey) = EccUtil.generateEccKeyPairEncoded
       val hardwareDeviceId = UUIDUtil.uuid
+      val newPublicKeyId = UUIDUtil.uuidStr
 
       val now = DateUtil.nowUTC
       val pubKeyInfo = PublicKeyInfo(
@@ -194,7 +197,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = None,
         pubKey = newPublicKey,
-        pubKeyId = None,
+        pubKeyId = newPublicKeyId,
         validNotAfter = None,
         validNotBefore = now
       )
@@ -223,7 +226,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = None,
         pubKey = newPublicKey,
-        pubKeyId = Some(newPublicKey),
+        pubKeyId = newPublicKey,
         validNotAfter = None,
         validNotBefore = now
       )

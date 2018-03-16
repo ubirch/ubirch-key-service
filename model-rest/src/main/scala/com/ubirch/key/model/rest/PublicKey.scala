@@ -32,7 +32,7 @@ case class PublicKeyInfo(algorithm: String,
                          hwDeviceId: String,
                          previousPubKeyId: Option[String] = None,
                          pubKey: String,
-                         pubKeyId: Option[String] = None,
+                         pubKeyId: String,
                          validNotAfter: Option[DateTime] = None,
                          validNotBefore: DateTime
                         )
