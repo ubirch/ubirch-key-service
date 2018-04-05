@@ -1,6 +1,6 @@
 ## Release History
 
-### Version 0.5.0 (tbd)
+### Version 0.5.0 (2018-04-05)
 
 * rollback: field `PublicKeyInfo.pubKeyId` is mandatory again in DB and REST model
 
