@@ -14,6 +14,7 @@ object RouteConstants {
   final val deepCheck = "deepCheck"
 
   final val pubKey = "pubkey"
+  final val mpack = "mpack"
   final val current = "current"
   final val hardwareId = "hardwareId"
 
@@ -23,6 +24,9 @@ object RouteConstants {
   val pathDeepCheck = s"$pathPrefix/$deepCheck"
 
   val pathPubKey = s"$pathPrefix/$pubKey"
+
+  val pathPubKeyMsgPack = s"$pathPrefix/$pubKey/$mpack"
+
   private val pathPubKeyCurrentHardwareId = s"$pathPubKey/$current/$hardwareId"
   def pathPubKeyCurrentHardwareId(hardwareId: String): String = s"$pathPubKeyCurrentHardwareId/$hardwareId"
 
