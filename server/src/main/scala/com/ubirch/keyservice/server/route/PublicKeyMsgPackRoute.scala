@@ -13,10 +13,13 @@ import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.model.JsonResponse
 import com.ubirch.util.rest.akka.directives.CORSDirective
 import org.anormcypher.Neo4jREST
+import org.apache.commons.codec.binary.Hex
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 import scala.language.postfixOps
+
+import scala.collection.JavaConverters._
 
 /**
   * author: cvandrei
@@ -33,14 +36,15 @@ class PublicKeyMsgPackRoute(implicit neo4jREST: Neo4jREST)
 
   private val pubKeyActor = system.actorOf(PublicKeyActor.props(), ActorNames.PUB_KEY)
 
-  val route: Route = {
+  val route: Route = pathPrefix(RouteConstants.pubKey / RouteConstants.mpack) {
+    pathEnd {
+      post {
+        entity(as[Array[Byte]]) { binData =>
 
-    pathPrefix(RouteConstants.pubKey / RouteConstants.mpack) {
-      pathEnd {
-        post {
-          entity(as[Array[Byte]]) { binData =>
-            complete(StatusCodes.Accepted -> JsonResponse(message = "pubKey created").toJsonString)
-          }
+          val hexData = Hex.encodeHexString(binData)
+          logger.debug(s"got msgPack: $hexData")
+
+          complete(StatusCodes.Accepted -> JsonResponse(message = "pubKey created").toJsonString)
         }
       }
     }
