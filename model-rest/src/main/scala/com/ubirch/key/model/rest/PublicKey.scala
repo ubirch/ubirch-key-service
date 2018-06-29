@@ -11,10 +11,12 @@ import org.joda.time.DateTime
   * @param pubKeyInfo public key details
   * @param signature signature of field _pubKeyInfo_ created with current key pair
   * @param previousPubKeySignature (optional) signature of field _pubKeyInfo_ created with previous key pair
+  * @param raw the raw data of the public key structure (in case it is binary)
   */
 case class PublicKey(pubKeyInfo: PublicKeyInfo,
                      signature: String,
-                     previousPubKeySignature: Option[String] = None
+                     previousPubKeySignature: Option[String] = None,
+                     raw: Option[String] = None
                     )
 
 /**

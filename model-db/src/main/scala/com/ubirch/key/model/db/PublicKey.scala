@@ -9,7 +9,8 @@ import org.joda.time.DateTime
   */
 case class PublicKey(pubKeyInfo: PublicKeyInfo,
                      signature: String,
-                     previousPubKeySignature: Option[String] = None
+                     previousPubKeySignature: Option[String] = None,
+                     raw: Option[String] = None
                     )
 
 /**

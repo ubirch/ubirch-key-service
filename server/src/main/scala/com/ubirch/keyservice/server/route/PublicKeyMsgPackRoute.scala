@@ -1,25 +1,25 @@
 package com.ubirch.keyservice.server.route
 
-import akka.actor.ActorSystem
+import java.io.ByteArrayInputStream
+
+import akka.actor.ActorRef
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
-import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.StrictLogging
-import com.ubirch.keyservice.config.Config
+import com.ubirch.core.protocol.msgpack.UbMsgPacker
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo}
 import com.ubirch.keyservice.server.actor.PublicKeyActor
 import com.ubirch.keyservice.server.actor.util.ActorNames
-import com.ubirch.keyservice.util.server.RouteConstants
+import com.ubirch.keyservice.util.server.RouteConstants.{pubKey, mpack}
 import com.ubirch.util.http.response.ResponseUtil
-import com.ubirch.util.model.JsonResponse
+import com.ubirch.util.model.JsonErrorResponse
 import com.ubirch.util.rest.akka.directives.CORSDirective
+import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 import org.anormcypher.Neo4jREST
 import org.apache.commons.codec.binary.Hex
+import org.msgpack.ScalaMessagePack
 
-import scala.concurrent.ExecutionContextExecutor
-import scala.concurrent.duration._
 import scala.language.postfixOps
-
-import scala.collection.JavaConverters._
 
 /**
   * author: cvandrei
@@ -28,23 +28,36 @@ import scala.collection.JavaConverters._
 class PublicKeyMsgPackRoute(implicit neo4jREST: Neo4jREST)
   extends ResponseUtil
     with CORSDirective
-    with StrictLogging {
+    with StrictLogging
+    with PublicKeyActions {
 
-  implicit val system = ActorSystem()
-  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
-  implicit val timeout = Timeout(Config.actorTimeout seconds)
+  override protected val pubKeyActor: ActorRef = system.actorOf(PublicKeyActor.props(), ActorNames.PUB_KEY)
 
-  private val pubKeyActor = system.actorOf(PublicKeyActor.props(), ActorNames.PUB_KEY)
-
-  val route: Route = pathPrefix(RouteConstants.pubKey / RouteConstants.mpack) {
+  val route: Route = pathPrefix(pubKey / mpack) {
     pathEnd {
-      post {
-        entity(as[Array[Byte]]) { binData =>
+      respondWithCORS {
+        post {
+          entity(as[Array[Byte]]) { binData =>
+            val unpacker = ScalaMessagePack.messagePack.createUnpacker(new ByteArrayInputStream(binData))
 
-          val hexData = Hex.encodeHexString(binData)
-          logger.debug(s"got msgPack: $hexData")
+            val hexData = Hex.encodeHexString(binData)
+            logger.debug(s"got msgPack: $hexData")
 
-          complete(StatusCodes.Accepted -> JsonResponse(message = "pubKey created").toJsonString)
+            UbMsgPacker.processUbirchprot(binData).map { ubm =>
+              PublicKey(
+                pubKeyInfo = ubm.payloads.data.extract[PublicKeyInfo],
+                signature = ubm.signature.getOrElse(""),
+                previousPubKeySignature = ubm.prevSignature,
+                raw = Some(ubm.rawMessage)
+              )
+            }.headOption match {
+              case Some(publicKey) =>
+                createPublicKey(publicKey)
+              case None =>
+                logger.error("failed to create public key (server error)")
+                complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "request does not contain a key"))
+            }
+          }
         }
       }
     }

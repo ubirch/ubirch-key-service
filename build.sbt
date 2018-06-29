@@ -71,7 +71,7 @@ lazy val cmdtools = project
 
 lazy val core = project
   .settings(commonSettings: _*)
-  .dependsOn(modelDb, util, testTools % "test")
+  .dependsOn(modelDb, modelRest, util, testTools % "test")
   .settings(
     description := "business logic",
     libraryDependencies ++= depCore,
@@ -163,6 +163,7 @@ lazy val depCore = Seq(
   ubirchDeepCheckModel,
   ubirchUuid,
   anormCypher,
+  msgpackScala,
   ubirchFutures % "test",
   scalatest % "test"
 ) ++ scalaLogging
@@ -238,6 +239,7 @@ val typesafePlayG = "com.typesafe.play"
 lazy val scalatest = "org.scalatest" %% "scalatest" % scalaTestV
 
 lazy val json4sNative = json4sG %% "json4s-native" % json4sV
+lazy val msgpackScala = "org.msgpack" %% "msgpack-scala" % "0.6.11"
 
 lazy val playWS = Seq(
   typesafePlayG %% "play-ws" % playV,
@@ -275,7 +277,7 @@ lazy val ubirchJson = ubirchUtilG %% "json" % "0.4.3" excludeAll (excludedLogger
 lazy val ubirchRestAkkaHttp = ubirchUtilG %% "rest-akka-http" % "0.3.8" excludeAll (excludedLoggers: _*)
 lazy val ubirchRestAkkaHttpTest = ubirchUtilG %% "rest-akka-http-test" % "0.3.8" excludeAll (excludedLoggers: _*)
 lazy val ubirchResponse = ubirchUtilG %% "response-util" % "0.2.4" excludeAll (excludedLoggers: _*)
-lazy val ubirchUuid = ubirchUtilG %% "uuid" % "0.1.1" excludeAll (excludedLoggers: _*)
+lazy val ubirchUuid = ubirchUtilG %% "uuid" % "0.1.2" excludeAll (excludedLoggers: _*)
 
 lazy val anormCypher = "org.anormcypher" %% "anormcypher" % "0.9.1"
 
