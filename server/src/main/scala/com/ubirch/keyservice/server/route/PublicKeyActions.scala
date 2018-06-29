@@ -15,7 +15,6 @@ import com.ubirch.keyservice.server.actor.util.ActorNames
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
-import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Failure, Success}
@@ -42,26 +41,26 @@ trait PublicKeyActions {
 
       case Failure(t) =>
         logger.error("create public key call responded with an unhandled message (check PublicKeyRoute for bugs!!!)", t)
-        complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
+        complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end").toJsonString)
 
       case Success(resp) =>
 
         resp match {
 
           case Some(createPubKey: PublicKey) =>
-            complete(createPubKey)
+            complete(createPubKey.toString)
 
           case jr: JsonErrorResponse =>
             logger.error(s"failed to create public key ${jr.errorMessage}")
-            complete(StatusCodes.BadRequest -> jr)
+            complete(StatusCodes.BadRequest -> jr.toJsonString)
 
           case None =>
             logger.error("failed to create public key (None)")
-            complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "CreateError", errorMessage = "failed to create public key"))
+            complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "CreateError", errorMessage = "failed to create public key").toJsonString)
 
           case _ =>
             logger.error("failed to create public key (server error)")
-            complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key"))
+            complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key").toJsonString)
 
         }
 
@@ -75,21 +74,21 @@ trait PublicKeyActions {
 
       case Failure(t) =>
         logger.error("query currently valid public keys call responded with an unhandled message (check PublicKeyRoute for bugs!!!)", t)
-        complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
+        complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end").toJsonString)
 
       case Success(resp) =>
 
         resp match {
 
           case publicKeys: PublicKeys =>
-            complete(StatusCodes.OK -> publicKeys.publicKeys)
+            complete(StatusCodes.OK -> publicKeys.publicKeys.toString)
 
           case jr: JsonErrorResponse =>
-            complete(StatusCodes.BadRequest -> jr)
+            complete(StatusCodes.BadRequest -> jr.toJsonString)
 
           case _ =>
             logger.error("failed to create public key (server error)")
-            complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key"))
+            complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key").toJsonString)
 
         }
 
@@ -103,21 +102,22 @@ trait PublicKeyActions {
 
       case Failure(t) =>
         logger.error("find public key call responded with an unhandled message (check PublicKeyRoute for bugs!!!)", t)
-        complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
+        complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end").toJsonString)
 
       case Success(resp) =>
 
         resp match {
 
-          case Some(createPubKey: db.PublicKey) => complete(Json4sUtil.any2any[rest.PublicKey](createPubKey))
+          case Some(createPubKey: db.PublicKey) =>
+            complete(Json4sUtil.any2any[rest.PublicKey](createPubKey).toString)
 
           case None =>
             logger.error(s"failed to find public key ($publicKey)")
-            complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "QueryError", errorMessage = "failed to find public key"))
+            complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "QueryError", errorMessage = "failed to find public key").toJsonString)
 
           case _ =>
             logger.error("failed to find public key (server error)")
-            complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to find public key"))
+            complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to find public key").toJsonString)
 
         }
 

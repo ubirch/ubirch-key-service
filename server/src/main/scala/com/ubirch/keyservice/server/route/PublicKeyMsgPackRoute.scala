@@ -14,7 +14,6 @@ import com.ubirch.keyservice.util.server.RouteConstants.{pubKey, mpack}
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.model.JsonErrorResponse
 import com.ubirch.util.rest.akka.directives.CORSDirective
-import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 import org.anormcypher.Neo4jREST
 import org.apache.commons.codec.binary.Hex
 import org.msgpack.ScalaMessagePack
@@ -38,8 +37,6 @@ class PublicKeyMsgPackRoute(implicit neo4jREST: Neo4jREST)
       respondWithCORS {
         post {
           entity(as[Array[Byte]]) { binData =>
-            val unpacker = ScalaMessagePack.messagePack.createUnpacker(new ByteArrayInputStream(binData))
-
             val hexData = Hex.encodeHexString(binData)
             logger.debug(s"got msgPack: $hexData")
 
@@ -55,7 +52,7 @@ class PublicKeyMsgPackRoute(implicit neo4jREST: Neo4jREST)
                 createPublicKey(publicKey)
               case None =>
                 logger.error("failed to create public key (server error)")
-                complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "request does not contain a key"))
+                complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "request does not contain a key").toJsonString)
             }
           }
         }
