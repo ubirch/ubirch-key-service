@@ -1,7 +1,7 @@
 package com.ubirch.core.protocol.msgpack
 
 import java.io.ByteArrayInputStream
-import java.util.Base64
+import java.util.{Base64, UUID}
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 import com.ubirch.core.protocol.{UbMessage, UbPayloads}
@@ -9,6 +9,7 @@ import com.ubirch.crypto.hash.HashUtil
 import com.ubirch.util.json.{Json4sUtil, MyJsonProtocol}
 import com.ubirch.util.uuid.UUIDUtil
 import org.apache.commons.codec.binary.Hex
+import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
@@ -163,7 +164,7 @@ object UbMsgPacker
 
   private def processKeyRegistrationPayload(payload: Value): UbPayloads = {
     UbPayloads(
-      data = parseConfigMap(payload.asMapValue()),
+      data = parseKeyRegMap(payload.asMapValue()),
       meta = None,
       config = None
     )
@@ -237,6 +238,48 @@ object UbMsgPacker
     json
   }
 
+  private def parseKeyRegMap(mVal: MapValue): JValue = {
+    val dateTimeFormat = ISODateTimeFormat.dateTime().withZoneUTC()
+    val res = mVal.keySet.toArray.map { key =>
+      val keyStr = String.valueOf(key).replace("\"", "")
+      val curVal = mVal.get(key)
+      curVal.getType match {
+        case ValueType.INTEGER if keyStr == "validNotBefore" || keyStr == "validNotAfter" || keyStr == "created" =>
+           val curValVal = dateTimeFormat.print(curVal.asIntegerValue().getLong * 1000)
+          logger.debug(s"k: $keyStr ($key) -> v: $curValVal")
+          Some(keyStr -> JString(curValVal))
+        case ValueType.INTEGER =>
+          val curValVal = curVal.asIntegerValue().getLong
+          logger.debug(s"k: $keyStr ($key) -> v: $curValVal")
+          Some(keyStr -> JLong(curValVal))
+        case ValueType.RAW if keyStr == "pubKey" || keyStr == "pubKeyId" =>
+          val curValVal = new String(Base64.getEncoder.encode(curVal.asRawValue().getByteArray))
+          logger.debug(s"k: $keyStr ($key) -> v: $curValVal")
+          Some(keyStr -> JString(curValVal))
+        case ValueType.RAW if keyStr == "hwDeviceId" =>
+          val curValVal = UUIDUtil.fromByteArray(curVal.asRawValue().getByteArray).toString
+          logger.debug(s"k: $keyStr ($key) -> v: $curValVal")
+          Some(keyStr -> JString(curValVal))
+        case ValueType.RAW =>
+          val curValVal = curVal.asRawValue().getString
+          logger.debug(s"k: $keyStr ($key) -> v: $curValVal")
+          Some(keyStr -> JString(curValVal))
+        case _ =>
+          logger.debug("unsupported config type")
+          None
+      }
+    }.filter(_.isDefined).map(_.get).toList
+    val tmp = JObject(res)
+    val json = if(tmp \ "pubKeyId" == JNothing) {
+      JObject(("pubKeyId", tmp \ "pubKey") :: res)
+    } else {
+      tmp
+    }
+
+    logger.debug(compact(render(json)))
+    json
+  }
+
   private def parseConfigMap(mVal: MapValue): JValue = {
     val res = mVal.keySet.toArray.map { key =>
       val keyStr = String.valueOf(key).replace("\"", "")
@@ -247,7 +290,7 @@ object UbMsgPacker
           logger.debug(s"k: $keyStr ($key) -> v: $curValVal")
           Some(keyStr -> JLong(curValVal))
         case ValueType.RAW =>
-          val curValVal = curVal.asRawValue().getString
+            val curValVal = curVal.asRawValue().getString
           logger.debug(s"k: $keyStr ($key) -> v: $curValVal")
           Some(keyStr -> JString(curValVal))
         case _ =>

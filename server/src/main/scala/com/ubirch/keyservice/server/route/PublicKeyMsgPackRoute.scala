@@ -38,6 +38,7 @@ class PublicKeyMsgPackRoute(implicit neo4jREST: Neo4jREST)
             logger.debug(s"got msgPack: $hexData")
 
             UbMsgPacker.processUbirchprot(binData).map { ubm =>
+              val u = ubm.payloads.data
               PublicKey(
                 pubKeyInfo = ubm.payloads.data.extract[PublicKeyInfo],
                 signature = ubm.signature.getOrElse(""),
