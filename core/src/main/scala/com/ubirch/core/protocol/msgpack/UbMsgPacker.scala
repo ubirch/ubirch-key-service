@@ -149,14 +149,14 @@ object UbMsgPacker
 
   private def processPayload(messageType: Int, payload: Value): UbPayloads = {
     messageType match {
+      case 0x01 =>
+        processKeyRegistrationPayload(payload)
       case 0x53 =>
         throw new Exception("not implemented ubirch protocol T85")
-      case 84 =>
+      case 0x54 =>
         processT84Payload(payload)
-      case 85 =>
+      case 0x55 =>
         throw new Exception("not implemented ubirch protocol T85")
-      case 1 =>
-        processKeyRegistrationPayload(payload)
       case n: Int =>
         throw new Exception(s"unsupported msg type $n")
     }
