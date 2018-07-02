@@ -19,6 +19,7 @@ import com.ubirch.util.model.JsonErrorResponse
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Failure, Success}
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 /**
   * Add description.
