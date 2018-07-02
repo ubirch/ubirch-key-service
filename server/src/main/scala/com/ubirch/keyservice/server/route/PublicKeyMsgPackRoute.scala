@@ -1,7 +1,5 @@
 package com.ubirch.keyservice.server.route
 
-import java.io.ByteArrayInputStream
-
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
@@ -10,13 +8,12 @@ import com.ubirch.core.protocol.msgpack.UbMsgPacker
 import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo}
 import com.ubirch.keyservice.server.actor.PublicKeyActor
 import com.ubirch.keyservice.server.actor.util.ActorNames
-import com.ubirch.keyservice.util.server.RouteConstants.{pubKey, mpack}
+import com.ubirch.keyservice.util.server.RouteConstants.{mpack, pubKey}
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.model.JsonErrorResponse
 import com.ubirch.util.rest.akka.directives.CORSDirective
 import org.anormcypher.Neo4jREST
 import org.apache.commons.codec.binary.Hex
-import org.msgpack.ScalaMessagePack
 
 import scala.language.postfixOps
 
