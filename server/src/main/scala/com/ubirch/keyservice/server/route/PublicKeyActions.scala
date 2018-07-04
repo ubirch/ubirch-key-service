@@ -88,7 +88,7 @@ trait PublicKeyActions {
             complete(StatusCodes.BadRequest -> jr.toJsonString)
 
           case _ =>
-            logger.error("failed to create public key (server error)")
+            logger.error("failed to find valid public key (server error)")
             complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key").toJsonString)
 
         }
