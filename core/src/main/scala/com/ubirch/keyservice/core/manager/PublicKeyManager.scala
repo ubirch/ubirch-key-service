@@ -49,7 +49,7 @@ object PublicKeyManager extends StrictLogging {
               Some(pubKey)
 
             case false =>
-              val errMsg = s"failed to create publicKey: ${pubKey.pubKeyInfo.pubKey}"
+              val errMsg = s"failed to create publicKey: ${cypherStr}"
               logger.error(errMsg)
               throw new Exception(errMsg)
           }
