@@ -113,7 +113,7 @@ trait PublicKeyActions {
         resp match {
 
           case Some(createPubKey: db.PublicKey) =>
-            complete(Json4sUtil.any2any[rest.PublicKey](createPubKey).toString)
+            complete(StatusCodes.OK -> createPubKey)
 
           case None =>
             logger.error(s"failed to find public key ($publicKey)")
