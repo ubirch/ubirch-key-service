@@ -45,11 +45,12 @@ trait PublicKeyActions {
         complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end").toJsonString)
 
       case Success(resp) =>
+        import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 
         resp match {
 
           case Some(createPubKey: PublicKey) =>
-            complete(createPubKey.toString)
+            complete(StatusCodes.OK -> createPubKey)
 
           case jr: JsonErrorResponse =>
             logger.error(s"failed to create public key ${jr.errorMessage}")
@@ -79,6 +80,7 @@ trait PublicKeyActions {
 
       case Success(resp) =>
         import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
+
         resp match {
 
           case publicKeys: PublicKeys =>
