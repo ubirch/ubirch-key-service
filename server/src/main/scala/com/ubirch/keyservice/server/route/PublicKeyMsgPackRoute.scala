@@ -39,18 +39,29 @@ class PublicKeyMsgPackRoute(implicit neo4jREST: Neo4jREST)
 
             UbMsgPacker.processUbirchprot(binData).map { ubm =>
               val u = ubm.payloads.data
-              PublicKey(
-                pubKeyInfo = ubm.payloads.data.extract[PublicKeyInfo],
-                signature = ubm.signature.getOrElse(""),
-                previousPubKeySignature = ubm.prevSignature,
-                raw = Some(ubm.rawMessage)
-              )
+
+              ubm.payloads.data.extractOpt[PublicKeyInfo] match {
+                case Some(pki) =>
+                  Some(PublicKey(
+                    pubKeyInfo = pki,
+                    signature = ubm.signature.getOrElse(""),
+                    previousPubKeySignature = ubm.prevSignature,
+                    raw = Some(ubm.rawMessage)
+                  ))
+                case None =>
+                  None
+              }
             }.headOption match {
-              case Some(publicKey) =>
-                createPublicKey(publicKey)
+              case Some(publicKey) if publicKey.isDefined =>
+                createPublicKey(publicKey.get)
+              case Some(publicKey) if publicKey.isEmpty =>
+                logger.error("failed to parse input")
+                import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
+                complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ValidationError", errorMessage = "request does not contain a key"))
               case None =>
                 logger.error("failed to create public key (server error)")
-                complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "request does not contain a key").toJsonString)
+                import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
+                complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "request does not contain a key"))
             }
           }
         }
