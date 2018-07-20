@@ -184,6 +184,9 @@ object PublicKeyManager extends StrictLogging {
     if (publicKey.previousPubKeySignature.isDefined) {
       keyValue += "previousPubKeySignature" -> publicKey.previousPubKeySignature.get
     }
+    if (publicKey.raw.isDefined) {
+      keyValue += "raw" -> publicKey.raw.get
+    }
 
     keyValue
 
@@ -244,7 +247,8 @@ object PublicKeyManager extends StrictLogging {
           validNotAfter = validNotAfter
         ),
         signature = props("signature").asInstanceOf[String],
-        previousPubKeySignature = previousPublicKeySignature
+        previousPubKeySignature = previousPublicKeySignature,
+        raw = props.get("raw").asInstanceOf[Option[String]]
       )
 
     } toSet

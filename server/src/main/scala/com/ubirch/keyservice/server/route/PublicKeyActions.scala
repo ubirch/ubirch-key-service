@@ -78,11 +78,11 @@ trait PublicKeyActions {
         complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end").toJsonString)
 
       case Success(resp) =>
-
+        import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
         resp match {
 
           case publicKeys: PublicKeys =>
-            complete(StatusCodes.OK -> publicKeys.publicKeys.toString)
+            complete(StatusCodes.OK -> publicKeys.publicKeys)
 
           case jr: JsonErrorResponse =>
             complete(StatusCodes.BadRequest -> jr.toJsonString)
@@ -106,6 +106,7 @@ trait PublicKeyActions {
         complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end").toJsonString)
 
       case Success(resp) =>
+        import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 
         resp match {
 
