@@ -1,11 +1,9 @@
-packagedArtifacts in file(".") := Map.empty // disable publishing of root/default project
-
 // see http://www.scala-sbt.org/0.13/docs/Parallel-Execution.html for details
 concurrentRestrictions in Global := Seq(
   Tags.limit(Tags.Test, 1)
 )
 
-lazy val commonSettings = Seq(
+val commonSettings = Seq(
 
   scalaVersion := "2.11.8",
   scalacOptions ++= Seq("-feature"),
@@ -16,7 +14,7 @@ lazy val commonSettings = Seq(
     url("https://github.com/ubirch/ubirch-key-service"),
     "scm:git:git@github.com:ubirch/ubirch-key-service.git"
   )),
-  version := "0.5.1-SNAPSHOT",
+  version := "0.6.0",
   test in assembly := {},
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases"),
@@ -30,7 +28,10 @@ lazy val commonSettings = Seq(
  ********************************************************/
 
 lazy val keyService = (project in file("."))
-  .settings(commonSettings: _*)
+  .settings(
+    commonSettings,
+    skip in publish := true
+  )
   .aggregate(
     clientRest,
     cmdtools,
