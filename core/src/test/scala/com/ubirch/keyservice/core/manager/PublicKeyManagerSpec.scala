@@ -4,7 +4,6 @@ import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete}
 import com.ubirch.keyService.testTools.data.generator.TestDataGeneratorDb
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
-import com.ubirch.util.futures.FutureUtil
 import com.ubirch.util.uuid.UUIDUtil
 
 import org.joda.time.{DateTime, DateTimeZone}
@@ -632,7 +631,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       }
     }
 
-    FutureUtil.unfoldInnerFutures(resultsFuture.toList) map { results =>
+    Future.sequence(resultsFuture.toList) map { results =>
       results.forall(b => b)
     }
 

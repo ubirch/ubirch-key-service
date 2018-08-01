@@ -5,7 +5,7 @@ concurrentRestrictions in Global := Seq(
 
 val commonSettings = Seq(
 
-  scalaVersion := "2.11.8",
+  scalaVersion := "2.11.12",
   scalacOptions ++= Seq("-feature"),
   organization := "com.ubirch.key",
 
@@ -14,7 +14,7 @@ val commonSettings = Seq(
     url("https://github.com/ubirch/ubirch-key-service"),
     "scm:git:git@github.com:ubirch/ubirch-key-service.git"
   )),
-  version := "0.6.1-SNAPSHOT",
+  version := "0.7.0-SNAPSHOT",
   test in assembly := {},
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases"),
@@ -46,7 +46,7 @@ lazy val keyService = (project in file("."))
   )
 
 lazy val clientRest = (project in file("client-rest"))
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .dependsOn(config, modelRest, util, testTools % "test", core % "test")
   .settings(
     name := "client-rest",
@@ -55,14 +55,14 @@ lazy val clientRest = (project in file("client-rest"))
   )
 
 lazy val config = project
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .settings(
     description := "key-service specific config and config tools",
     libraryDependencies += ubirchConfig
   )
 
 lazy val cmdtools = project
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .dependsOn(config, util, utilsNeo4j)
   .settings(
     description := "command line tools",
@@ -71,7 +71,7 @@ lazy val cmdtools = project
   )
 
 lazy val core = project
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .dependsOn(modelDb, modelRest, util, testTools % "test")
   .settings(
     description := "business logic",
@@ -80,7 +80,7 @@ lazy val core = project
   )
 
 lazy val modelDb = (project in file("model-db"))
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .settings(
     name := "model-db",
     description := "DB models",
@@ -88,7 +88,7 @@ lazy val modelDb = (project in file("model-db"))
   )
 
 lazy val modelRest = (project in file("model-rest"))
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .settings(
     name := "model-rest",
     description := "JSON models",
@@ -96,7 +96,7 @@ lazy val modelRest = (project in file("model-rest"))
   )
 
 lazy val server = project
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .settings(mergeStrategy: _*)
   .dependsOn(config, core, modelDb, modelRest, util, utilsNeo4j, testTools % "test")
   .enablePlugins(DockerPlugin)
@@ -114,7 +114,7 @@ lazy val server = project
   )
 
 lazy val testTools = (project in file("test-tools"))
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .dependsOn(config, modelDb, modelRest, util, utilsNeo4j)
   .settings(
     name := "test-tools",
@@ -124,7 +124,7 @@ lazy val testTools = (project in file("test-tools"))
   )
 
 lazy val util = project
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .dependsOn(modelDb, modelRest % "test")
   .settings(
     description := "utils",
@@ -132,7 +132,7 @@ lazy val util = project
   )
 
 lazy val utilsNeo4j = (project in file("util-neo4j"))
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .settings(
     name := "utils-neo4j",
     description := "Neo4j utils",
@@ -146,6 +146,7 @@ lazy val utilsNeo4j = (project in file("util-neo4j"))
 
 lazy val depClientRest = Seq(
   akkaHttp,
+  akkaStream,
   akkaSlf4j,
   ubirchResponse,
   ubirchDeepCheckModel
@@ -165,7 +166,6 @@ lazy val depCore = Seq(
   ubirchUuid,
   anormCypher,
   msgpackScala,
-  ubirchFutures % "test",
   scalatest % "test"
 ) ++ scalaLogging
 
@@ -186,10 +186,11 @@ lazy val depModelRest = Seq(
 lazy val depServer = Seq(
   akkaSlf4j,
   akkaHttp,
-  ubirchRestAkkaHttp,
-  ubirchRestAkkaHttpTest % "test",
+  akkaStream,
   anormCypher,
-  ubirchResponse
+  ubirchRestAkkaHttp,
+  ubirchResponse,
+  ubirchRestAkkaHttpTest % "test"
 )
 
 lazy val depTestTools = Seq(
@@ -216,38 +217,34 @@ lazy val depUtilsNeo4j = Seq(
  ********************************************************/
 
 // VERSIONS
-val akkaV = "2.4.19"
-val akkaHttpV = "10.0.9"
-val json4sV = "3.5.2"
-val playV = "2.4.11"
+val akkaV = "2.5.11"
+val akkaHttpV = "10.1.3"
+val json4sV = "3.6.0"
+val anormCypherV = "0.10.0"
 
 val scalaTestV = "3.0.1"
 
-lazy val logbackV = "1.2.3"
-lazy val logbackESV = "1.5"
-lazy val slf4jV = "1.7.25"
-lazy val log4jV = "2.9.1"
-lazy val scalaLogV = "3.7.2"
-lazy val scalaLogSLF4JV = "2.1.2"
+val logbackV = "1.2.3"
+val logbackESV = "1.5"
+val slf4jV = "1.7.25"
+val log4jV = "2.9.1"
+val scalaLogV = "3.7.2"
+val scalaLogSLF4JV = "2.1.2"
 
 
 // GROUP NAMES
 val ubirchUtilG = "com.ubirch.util"
 val json4sG = "org.json4s"
 val akkaG = "com.typesafe.akka"
-val typesafePlayG = "com.typesafe.play"
 
-lazy val scalatest = "org.scalatest" %% "scalatest" % scalaTestV
+val scalatest = "org.scalatest" %% "scalatest" % scalaTestV
 
-lazy val json4sNative = json4sG %% "json4s-native" % json4sV
-lazy val msgpackScala = "org.msgpack" %% "msgpack-scala" % "0.6.11"
+val anormCypher = "org.anormcypher" %% "anormcypher" % anormCypherV
 
-lazy val playWS = Seq(
-  typesafePlayG %% "play-ws" % playV,
-  akkaSlf4j
-)
+val json4sNative = json4sG %% "json4s-native" % json4sV
+val msgpackScala = "org.msgpack" %% "msgpack-scala" % "0.6.11"
 
-lazy val scalaLogging = Seq(
+val scalaLogging = Seq(
   "org.slf4j" % "slf4j-api" % slf4jV,
   "org.slf4j" % "log4j-over-slf4j" % slf4jV,
   "org.slf4j" % "jul-to-slf4j" % slf4jV,
@@ -259,38 +256,36 @@ lazy val scalaLogging = Seq(
   "com.internetitem" % "logback-elasticsearch-appender" % logbackESV
 )
 
-lazy val akkaActor = akkaG %% "akka-actor" % akkaV
-lazy val akkaHttp = akkaG %% "akka-http" % akkaHttpV
-lazy val akkaSlf4j = akkaG %% "akka-slf4j" % akkaV
+val akkaActor = akkaG %% "akka-actor" % akkaV
+val akkaHttp = akkaG %% "akka-http" % akkaHttpV
+val akkaSlf4j = akkaG %% "akka-slf4j" % akkaV
+val akkaStream = akkaG %% "akka-stream" % akkaV
 
-lazy val excludedLoggers = Seq(
+val excludedLoggers = Seq(
   ExclusionRule(organization = "com.typesafe.scala-logging"),
   ExclusionRule(organization = "org.slf4j"),
   ExclusionRule(organization = "ch.qos.logback")
 )
 
-lazy val ubirchConfig = ubirchUtilG %% "config" % "0.2.0" excludeAll (excludedLoggers: _*)
-lazy val ubirchCrypto = ubirchUtilG %% "crypto" % "0.4.7" excludeAll (excludedLoggers: _*)
-lazy val ubirchDate = ubirchUtilG %% "date" % "0.5.1" excludeAll (excludedLoggers: _*)
-lazy val ubirchDeepCheckModel = ubirchUtilG %% "deep-check-model" % "0.2.0" excludeAll (excludedLoggers: _*)
-lazy val ubirchFutures = ubirchUtilG %% "futures" % "0.1.1" excludeAll (excludedLoggers: _*)
-lazy val ubirchJson = ubirchUtilG %% "json" % "0.4.3" excludeAll (excludedLoggers: _*)
-lazy val ubirchRestAkkaHttp = ubirchUtilG %% "rest-akka-http" % "0.3.8" excludeAll (excludedLoggers: _*)
-lazy val ubirchRestAkkaHttpTest = ubirchUtilG %% "rest-akka-http-test" % "0.3.8" excludeAll (excludedLoggers: _*)
-lazy val ubirchResponse = ubirchUtilG %% "response-util" % "0.2.4" excludeAll (excludedLoggers: _*)
-lazy val ubirchUuid = ubirchUtilG %% "uuid" % "0.1.2" excludeAll (excludedLoggers: _*)
-
-lazy val anormCypher = "org.anormcypher" %% "anormcypher" % "0.9.1"
+val ubirchConfig = ubirchUtilG %% "config" % "0.2.1" excludeAll (excludedLoggers: _*)
+val ubirchCrypto = ubirchUtilG %% "crypto" % "0.4.9" excludeAll (excludedLoggers: _*)
+val ubirchDate = ubirchUtilG %% "date" % "0.5.2" excludeAll (excludedLoggers: _*)
+val ubirchDeepCheckModel = ubirchUtilG %% "deep-check-model" % "0.3.0" excludeAll (excludedLoggers: _*)
+val ubirchJson = ubirchUtilG %% "json" % "0.5.0" excludeAll (excludedLoggers: _*)
+val ubirchResponse = ubirchUtilG %% "response-util" % "0.4.0" excludeAll (excludedLoggers: _*)
+val ubirchRestAkkaHttp = ubirchUtilG %% "rest-akka-http" % "0.4.0" excludeAll (excludedLoggers: _*)
+val ubirchRestAkkaHttpTest = ubirchUtilG %% "rest-akka-http-test" % "0.4.0" excludeAll (excludedLoggers: _*)
+val ubirchUuid = ubirchUtilG %% "uuid" % "0.1.3" excludeAll (excludedLoggers: _*)
 
 /*
  * RESOLVER
  ********************************************************/
 
-lazy val resolverSeebergerJson = Resolver.bintrayRepo("hseeberger", "maven")
-lazy val resolverAnormcypher = "anormcypher" at "http://repo.anormcypher.org/"
-lazy val resolverTypesafeReleases = "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
+val resolverSeebergerJson = Resolver.bintrayRepo("hseeberger", "maven")
+val resolverAnormcypher = "anormcypher" at "http://repo.anormcypher.org/"
+val resolverTypesafeReleases = "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
 
-lazy val anormCypherResolvers = Seq(resolverAnormcypher, resolverTypesafeReleases)
+val anormCypherResolvers = Seq(resolverAnormcypher, resolverTypesafeReleases)
 
 /*
  * MISC
