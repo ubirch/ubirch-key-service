@@ -6,6 +6,8 @@ import com.ubirch.keyservice.config.{Config, Neo4jConfig}
 
 import org.anormcypher.{Neo4jConnection, Neo4jREST}
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.ning.NingWSClient
 
@@ -17,6 +19,9 @@ import scala.concurrent.ExecutionContextExecutor
   */
 trait CmdBase extends App
   with StrictLogging {
+
+  protected implicit val system: ActorSystem = ActorSystem()
+  protected implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   protected implicit val wsClient: WSClient = NingWSClient()
   protected val neo4jConfig: Neo4jConfig = Config.neo4jConfig()
@@ -30,6 +35,13 @@ trait CmdBase extends App
   protected implicit val ec: ExecutionContextExecutor = scala.concurrent.ExecutionContext.global
 
   run()
+
+  Runtime.getRuntime.addShutdownHook(new Thread() {
+    override def run(): Unit = {
+      wsClient.close()
+      system.terminate()
+    }
+  })
 
   def close(): Unit = wsClient.close()
 

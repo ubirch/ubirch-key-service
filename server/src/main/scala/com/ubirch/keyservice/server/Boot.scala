@@ -61,16 +61,16 @@ object Boot extends App with StrictLogging {
 
   }
 
-  private def registerShutdownHooks() = {
+  private def registerShutdownHooks(): Unit = {
 
     Runtime.getRuntime.addShutdownHook(new Thread() {
       override def run(): Unit = {
 
+        wsClient.close()
+
         bindingFuture
           .flatMap(_.unbind())
           .onComplete(_ => system.terminate())
-
-        wsClient.close()
 
       }
     })

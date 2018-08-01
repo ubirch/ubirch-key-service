@@ -27,11 +27,8 @@ trait Neo4jSpec extends AsyncFeatureSpec
   with BeforeAndAfterAll
   with StrictLogging {
 
-  implicit val system = ActorSystem()
-  system.registerOnTermination {
-    System.exit(0)
-  }
-  implicit val materializer = ActorMaterializer()
+  implicit val system: ActorSystem = ActorSystem()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   implicit val httpClient: HttpExt = Http()
 
@@ -45,6 +42,11 @@ trait Neo4jSpec extends AsyncFeatureSpec
     https = neo4jConfig.https
   )
   protected implicit val ec: ExecutionContextExecutor = scala.concurrent.ExecutionContext.global
+
+  system.registerOnTermination {
+    wsClient.close()
+    System.exit(0)
+  }
 
   override protected def beforeEach(): Unit = {
 
