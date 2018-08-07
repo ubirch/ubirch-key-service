@@ -2,7 +2,7 @@ package com.ubirch.keyservice.server.route
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.keyservice.config.Config
+import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.server.actor.DeepCheckActor
 import com.ubirch.keyservice.server.actor.util.ActorNames
 import com.ubirch.keyservice.util.server.RouteConstants
@@ -10,7 +10,7 @@ import com.ubirch.util.deepCheck.model.{DeepCheckRequest, DeepCheckResponse}
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.rest.akka.directives.CORSDirective
 
-import org.anormcypher.Neo4jConnection
+import org.neo4j.driver.v1.Driver
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
@@ -28,14 +28,14 @@ import scala.util.{Failure, Success}
   * author: cvandrei
   * since: 2017-06-08
   */
-class DeepCheckRoute(implicit neo4jConnection: Neo4jConnection)
+class DeepCheckRoute(implicit neo4jDriver: Driver)
   extends CORSDirective
     with ResponseUtil
     with StrictLogging {
 
-  implicit val system = ActorSystem()
+  implicit val system: ActorSystem = ActorSystem()
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
-  implicit val timeout = Timeout(Config.actorTimeout seconds)
+  implicit val timeout: Timeout = Timeout(KeyConfig.actorTimeout seconds)
 
   private val deepCheckActor = system.actorOf(DeepCheckActor.props(), ActorNames.DEEP_CHECK)
 

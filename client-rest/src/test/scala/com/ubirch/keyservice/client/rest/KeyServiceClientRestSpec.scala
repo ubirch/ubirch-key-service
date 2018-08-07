@@ -6,7 +6,7 @@ import com.ubirch.key.model.db.PublicKey
 import com.ubirch.key.model.rest.PublicKeyDelete
 import com.ubirch.keyService.testTools.data.generator.TestDataGeneratorDb
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
-import com.ubirch.keyservice.config.Config
+import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.core.manager.PublicKeyManager
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
 import com.ubirch.util.json.Json4sUtil
@@ -32,9 +32,9 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
         case None => fail("expected a result other than None")
 
         case Some(jsonResponse: JsonResponse) =>
-          val goInfo = s"${Config.goPipelineName} / ${Config.goPipelineLabel} / ${Config.goPipelineRevision}"
+          val goInfo = s"${KeyConfig.goPipelineName} / ${KeyConfig.goPipelineLabel} / ${KeyConfig.goPipelineRevision}"
           val expected = JsonResponse(message = s"Welcome to the ubirchKeyService ( $goInfo )")
-          jsonResponse should be(expected)
+          jsonResponse shouldBe expected
 
       }
 
@@ -50,7 +50,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
       KeyServiceClientRest.deepCheck() map { deepCheckResponse =>
 
         // verify
-        deepCheckResponse should be(DeepCheckResponse())
+        deepCheckResponse shouldBe DeepCheckResponse()
 
       }
 
@@ -76,8 +76,8 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
       KeyServiceClientRest.pubKeyPOST(restPubKey) map { result =>
 
         // verify
-        result should be('isDefined)
-        result.get should be(restPubKey)
+        result shouldBe defined
+        result.get shouldBe restPubKey
 
       }
 
@@ -96,15 +96,17 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
       val restPubKey = Json4sUtil.any2any[rest.PublicKey](publicKey)
       PublicKeyManager.create(publicKey) flatMap {
 
-        case None => fail("failed to prepare public key")
+        case Left(t) => fail(s"failed to prepare public key", t)
 
-        case Some(_: PublicKey) =>
+        case Right(None) => fail("failed to prepare public key")
+
+        case Right(Some(_: PublicKey)) =>
 
           // test
           KeyServiceClientRest.pubKeyPOST(restPubKey) map { result =>
 
             // verify
-            result should be('isEmpty)
+            result shouldBe empty
 
           }
 
@@ -172,9 +174,11 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
 
       PublicKeyManager.create(pKey1) flatMap {
 
-        case None => fail("failed to prepare public key")
+        case Left(t) => fail(s"failed to prepare public key", t)
 
-        case Some(_: PublicKey) =>
+        case Right(None) => fail("failed to prepare public key")
+
+        case Right(Some(_: PublicKey)) =>
 
           // test
           KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) flatMap { result =>
@@ -206,9 +210,11 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
 
       PublicKeyManager.create(pKey1) flatMap {
 
-        case None => fail("failed to prepare public key")
+        case Left(t) => fail(s"failed to prepare public key", t)
 
-        case Some(_: PublicKey) =>
+        case Right(None) => fail("failed to prepare public key")
+
+        case Right(Some(_: PublicKey)) =>
 
           // test
           KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) flatMap { result =>
@@ -254,9 +260,11 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
       )
       PublicKeyManager.create(publicKey) flatMap {
 
-        case None => fail("failed to prepare public key")
+        case Left(t) => fail(s"failed to prepare public key", t)
 
-        case Some(pubKeyDb: PublicKey) =>
+        case Right(None) => fail("failed to prepare public key")
+
+        case Right(Some(pubKeyDb: PublicKey)) =>
 
           // test
           KeyServiceClientRest.findPubKey(pubKey1) map { result =>
@@ -281,8 +289,8 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
       KeyServiceClientRest.currentlyValidPubKeys("1234") map { result =>
 
         // verify
-        result should be('isDefined)
-        result.get should be('isEmpty)
+        result shouldBe defined
+        result.get shouldBe  empty
 
       }
 
@@ -299,18 +307,20 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
       )
       PublicKeyManager.create(publicKey) flatMap {
 
-        case None => fail("failed to prepare public key")
+        case Left(t) => fail("failed to prepare public key", t)
 
-        case Some(existingPubKey: PublicKey) =>
+        case Right(None) => fail("failed to prepare public key")
+
+        case Right(Some(existingPubKey: PublicKey)) =>
 
           // test
           KeyServiceClientRest.currentlyValidPubKeys(existingPubKey.pubKeyInfo.hwDeviceId) map { result =>
 
             // verify
-            result should be('isDefined)
+            result shouldBe defined
             val actual = result.get map Json4sUtil.any2any[PublicKey]
             val expected = Set(Json4sUtil.any2any[PublicKey](existingPubKey))
-            actual should be(expected)
+            actual shouldBe expected
 
           }
 

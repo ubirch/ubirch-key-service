@@ -1,6 +1,6 @@
 package com.ubirch.keyservice.cmd
 
-import com.ubirch.keyservice.utils.neo4j.Neo4jUtils
+import com.ubirch.util.neo4j.utils.Neo4jUtils
 
 /**
   * author: cvandrei

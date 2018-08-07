@@ -2,16 +2,10 @@ package com.ubirch.keyservice.cmd
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.keyservice.config.{Config, Neo4jConfig}
+import com.ubirch.keyservice.config.ConfigKeys
+import com.ubirch.util.neo4j.utils.Neo4jDriverUtil
 
-import org.anormcypher.{Neo4jConnection, Neo4jREST}
-
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import play.api.libs.ws.WSClient
-import play.api.libs.ws.ning.NingWSClient
-
-import scala.concurrent.ExecutionContextExecutor
+import org.neo4j.driver.v1.Driver
 
 /**
   * author: cvandrei
@@ -20,30 +14,19 @@ import scala.concurrent.ExecutionContextExecutor
 trait CmdBase extends App
   with StrictLogging {
 
-  protected implicit val system: ActorSystem = ActorSystem()
-  protected implicit val materializer: ActorMaterializer = ActorMaterializer()
-
-  protected implicit val wsClient: WSClient = NingWSClient()
-  protected val neo4jConfig: Neo4jConfig = Config.neo4jConfig()
-  protected implicit val neo4jConnection: Neo4jConnection = Neo4jREST(
-    host = neo4jConfig.host,
-    port = neo4jConfig.port,
-    username = neo4jConfig.userName,
-    password = neo4jConfig.password,
-    https = neo4jConfig.https
-  )
-  protected implicit val ec: ExecutionContextExecutor = scala.concurrent.ExecutionContext.global
-
-  run()
+  protected implicit val neo4jDriver: Driver = Neo4jDriverUtil.driver(ConfigKeys.neo4jConfigPrefix)
 
   Runtime.getRuntime.addShutdownHook(new Thread() {
     override def run(): Unit = {
-      wsClient.close()
-      system.terminate()
+      neo4jDriver.close()
     }
   })
 
-  def close(): Unit = wsClient.close()
+  run()
+
+  def close(): Unit = {
+    System.exit(0)
+  }
 
   def run(): Unit
 

@@ -4,22 +4,21 @@ import java.util.concurrent.TimeUnit
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.keyservice.config.Config
+import com.ubirch.keyservice.config.{ConfigKeys, KeyConfig}
 import com.ubirch.keyservice.server.route.MainRoute
-import com.ubirch.keyservice.utils.neo4j.Neo4jUtils
+import com.ubirch.keyservice.utils.neo4j.Neo4jSchema
+import com.ubirch.util.neo4j.utils.{Neo4jDriverUtil, Neo4jUtils}
 
-import org.anormcypher.Neo4jREST
+import org.neo4j.driver.v1.Driver
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
-import play.api.libs.ws.WSClient
-import play.api.libs.ws.ning.NingWSClient
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.language.postfixOps
 
 /**
@@ -28,33 +27,25 @@ import scala.language.postfixOps
   */
 object Boot extends App with StrictLogging {
 
-  implicit val system = ActorSystem()
-  implicit val materializer = ActorMaterializer()
-  implicit val executionContext = system.dispatcher
+  implicit val system: ActorSystem = ActorSystem()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
+  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
-  implicit val timeout = Timeout(Config.timeout seconds)
+  implicit val timeout: Timeout = Timeout(KeyConfig.timeout seconds)
 
-  implicit val wsClient: WSClient = NingWSClient()
-  val neo4jConfig = Config.neo4jConfig()
-  implicit val neo4jREST: Neo4jREST = Neo4jREST(
-    host = neo4jConfig.host,
-    port = neo4jConfig.port,
-    username = neo4jConfig.userName,
-    password = neo4jConfig.password,
-    https = neo4jConfig.https
-  )
+  implicit val neo4jDriver: Driver = Neo4jDriverUtil.driver(ConfigKeys.neo4jConfigPrefix)
 
-  Neo4jUtils.createConstraints()
-  Neo4jUtils.createIndices()
+  Neo4jUtils.createConstraints(Neo4jSchema.constraints)
+  Neo4jUtils.createIndices(Neo4jSchema.indices)
 
   val bindingFuture = start()
   registerShutdownHooks()
 
   private def start(): Future[ServerBinding] = {
 
-    val interface = Config.interface
-    val port = Config.port
-    implicit val timeout = Timeout(5, TimeUnit.SECONDS)
+    val interface = KeyConfig.interface
+    val port = KeyConfig.port
+    implicit val timeout: Timeout = Timeout(5, TimeUnit.SECONDS)
 
     logger.info(s"start http server on $interface:$port")
     Http().bindAndHandle((new MainRoute).myRoute, interface, port)
@@ -66,7 +57,7 @@ object Boot extends App with StrictLogging {
     Runtime.getRuntime.addShutdownHook(new Thread() {
       override def run(): Unit = {
 
-        wsClient.close()
+        neo4jDriver.close()
 
         bindingFuture
           .flatMap(_.unbind())

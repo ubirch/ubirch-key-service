@@ -7,7 +7,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "client-rest" % "0.7.1-SNAPSHOT"
+  "com.ubirch.key" %% "client-rest" % "0.8.0-SNAPSHOT"
 )
 ```
 
@@ -36,7 +36,7 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "cmdtools" % "0.7.1-SNAPSHOT"
+  "com.ubirch.key" %% "cmdtools" % "0.8.0-SNAPSHOT"
 )
 ```
 
@@ -47,7 +47,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "config" % "0.7.1-SNAPSHOT"
+  "com.ubirch.key" %% "config" % "0.8.0-SNAPSHOT"
 )
 ```
 
@@ -60,7 +60,7 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "core" % "0.7.1-SNAPSHOT"
+  "com.ubirch.key" %% "core" % "0.8.0-SNAPSHOT"
 )
 ```
 
@@ -71,7 +71,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "model-db" % "0.7.1-SNAPSHOT"
+  "com.ubirch.key" %% "model-db" % "0.8.0-SNAPSHOT"
 )
 ```
 
@@ -82,7 +82,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "model-rest" % "0.7.1-SNAPSHOT"
+  "com.ubirch.key" %% "model-rest" % "0.8.0-SNAPSHOT"
 )
 ```
 
@@ -96,7 +96,7 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "server" % "0.7.1-SNAPSHOT"
+  "com.ubirch.key" %% "server" % "0.8.0-SNAPSHOT"
 )
 ```
 
@@ -109,7 +109,7 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "test-tools" % "0.7.1-SNAPSHOT"
+  "com.ubirch.key" %% "test-tools" % "0.8.0-SNAPSHOT"
 )
 ```
 
@@ -120,7 +120,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots")
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "util" % "0.7.1-SNAPSHOT"
+  "com.ubirch.key" %% "util" % "0.8.0-SNAPSHOT"
 )
 ```
 
@@ -133,6 +133,6 @@ resolvers ++= Seq(
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/" // needed by dependency org.anormcypher:anormcypher
 )
 libraryDependencies ++= Seq(
-  "com.ubirch.key" %% "utilsNeo4j" % "0.7.1-SNAPSHOT"
+  "com.ubirch.key" %% "utilsNeo4j" % "0.8.0-SNAPSHOT"
 )
 ```

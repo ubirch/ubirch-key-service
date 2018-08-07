@@ -9,7 +9,7 @@ import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.StrictLogging
 import com.ubirch.key.model.{db, rest}
 import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys}
-import com.ubirch.keyservice.config.Config
+import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, PublicKeyActor, QueryCurrentlyValid}
 import com.ubirch.keyservice.server.actor.util.ActorNames
 import com.ubirch.util.http.response.ResponseUtil
@@ -34,7 +34,7 @@ trait PublicKeyActions {
 
   protected val pubKeyActor: ActorRef
 
-  implicit val timeout: Timeout = Timeout(Config.actorTimeout seconds)
+  implicit val timeout: Timeout = Timeout(KeyConfig.actorTimeout seconds)
 
   def createPublicKey(publicKey: PublicKey): Route = {
 

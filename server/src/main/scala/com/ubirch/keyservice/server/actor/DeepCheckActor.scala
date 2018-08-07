@@ -1,10 +1,10 @@
 package com.ubirch.keyservice.server.actor
 
-import com.ubirch.keyservice.config.Config
+import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.core.manager.DeepCheckManager
 import com.ubirch.util.deepCheck.model.{DeepCheckRequest, DeepCheckResponse}
 
-import org.anormcypher.Neo4jConnection
+import org.neo4j.driver.v1.Driver
 
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.routing.RoundRobinPool
@@ -13,7 +13,7 @@ import akka.routing.RoundRobinPool
   * author: cvandrei
   * since: 2017-06-08
   */
-class DeepCheckActor(implicit neo4jConnection: Neo4jConnection)
+class DeepCheckActor(implicit neo4jDriver: Driver)
   extends Actor
     with ActorLogging {
 
@@ -31,8 +31,8 @@ class DeepCheckActor(implicit neo4jConnection: Neo4jConnection)
 
 object DeepCheckActor {
 
-  def props()(implicit neo4jConnection: Neo4jConnection): Props = {
-    new RoundRobinPool(Config.akkaNumberOfWorkers).props(Props(new DeepCheckActor))
+  def props()(implicit neo4jDriver: Driver): Props = {
+    new RoundRobinPool(KeyConfig.akkaNumberOfWorkers).props(Props(new DeepCheckActor))
   }
 
 }

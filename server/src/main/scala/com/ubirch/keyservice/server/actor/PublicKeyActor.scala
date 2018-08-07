@@ -1,15 +1,16 @@
 package com.ubirch.keyservice.server.actor
 
-import akka.actor.{Actor, ActorLogging, Props}
-import akka.routing.RoundRobinPool
 import com.ubirch.key.model._
 import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys}
-import com.ubirch.keyservice.config.Config
+import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.core.manager.PublicKeyManager
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
 
-import org.anormcypher.Neo4jREST
+import org.neo4j.driver.v1.Driver
+
+import akka.actor.{Actor, ActorLogging, Props}
+import akka.routing.RoundRobinPool
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
@@ -18,7 +19,7 @@ import scala.util.{Failure, Success}
   * author: cvandrei
   * since: 2017-04-27
   */
-class PublicKeyActor(implicit neo4jREST: Neo4jREST) extends Actor
+class PublicKeyActor(implicit neo4jDriver: Driver) extends Actor
   with ActorLogging {
 
   override def receive: Receive = {
@@ -29,8 +30,10 @@ class PublicKeyActor(implicit neo4jREST: Neo4jREST) extends Actor
       val dbPublicKey = Json4sUtil.any2any[db.PublicKey](create.publicKey)
       try {
         PublicKeyManager.create(dbPublicKey) onComplete {
-          case Success(dbPubKey) =>
+          case Success(Right(dbPubKey)) =>
             sender ! (dbPubKey map Json4sUtil.any2any[rest.PublicKey])
+          case Success(Left(t)) =>
+            sender ! JsonErrorResponse(errorType = "Invalid Input", errorMessage = t.getMessage)
           case Failure(t) =>
             sender ! JsonErrorResponse(errorType = "Invalid Input", errorMessage = t.getMessage)
         }
@@ -79,8 +82,8 @@ class PublicKeyActor(implicit neo4jREST: Neo4jREST) extends Actor
 
 object PublicKeyActor {
 
-  def props()(implicit neo4jREST: Neo4jREST): Props = {
-    new RoundRobinPool(Config.akkaNumberOfWorkers).props(Props(new PublicKeyActor))
+  def props()(implicit neo4jDriver: Driver): Props = {
+    new RoundRobinPool(KeyConfig.akkaNumberOfWorkers).props(Props(new PublicKeyActor))
   }
 
 }
