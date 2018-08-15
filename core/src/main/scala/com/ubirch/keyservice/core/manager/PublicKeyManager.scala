@@ -1,12 +1,13 @@
 package com.ubirch.keyservice.core.manager
 
-import com.typesafe.scalalogging.slf4j.StrictLogging
+import java.util.Base64
 
+import com.typesafe.scalalogging.slf4j.StrictLogging
 import com.ubirch.crypto.ecc.EccUtil
+import com.ubirch.crypto.hash.HashUtil
 import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete, PublicKeyInfo}
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
 import com.ubirch.util.neo4j.utils.Neo4jParseUtil
-
 import org.joda.time.{DateTime, DateTimeZone}
 import org.neo4j.driver.v1.Values.parameters
 import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
@@ -253,7 +254,8 @@ object PublicKeyManager extends StrictLogging {
   def deleteByPubKey(pubKeyDelete: PublicKeyDelete)
                     (implicit neo4jDriver: Driver): Future[Boolean] = {
 
-    val validSignature = EccUtil.validateSignature(pubKeyDelete.publicKey, pubKeyDelete.signature, pubKeyDelete.publicKey)
+    val decodedPubKey = Base64.getDecoder.decode(pubKeyDelete.publicKey)
+    val validSignature = EccUtil.validateSignature(pubKeyDelete.publicKey, pubKeyDelete.signature, decodedPubKey)
     if (validSignature) {
 
       val query =
