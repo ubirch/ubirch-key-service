@@ -17,6 +17,7 @@ import org.neo4j.driver.v1.Driver
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
+import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 
 import scala.language.postfixOps
 
@@ -56,14 +57,12 @@ class PublicKeyMsgPackRoute(implicit neo4jDriver: Driver)
               }
             }.headOption match {
               case Some(publicKey) if publicKey.isDefined =>
-                createPublicKey(publicKey.get)
-              case Some(publicKey) if publicKey.isEmpty =>
+                createPublicKeyStringResponse(publicKey.get)
+              case Some(publicKey) if publicKey.isEmpty => // TODO question: this is the same as `case None =>`, isn't it?
                 logger.error("failed to parse input")
-                import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
                 complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ValidationError", errorMessage = "request does not contain a key"))
               case None =>
                 logger.error("failed to create public key (server error)")
-                import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
                 complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "request does not contain a key"))
             }
           }

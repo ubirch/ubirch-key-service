@@ -73,17 +73,17 @@ object PublicKeyManager extends StrictLogging {
 
             case su: ServiceUnavailableException =>
 
-              logger.error(s"findByPubKey() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+              logger.error(s"create() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
               Left(new Exception(s"failed to create publicKey: ${pubKey.pubKeyInfo.pubKey}"))
 
             case e: Exception =>
 
-              logger.error(s"findByPubKey() -- Exception: e.message=${e.getMessage}", e)
+              logger.error(s"create() -- Exception: e.message=${e.getMessage}", e)
               Left(new Exception(s"failed to create publicKey: ${pubKey.pubKeyInfo.pubKey}"))
 
             case re: RuntimeException =>
 
-              logger.error(s"findByPubKey() -- RuntimeException: re.message=${re.getMessage}", re)
+              logger.error(s"create() -- RuntimeException: re.message=${re.getMessage}", re)
               Left(new Exception(s"failed to create publicKey: ${pubKey.pubKeyInfo.pubKey}"))
 
           }
@@ -172,17 +172,17 @@ object PublicKeyManager extends StrictLogging {
 
       case su: ServiceUnavailableException =>
 
-        logger.error(s"findByPubKey() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+        logger.error(s"currentlyValid() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
         Set.empty[PublicKey]
 
       case e: Exception =>
 
-        logger.error(s"findByPubKey() -- Exception: e.message=${e.getMessage}", e)
+        logger.error(s"currentlyValid() -- Exception: e.message=${e.getMessage}", e)
         Set.empty[PublicKey]
 
       case re: RuntimeException =>
 
-        logger.error(s"findByPubKey() -- RuntimeException: re.message=${re.getMessage}", re)
+        logger.error(s"currentlyValid() -- RuntimeException: re.message=${re.getMessage}", re)
         Set.empty[PublicKey]
 
     }

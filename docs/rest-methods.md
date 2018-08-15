@@ -74,7 +74,7 @@ curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: applicatio
   },
   "signature": "0aMQdrSBeyGbuZefhhLyWRmW3mJPIK+Tp4AtgKIg8eEXUCTogH23NeOfhw3PB1I82Mmsn8yCNC0cyMEFMMwABQ=="
 }'
-``` 
+```
 
 Valid _algorithm_s are:
 

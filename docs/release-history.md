@@ -7,6 +7,8 @@
 * update to `com.ubirch.util:date:0.5.3`
 * update to `com.ubirch.util:json:0.5.1`
 * migrated database connection from `anormcypher` to official Neo4j Java driver
+* fixed problem of `PublicKeyActions` not responding with JSON but only with strings (the following import was missing: `import de.heikoseeberger.akkahttpjson4s.Json4sSupport._`)
+* fixed log messages in `PublicKeyManager`
 
 ### Version 0.7.0 (2018-08-01)
 
