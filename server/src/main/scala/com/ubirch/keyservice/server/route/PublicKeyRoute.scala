@@ -28,7 +28,7 @@ class PublicKeyRoute(implicit neo4jDriver: Driver)
     with RouteDirectives
     with FutureDirectives
     with StrictLogging
-    with PublicKeyActions {
+    with PublicKeyActionsJson {
 
   override protected val pubKeyActor: ActorRef = system.actorOf(PublicKeyActor.props(), ActorNames.PUB_KEY)
 
