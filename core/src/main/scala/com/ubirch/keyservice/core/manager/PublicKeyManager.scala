@@ -35,7 +35,7 @@ object PublicKeyManager extends StrictLogging {
 
     findByPubKey(pubKey.pubKeyInfo.pubKey) flatMap {
 
-      case Some(pk) =>
+      case Some(_) =>
 
         val errMsg = s"unable to create publicKey if it already exists: ${pubKey.pubKeyInfo.pubKey}"
         logger.error(errMsg)
@@ -59,7 +59,7 @@ object PublicKeyManager extends StrictLogging {
 
                   val result = tx.run(query)
                   val records = result.list().toSeq
-                  logger.debug(s"found ${records.size} results for pubKey=$pubKey")
+                  logger.info(s"found ${records.size} results for pubKey=$pubKey")
 
                   Right(recordsToPublicKeys(records, "pubKey").headOption)
 
@@ -139,7 +139,7 @@ object PublicKeyManager extends StrictLogging {
 
             val result = tx.run(query, parameterMap)
             val records = result.list().toSeq
-            logger.debug(s"currentlyValid() -- found ${records.size} results for: hardwareId=$hardwareId; now=$now")
+            logger.info(s"currentlyValid() -- found ${records.size} results for: hardwareId=$hardwareId; now=$now")
 
             recordsToPublicKeys(records, "pubKey")
 
@@ -192,7 +192,7 @@ object PublicKeyManager extends StrictLogging {
 
             val result = tx.run(query, parameterMap)
             val records = result.list().toSeq
-            logger.debug(s"found ${records.size} results for pubKey=$pubKey")
+            logger.info(s"found ${records.size} results for pubKey=$pubKey")
 
             recordsToPublicKeys(records, "pubKey").headOption
 
@@ -249,8 +249,8 @@ object PublicKeyManager extends StrictLogging {
           session.writeTransaction(new TransactionWork[Boolean]() {
             def execute(tx: Transaction): Boolean = {
 
-              val result = tx.run(query, parameterMap)
-              logger.debug(s"deleted publicKey=${pubKeyDelete.publicKey}")
+              tx.run(query, parameterMap)
+              logger.info(s"deleted publicKey=${pubKeyDelete.publicKey}")
 
               true
 
