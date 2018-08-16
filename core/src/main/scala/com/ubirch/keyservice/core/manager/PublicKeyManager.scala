@@ -54,7 +54,6 @@ object PublicKeyManager extends StrictLogging {
             val session = neo4jDriver.session
             try {
 
-              // TODO refactor: readTransactionAsync()
               session.writeTransaction(new TransactionWork[Either[Exception, Option[PublicKey]]]() {
                 def execute(tx: Transaction): Either[Exception, Option[PublicKey]] = {
 
@@ -89,24 +88,6 @@ object PublicKeyManager extends StrictLogging {
           }
 
           Future(createResult)
-
-          /*
-          Cypher(
-            cypherStr
-          ).executeAsync() map {
-
-            case true =>
-
-              Right(Some(pubKey))
-
-            case false =>
-
-              val errMsg = s"failed to create publicKey: ${pubKey.pubKeyInfo.pubKey}"
-              logger.error(errMsg)
-              Left(new Exception(errMsg))
-
-          }
-          */
 
         } else {
 
@@ -153,7 +134,6 @@ object PublicKeyManager extends StrictLogging {
       val session = neo4jDriver.session
       try {
 
-        // TODO refactor: readTransactionAsync()
         session.readTransaction(new TransactionWork[Set[PublicKey]]() {
           def execute(tx: Transaction): Set[PublicKey] = {
 
@@ -207,7 +187,6 @@ object PublicKeyManager extends StrictLogging {
       val session = neo4jDriver.session
       try {
 
-        // TODO refactor: readTransactionAsync()
         session.readTransaction(new TransactionWork[Option[PublicKey]]() {
           def execute(tx: Transaction): Option[PublicKey] = {
 
@@ -267,7 +246,6 @@ object PublicKeyManager extends StrictLogging {
         val session = neo4jDriver.session
         try {
 
-          // TODO refactor: writeTransactionAsync()
           session.writeTransaction(new TransactionWork[Boolean]() {
             def execute(tx: Transaction): Boolean = {
 
@@ -309,8 +287,6 @@ object PublicKeyManager extends StrictLogging {
     }
 
   }
-
-  // TODO implement findByHwDeviceId()
 
   private def toKeyValueMap(publicKey: PublicKey): Map[String, Any] = {
 
@@ -364,7 +340,6 @@ object PublicKeyManager extends StrictLogging {
 
     records map { record =>
 
-      printRecord(record)
       val pubKey = record.get(recordLabel)
 
       PublicKey(
@@ -384,14 +359,6 @@ object PublicKeyManager extends StrictLogging {
       )
 
     } toSet
-
-  }
-
-  private def printRecord(record: Record): Unit = {
-
-    record.fields() foreach { keyValue =>
-      println(s"${keyValue.key()}=${keyValue.value()}")
-    }
 
   }
 
