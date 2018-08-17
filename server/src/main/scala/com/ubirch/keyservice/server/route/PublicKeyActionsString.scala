@@ -1,24 +1,24 @@
 package com.ubirch.keyservice.server.route
 
-import com.typesafe.scalalogging.slf4j.StrictLogging
-
-import com.ubirch.key.model.rest.PublicKey
-import com.ubirch.keyservice.config.KeyConfig
-import com.ubirch.keyservice.server.actor.CreatePublicKey
-import com.ubirch.util.http.response.ResponseUtil
-import com.ubirch.util.model.JsonErrorResponse
-
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.{FutureDirectives, RouteDirectives}
 import akka.pattern.ask
 import akka.util.Timeout
+import com.typesafe.scalalogging.slf4j.StrictLogging
+import com.ubirch.key.model.rest.PublicKey
+import com.ubirch.keyservice.config.KeyConfig
+import com.ubirch.keyservice.server.actor.CreatePublicKey
+import com.ubirch.util.http.response.ResponseUtil
+import com.ubirch.util.model.JsonErrorResponse
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
+
+// TODO duplicated code w/ PublicKeyActionsJson
 
 /**
   * Add description.
@@ -48,19 +48,23 @@ trait PublicKeyActionsString {
         resp match {
 
           case Some(createPubKey: PublicKey) =>
-            complete(createPubKey.toString) // TODO: in the JSON version this is serialized to JSON. here it the scala object is serialized into a String. Question: is this the intention?
+            import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
+            complete(createPubKey)
 
           case jr: JsonErrorResponse =>
+            import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
             logger.error(s"failed to create public key ${jr.errorMessage}")
-            complete(StatusCodes.BadRequest -> jr.toJsonString)
+            complete(StatusCodes.BadRequest -> jr)
 
           case None =>
+            import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
             logger.error("failed to create public key (None)")
-            complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "CreateError", errorMessage = "failed to create public key").toJsonString)
+            complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "CreateError", errorMessage = "failed to create public key"))
 
           case _ =>
+            import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
             logger.error("failed to create public key (server error)")
-            complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key").toJsonString)
+            complete(StatusCodes.InternalServerError -> JsonErrorResponse(errorType = "ServerError", errorMessage = "failed to create public key"))
 
         }
 

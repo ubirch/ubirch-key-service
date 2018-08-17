@@ -1,7 +1,12 @@
 package com.ubirch.keyservice.server.route
 
+import akka.actor.{ActorRef, ActorSystem}
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.directives.{FutureDirectives, RouteDirectives}
+import akka.pattern.ask
+import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.StrictLogging
-
 import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys}
 import com.ubirch.key.model.{db, rest}
 import com.ubirch.keyservice.config.KeyConfig
@@ -9,19 +14,14 @@ import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, QueryCu
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
-
-import akka.actor.{ActorRef, ActorSystem}
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.directives.{FutureDirectives, RouteDirectives}
-import akka.pattern.ask
-import akka.util.Timeout
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
+
+// TODO duplicated code w/ PublicKeyActionsString
 
 /**
   * Add description.
