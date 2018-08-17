@@ -1,5 +1,16 @@
 ## Release History
 
+### Version 0.8.0 (tbd)
+
+* update to `com.ubirch.util:config:0.2.3`
+* update to `com.ubirch.util:crypto:0.4.11`
+* update to `com.ubirch.util:date:0.5.3`
+* update to `com.ubirch.util:json:0.5.1`
+* migrated database connection from `anormcypher` to official Neo4j Java driver
+* fixed problem of `PublicKeyActions` not responding with JSON but only with strings (the following import was missing: `import de.heikoseeberger.akkahttpjson4s.Json4sSupport._`)
+* fixed log messages in `PublicKeyManager`
+* added documentation of`/api/keyService/v1/pubkey/mpack` endpoint
+
 ### Version 0.7.0 (2018-08-01)
 
 * update to Scala 2.11.12

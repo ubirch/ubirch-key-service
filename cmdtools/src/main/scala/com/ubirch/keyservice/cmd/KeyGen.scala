@@ -12,6 +12,7 @@ import com.ubirch.util.uuid.UUIDUtil
   */
 object KeyGen extends App {
 
+  // TODO migrate to encapsulate all executable logic within a method `run(): Unit`
   val (publicKey, privateKey) = EccUtil.generateEccKeyPairEncoded
   val publicKeySigned = EccUtil.signPayload(privateKey, publicKey)
 

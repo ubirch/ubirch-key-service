@@ -1,14 +1,18 @@
 package com.ubirch.keyservice.core.manager
 
+import java.util.Base64
+
 import com.typesafe.scalalogging.slf4j.StrictLogging
-
 import com.ubirch.crypto.ecc.EccUtil
-import com.ubirch.key.model.db.{Neo4jLabels, PublicKey, PublicKeyDelete, PublicKeyInfo}
+import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete, PublicKeyInfo}
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
-
-import org.anormcypher._
+import com.ubirch.util.neo4j.utils.Neo4jParseUtil
 import org.joda.time.{DateTime, DateTimeZone}
+import org.neo4j.driver.v1.Values.parameters
+import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
+import org.neo4j.driver.v1.{Driver, Record, Transaction, TransactionWork}
 
+import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.postfixOps
@@ -23,137 +27,260 @@ object PublicKeyManager extends StrictLogging {
     * Persist a [[PublicKey]].
     *
     * @param pubKey    public key to persist
-    * @param neo4jREST Neo4j connection
+    * @param neo4jDriver Neo4j connection
     * @return persisted public key; None if something went wrong
     */
   def create(pubKey: PublicKey)
-            (implicit neo4jREST: Neo4jREST): Future[Option[PublicKey]] = {
+            (implicit neo4jDriver: Driver): Future[Either[Exception, Option[PublicKey]]] = {
 
     findByPubKey(pubKey.pubKeyInfo.pubKey) flatMap {
-      case Some(pk) =>
-        val errMsg = s"publicKey already exist: ${pubKey.pubKeyInfo.pubKey}"
+
+      case Some(_) =>
+
+        val errMsg = s"unable to create publicKey if it already exists: ${pubKey.pubKeyInfo.pubKey}"
         logger.error(errMsg)
-        throw new Exception(errMsg)
+        Future(Left(new Exception(errMsg)))
+
       case None =>
+
         if (PublicKeyUtil.validateSignature(pubKey)) {
 
           val data = entityToString(pubKey)
-          val cypherStr =
-            s"""CREATE (pubKey:${Neo4jLabels.PUBLIC_KEY} $data)
+          val query = s"""CREATE (pubKey:PublicKey $data)
                |RETURN pubKey""".stripMargin
-          Cypher(
-            cypherStr
-          ).executeAsync() map {
 
-            case true =>
-              Some(pubKey)
+          val createResult = try {
 
-            case false =>
-              val errMsg = s"failed to create publicKey: $cypherStr"
-              logger.error(errMsg)
-              throw new Exception(errMsg)
+            val session = neo4jDriver.session
+            try {
+
+              session.writeTransaction(new TransactionWork[Either[Exception, Option[PublicKey]]]() {
+                def execute(tx: Transaction): Either[Exception, Option[PublicKey]] = {
+
+                  val result = tx.run(query)
+                  val records = result.list().toSeq
+                  logger.info(s"found ${records.size} results for pubKey=$pubKey")
+
+                  Right(recordsToPublicKeys(records, "pubKey").headOption)
+
+                }
+              })
+
+            } finally if (session != null) session.close()
+
+          } catch {
+
+            case su: ServiceUnavailableException =>
+
+              logger.error(s"create() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+              Left(new Exception(s"failed to create publicKey: ${pubKey.pubKeyInfo.pubKey}"))
+
+            case e: Exception =>
+
+              logger.error(s"create() -- Exception: e.message=${e.getMessage}", e)
+              Left(new Exception(s"failed to create publicKey: ${pubKey.pubKeyInfo.pubKey}"))
+
+            case re: RuntimeException =>
+
+              logger.error(s"create() -- RuntimeException: re.message=${re.getMessage}", re)
+              Left(new Exception(s"failed to create publicKey: ${pubKey.pubKeyInfo.pubKey}"))
+
           }
 
+          Future(createResult)
+
         } else {
-          val errMsg = s"invalid signature: ${pubKey.signature}"
+
+          val errMsg = s"unable to create public key if signature is invalid: ${pubKey.signature}"
           logger.error(errMsg)
-          throw new Exception(errMsg)
+          Future(Left(new Exception(errMsg)))
+
         }
 
     }
+
   }
 
   /**
     * Gives us a Set of all currently valid public keys for a given hardware id.
     *
-    * @param hardwareId      hardware id for which to search for currently valid keys
-    * @param neo4jConnection Neo4j connection
+    * @param hardwareId  hardware id for which to search for currently valid keys
+    * @param neo4jDriver Neo4j connection
     * @return currently valid public keys; empty if none are found
     */
   def currentlyValid(hardwareId: String)
-                    (implicit neo4jConnection: Neo4jConnection): Future[Set[PublicKey]] = {
+                    (implicit neo4jDriver: Driver): Future[Set[PublicKey]] = {
 
     val now = DateTime.now(DateTimeZone.UTC).toString
-    logger.debug(s"now=$now")
-    Cypher(
-      s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY}  {infoHwDeviceId: {hwDeviceId}})
-         |WHERE
-         |  {now} > pubKey.infoValidNotBefore
-         |  AND (
-         |    pubKey.infoValidNotAfter is null
-         |     OR {now} < pubKey.infoValidNotAfter
-         |  )
-         |RETURN pubKey
-       """.stripMargin
-    ).on(
-      "hwDeviceId" -> hardwareId,
-      "now" -> now
-    ).async() map { result =>
+    logger.debug(s"currentlyValid() -- now=$now, hardwareId=$hardwareId")
 
-      logger.debug(s"found ${result.size} results for hardwareId=$hardwareId")
-      for (row <- result) {
-        logger.debug(s"(hardwareId=$hardwareId) row=$row")
-      }
+    val query =
+      """MATCH (pubKey: PublicKey {infoHwDeviceId: $hwDeviceId})
+        |WHERE
+        |  $now > pubKey.infoValidNotBefore
+        |  AND (
+        |    pubKey.infoValidNotAfter is null
+        |     OR $now < pubKey.infoValidNotAfter
+        |  )
+        |RETURN pubKey
+      """.stripMargin
+    val parameterMap = parameters(
+      "hwDeviceId", hardwareId,
+      "now", now
+    )
 
-      mapToPublicKey(result)
+    val pubKeyResults = try {
+
+      val session = neo4jDriver.session
+      try {
+
+        session.readTransaction(new TransactionWork[Set[PublicKey]]() {
+          def execute(tx: Transaction): Set[PublicKey] = {
+
+            val result = tx.run(query, parameterMap)
+            val records = result.list().toSeq
+            logger.info(s"currentlyValid() -- found ${records.size} results for: hardwareId=$hardwareId; now=$now")
+
+            recordsToPublicKeys(records, "pubKey")
+
+          }
+        })
+
+      } finally if (session != null) session.close()
+
+    } catch {
+
+      case su: ServiceUnavailableException =>
+
+        logger.error(s"currentlyValid() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+        Set.empty[PublicKey]
+
+      case e: Exception =>
+
+        logger.error(s"currentlyValid() -- Exception: e.message=${e.getMessage}", e)
+        Set.empty[PublicKey]
+
+      case re: RuntimeException =>
+
+        logger.error(s"currentlyValid() -- RuntimeException: re.message=${re.getMessage}", re)
+        Set.empty[PublicKey]
 
     }
+
+    Future(pubKeyResults)
+
   }
 
   def findByPubKey(pubKey: String)
-                  (implicit neo4jConnection: Neo4jConnection): Future[Option[PublicKey]] = {
+                  (implicit neo4jDriver: Driver): Future[Option[PublicKey]] = {
 
     logger.debug(s"findByPubKey($pubKey)")
-    Cypher(
-      s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY})
-         |WHERE pubKey.infoPubKey = {infoPubKey}
-         |RETURN pubKey
-       """.stripMargin
-    )
-      .on("infoPubKey" -> pubKey)
-      .async() map { result =>
 
-      logger.debug(s"found ${result.size} results for pubKey=$pubKey")
-      for (row <- result) {
-        logger.debug(s"(pubKey=$pubKey) row=$row")
-      }
+    val query =
+      """MATCH (pubKey: PublicKey)
+        |WHERE pubKey.infoPubKey = $infoPubKey
+        |RETURN pubKey""".stripMargin
+    val parameterMap = parameters("infoPubKey", pubKey)
 
-      mapToPublicKey(result).headOption
+    val pubKeyResult = try {
+
+      val session = neo4jDriver.session
+      try {
+
+        session.readTransaction(new TransactionWork[Option[PublicKey]]() {
+          def execute(tx: Transaction): Option[PublicKey] = {
+
+            val result = tx.run(query, parameterMap)
+            val records = result.list().toSeq
+            logger.info(s"found ${records.size} results for pubKey=$pubKey")
+
+            recordsToPublicKeys(records, "pubKey").headOption
+
+          }
+        })
+
+      } finally if (session != null) session.close()
+
+    } catch {
+
+      case su: ServiceUnavailableException =>
+
+        logger.error(s"findByPubKey() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+        None
+
+      case e: Exception =>
+
+        logger.error(s"findByPubKey() -- Exception: e.message=${e.getMessage}", e)
+        None
+
+      case re: RuntimeException =>
+
+        logger.error(s"findByPubKey() -- RuntimeException: re.message=${re.getMessage}", re)
+        None
 
     }
+
+    Future(pubKeyResult)
 
   }
 
   /**
-    * @param pubKeyDelete          public key to delete
-    * @param neo4jConnection database connection
+    * @param pubKeyDelete public key to delete
+    * @param neo4jDriver  database connection
     * @return true if deleted (idempotent); false in case of an error (exception or invalid signature)
     */
   def deleteByPubKey(pubKeyDelete: PublicKeyDelete)
-                    (implicit neo4jConnection: Neo4jConnection): Future[Boolean] = {
+                    (implicit neo4jDriver: Driver): Future[Boolean] = {
 
-    val validSignature = EccUtil.validateSignature(pubKeyDelete.publicKey, pubKeyDelete.signature, pubKeyDelete.publicKey)
+    val decodedPubKey = Base64.getDecoder.decode(pubKeyDelete.publicKey)
+    val validSignature = EccUtil.validateSignature(pubKeyDelete.publicKey, pubKeyDelete.signature, decodedPubKey)
     if (validSignature) {
 
-      try {
+      val query =
+        """MATCH (pubKey: PublicKey)
+          |WHERE pubKey.infoPubKey = $infoPubKey
+          |DELETE pubKey""".stripMargin
+      val parameterMap = parameters("infoPubKey", pubKeyDelete.publicKey)
 
-        Cypher(
-          s"""MATCH (pubKey: ${Neo4jLabels.PUBLIC_KEY})
-             |WHERE pubKey.infoPubKey = {infoPubKey}
-             |DELETE pubKey
-       """.stripMargin
-        )
-          .on("infoPubKey" -> pubKeyDelete.publicKey)
-          .async() map ( _.isEmpty )
+      val deleteResult: Boolean = try {
+
+        val session = neo4jDriver.session
+        try {
+
+          session.writeTransaction(new TransactionWork[Boolean]() {
+            def execute(tx: Transaction): Boolean = {
+
+              tx.run(query, parameterMap)
+              logger.info(s"deleted publicKey=${pubKeyDelete.publicKey}")
+
+              true
+
+            }
+          })
+
+        } finally if (session != null) session.close()
 
       } catch {
 
+        case su: ServiceUnavailableException =>
+
+          logger.error(s"deleteByPubKey() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+          false
+
         case e: Exception =>
 
-          logger.error(s"failed to delete publicKey=${pubKeyDelete.publicKey}", e)
-          Future(false)
+          logger.error(s"deleteByPubKey() -- Exception: e.message=${e.getMessage}", e)
+          false
+
+        case re: RuntimeException =>
+
+          logger.error(s"deleteByPubKey() -- RuntimeException: re.message=${re.getMessage}", re)
+          false
 
       }
+
+      Future(deleteResult)
+
 
     } else {
       logger.error(s"unable to delete public key with invalid signature: $pubKeyDelete")
@@ -161,8 +288,6 @@ object PublicKeyManager extends StrictLogging {
     }
 
   }
-
-  // TODO implement findByHwDeviceId()
 
   private def toKeyValueMap(publicKey: PublicKey): Map[String, Any] = {
 
@@ -212,43 +337,26 @@ object PublicKeyManager extends StrictLogging {
     keyValueToString(keyValue)
   }
 
-  private def mapToPublicKey(result: Seq[CypherResultRow]): Set[PublicKey] = {
+  private def recordsToPublicKeys(records: Seq[Record], recordLabel: String): Set[PublicKey] = {
 
-    result map { row =>
+    records map { record =>
 
-      val props = row[NeoNode]("pubKey").props
-
-      val validNotAfter = props.getOrElse("infoValidNotAfter", "--UNDEFINED--").asInstanceOf[String] match {
-        case "--UNDEFINED--" => None
-        case dateTimeString: String => Some(DateTime.parse(dateTimeString))
-      }
-
-      val previousPublicKeyId = props.getOrElse("infoPreviousPubKeyId", "--UNDEFINED--").asInstanceOf[String] match {
-        case "--UNDEFINED--" => None
-        case s: String => Some(s)
-      }
-
-      val publicKeyId = props.getOrElse("infoPubKeyId", "--UNDEFINED--").asInstanceOf[String]
-
-      val previousPublicKeySignature = props.getOrElse("previousPubKeySignature", "--UNDEFINED--").asInstanceOf[String] match {
-        case "--UNDEFINED--" => None
-        case s: String => Some(s)
-      }
+      val pubKey = record.get(recordLabel)
 
       PublicKey(
         pubKeyInfo = PublicKeyInfo(
-          hwDeviceId = props("infoHwDeviceId").asInstanceOf[String],
-          pubKey = props("infoPubKey").asInstanceOf[String],
-          pubKeyId = publicKeyId,
-          algorithm = props("infoAlgorithm").asInstanceOf[String],
-          previousPubKeyId = previousPublicKeyId,
-          created = DateTime.parse(props("infoCreated").asInstanceOf[String]),
-          validNotBefore = DateTime.parse(props("infoValidNotBefore").asInstanceOf[String]),
-          validNotAfter = validNotAfter
+          hwDeviceId = Neo4jParseUtil.asType[String](pubKey, "infoHwDeviceId"),
+          pubKey = Neo4jParseUtil.asType[String](pubKey, "infoPubKey"),
+          pubKeyId = Neo4jParseUtil.asTypeOrDefault[String](pubKey, "infoPubKeyId", "--UNDEFINED--"),
+          algorithm = Neo4jParseUtil.asType[String](pubKey, "infoAlgorithm"),
+          previousPubKeyId = Neo4jParseUtil.asTypeOption[String](pubKey, "infoPreviousPubKeyId"),
+          created = Neo4jParseUtil.asDateTime(pubKey, "infoCreated"),
+          validNotBefore = Neo4jParseUtil.asDateTime(pubKey, "infoValidNotBefore"),
+          validNotAfter = Neo4jParseUtil.asDateTimeOption(pubKey, "infoValidNotAfter")
         ),
-        signature = props("signature").asInstanceOf[String],
-        previousPubKeySignature = previousPublicKeySignature,
-        raw = props.get("raw").asInstanceOf[Option[String]]
+        signature = Neo4jParseUtil.asType(pubKey, "signature"),
+        previousPubKeySignature = Neo4jParseUtil.asTypeOption[String](pubKey, "previousPubKeySignature"),
+        raw = Neo4jParseUtil.asTypeOption[String](pubKey, "raw")
       )
 
     } toSet

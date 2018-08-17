@@ -31,14 +31,8 @@ object ConfigKeys {
 
   /*
    * Neo4j
-   *********************************************************************************************/
+   ************************************************************************************************/
 
-  private val neo4jPrefix = s"$CONFIG_PREFIX.neo4j"
-
-  final val NEO4J_HOST = s"$neo4jPrefix.host"
-  final val NEO4J_PORT = s"$neo4jPrefix.port"
-  final val NEO4J_USER_NAME = s"$neo4jPrefix.userName"
-  final val NEO4J_PASSWORD = s"$neo4jPrefix.password"
-  final val NEO4J_HTTPS = s"$neo4jPrefix.https"
+  final val neo4jConfigPrefix: String = "ubirchKeyService.neo4j"
 
 }

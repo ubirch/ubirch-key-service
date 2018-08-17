@@ -31,8 +31,9 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       // test
       PublicKeyManager.create(publicKey) map {
 
-        case None => fail(s"failed to create key: $publicKey")
-        case Some(result: PublicKey) => result shouldBe publicKey
+        case Right(None) => fail(s"failed to create key: $publicKey")
+        case Right(Some(result: PublicKey)) => result shouldBe publicKey
+        case Left(t) => fail(s"failed to create key", t)
 
       }
 
@@ -54,8 +55,15 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       // test
       PublicKeyManager.create(invalidPublicKey) map {
 
-        case None => succeed
-        case Some(result: PublicKey) => fail(s"created key public key: $publicKey")
+        // verify
+        case Left(e) =>
+
+          e.isInstanceOf[Exception] shouldBe true
+          e.getMessage should startWith("unable to create public key if signature is invalid")
+
+        case Right(_) =>
+
+          fail("should have resulted in Exception")
 
       }
 
@@ -69,9 +77,11 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       val publicKey = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1)
       PublicKeyManager.create(publicKey) flatMap {
 
-        case None => fail(s"failed to create existing key: $publicKey")
+        case Left(t) => fail(s"failed to create key", t)
 
-        case Some(result: PublicKey) =>
+        case Right(None) => fail(s"failed to create existing key: $publicKey")
+
+        case Right(Some(result: PublicKey)) =>
 
           result shouldBe publicKey
 
@@ -79,7 +89,14 @@ class PublicKeyManagerSpec extends Neo4jSpec {
           PublicKeyManager.create(publicKey) map {
 
             // verify
-            _ shouldBe None
+            case Left(e) =>
+
+              e.isInstanceOf[Exception] shouldBe true
+              e.getMessage should startWith("unable to create publicKey if it already exists")
+
+            case Right(_) =>
+
+              fail("should have resulted in Exception")
 
           }
 
@@ -96,9 +113,11 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       PublicKeyManager.create(publicKey1) flatMap {
 
-        case None => fail(s"failed to create key during preparation: $publicKey1")
+        case Left(t) => fail(s"failed to create key", t)
 
-        case Some(result: PublicKey) =>
+        case Right(None) => fail(s"failed to create key during preparation: $publicKey1")
+
+        case Right(Some(result: PublicKey)) =>
 
           result shouldBe publicKey1
 
@@ -109,7 +128,14 @@ class PublicKeyManagerSpec extends Neo4jSpec {
           PublicKeyManager.create(publicKey2) map {
 
             // verify
-            _ shouldBe None
+            case Left(e) =>
+
+              e.isInstanceOf[Exception] shouldBe true
+              e.getMessage should startWith("unable to create publicKey if it already exists")
+
+            case Right(_) =>
+
+              fail("should have resulted in Exception")
 
           }
 
@@ -126,9 +152,11 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       PublicKeyManager.create(publicKey1) flatMap {
 
-        case None => fail(s"failed to create key during preparation: $publicKey1")
+        case Left(t) => fail(s"failed to create key", t)
 
-        case Some(result: PublicKey) =>
+        case Right(None) => fail(s"failed to create key during preparation: $publicKey1")
+
+        case Right(Some(result: PublicKey)) =>
 
           result shouldBe publicKey1
 
@@ -139,7 +167,14 @@ class PublicKeyManagerSpec extends Neo4jSpec {
           PublicKeyManager.create(publicKey2) map {
 
             // verify
-            _ shouldBe None
+            case Left(e) =>
+
+              e.isInstanceOf[Exception] shouldBe true
+              e.getMessage should startWith("unable to create publicKey if it already exists")
+
+            case Right(_) =>
+
+              fail("should have resulted in Exception")
 
           }
 
@@ -157,8 +192,9 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       // test
       PublicKeyManager.create(publicKey) map {
 
-        case None => fail(s"failed to create key: $publicKey")
-        case Some(result: PublicKey) => result shouldBe publicKey
+        case Left(t) => fail(s"failed to create key", t)
+        case Right(None) => fail(s"failed to create key: $publicKey")
+        case Right(Some(result: PublicKey)) => result shouldBe publicKey
 
       }
 
@@ -172,18 +208,25 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       val publicKey = TestDataGeneratorDb.publicKeyMandatoryOnly(privateKey = privKey1, infoPubKey = pubKey1)
       PublicKeyManager.create(publicKey) flatMap {
 
-        case None => fail(s"failed to create existing key: $publicKey")
+        case Left(t) => fail(s"failed to create key", t)
 
-        case Some(result: PublicKey) =>
+        case Right(None) => fail(s"failed to create existing key: $publicKey")
+
+        case Right(Some(result: PublicKey)) =>
 
           result shouldBe publicKey
 
           // test
           PublicKeyManager.create(publicKey) map {
 
-            // verify
-            _ shouldBe None
+            case Left(e) =>
 
+              e.isInstanceOf[Exception] shouldBe true
+              e.getMessage should startWith("unable to create publicKey if it already exists")
+
+            case Right(_) =>
+
+              fail("an Exception should have been thrown")
           }
 
       }
@@ -369,7 +412,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
 
       // test & verify
-      PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe 'empty)
+      PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe empty)
 
     }
 
@@ -391,7 +434,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
         case true =>
 
           // test & verify
-          PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe 'empty)
+          PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe empty)
 
       }
 
@@ -407,6 +450,8 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
       val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId2)
+      println(s"publicKey1=$pKey1")
+      println(s"publicKey2=$pKey2")
 
       createKeys(pKey1, pKey2) flatMap {
 
@@ -417,7 +462,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
           val pubKeyString = pKey1.pubKeyInfo.pubKey
 
           // test & verify
-          PublicKeyManager.findByPubKey(pubKeyString) map( _ shouldBe Some(pKey1) )
+          PublicKeyManager.findByPubKey(pubKeyString) map (_ shouldBe Some(pKey1))
 
       }
 
@@ -442,7 +487,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe true
 
       // test & verify
-      PublicKeyManager.deleteByPubKey(pubKeyDelete) map ( _ shouldBe true )
+      PublicKeyManager.deleteByPubKey(pubKeyDelete) map (_ shouldBe true)
 
     }
 
@@ -463,7 +508,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe false
 
       // test & verify
-      PublicKeyManager.deleteByPubKey(pubKeyDelete) map ( _ shouldBe false )
+      PublicKeyManager.deleteByPubKey(pubKeyDelete) map (_ shouldBe false)
 
     }
 
@@ -494,8 +539,8 @@ class PublicKeyManagerSpec extends Neo4jSpec {
           PublicKeyManager.deleteByPubKey(pubKeyDelete) map { result =>
 
             // verify
-            PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map( _ shouldBe 'empty )
-            PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map( _ shouldBe 'defined )
+            PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe empty)
+            PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map (_ shouldBe defined)
 
             result shouldBe true
 
@@ -532,8 +577,8 @@ class PublicKeyManagerSpec extends Neo4jSpec {
           PublicKeyManager.deleteByPubKey(pubKeyDelete) map { result =>
 
             // verify
-            PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map( _ shouldBe 'defined )
-            PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map( _ shouldBe 'defined )
+            PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe defined)
+            PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map (_ shouldBe defined)
 
             result shouldBe false
 
@@ -570,8 +615,8 @@ class PublicKeyManagerSpec extends Neo4jSpec {
           PublicKeyManager.deleteByPubKey(pubKeyDelete) flatMap { result =>
 
             // verify
-            PublicKeyManager.findByPubKey(pubKeyDelete.publicKey) map( _ shouldBe 'empty )
-            PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map( _ shouldBe 'defined )
+            PublicKeyManager.findByPubKey(pubKeyDelete.publicKey) map (_ shouldBe empty)
+            PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map (_ shouldBe defined)
 
             result shouldBe true
 
@@ -608,8 +653,8 @@ class PublicKeyManagerSpec extends Neo4jSpec {
           PublicKeyManager.deleteByPubKey(pubKeyDelete) flatMap { result =>
 
             // verify
-            PublicKeyManager.findByPubKey(pubKeyDelete.publicKey) map( _ shouldBe 'defined )
-            PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map( _ shouldBe 'defined )
+            PublicKeyManager.findByPubKey(pubKeyDelete.publicKey) map (_ shouldBe defined)
+            PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map (_ shouldBe defined)
 
             result shouldBe false
 
@@ -626,8 +671,9 @@ class PublicKeyManagerSpec extends Neo4jSpec {
     // TODO copy to test-tools-ext?
     val resultsFuture = pubKeys map { pubKey =>
       PublicKeyManager.create(pubKey = pubKey) map {
-        case None => false
-        case Some(_: PublicKey) => true
+        case Left(t) => false
+        case Right(None) => false
+        case Right(Some(_: PublicKey)) => true
       }
     }
 
