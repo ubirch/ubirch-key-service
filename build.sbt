@@ -221,7 +221,7 @@ val akkaV = "2.5.11"
 val akkaHttpV = "10.1.3"
 val json4sV = "3.6.0"
 
-val scalaTestV = "3.0.1"
+val scalaTestV = "3.0.5"
 
 val logbackV = "1.2.3"
 val logbackESV = "1.5"

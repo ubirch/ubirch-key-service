@@ -2,7 +2,7 @@
 
 ### Version 0.8.1 (tbd)
 
-* tbd
+* update to `org.scalatest:scalatest:3.0.5`
 
 ### Version 0.8.0 (2018-08-20)
 
