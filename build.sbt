@@ -14,7 +14,7 @@ val commonSettings = Seq(
     url("https://github.com/ubirch/ubirch-key-service"),
     "scm:git:git@github.com:ubirch/ubirch-key-service.git"
   )),
-  version := "0.8.0",
+  version := "0.8.1-SNAPSHOT",
   test in assembly := {},
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases"),

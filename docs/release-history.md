@@ -1,5 +1,9 @@
 ## Release History
 
+### Version 0.8.1 (tbd)
+
+* tbd
+
 ### Version 0.8.0 (2018-08-20)
 
 * update to `com.ubirch.util:config:0.2.3`
