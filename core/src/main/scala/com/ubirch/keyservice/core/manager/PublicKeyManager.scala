@@ -26,7 +26,7 @@ object PublicKeyManager extends StrictLogging {
   /**
     * Persist a [[PublicKey]].
     *
-    * @param pubKey    public key to persist
+    * @param pubKey      public key to persist
     * @param neo4jDriver Neo4j connection
     * @return persisted public key; None if something went wrong
     */
@@ -35,18 +35,24 @@ object PublicKeyManager extends StrictLogging {
 
     findByPubKey(pubKey.pubKeyInfo.pubKey) flatMap {
 
-      case Some(_) =>
+      case Some(exPubKey: PublicKey) =>
 
-        val errMsg = s"unable to create publicKey if it already exists: ${pubKey.pubKeyInfo.pubKey}"
-        logger.error(errMsg)
-        Future(Left(new Exception(errMsg)))
-
+        if (pubKey.pubKeyInfo.pubKey == exPubKey.pubKeyInfo.pubKey &&
+          pubKey.pubKeyInfo.hwDeviceId == exPubKey.pubKeyInfo.hwDeviceId) {
+          Future(Right(Some(exPubKey)))
+        }
+        else {
+          val errMsg = s"unable to create publicKey if it already exists: ${pubKey.pubKeyInfo.pubKey}"
+          logger.error(errMsg)
+          Future(Left(new Exception(errMsg)))
+        }
       case None =>
 
         if (PublicKeyUtil.validateSignature(pubKey)) {
 
           val data = entityToString(pubKey)
-          val query = s"""CREATE (pubKey:PublicKey $data)
+          val query =
+            s"""CREATE (pubKey:PublicKey $data)
                |RETURN pubKey""".stripMargin
 
           val createResult = try {

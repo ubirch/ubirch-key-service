@@ -1,6 +1,10 @@
 ## Release History
 
-### Version 0.8.0 (tbd)
+### Version 0.8.1 (tbd)
+
+* update to `org.scalatest:scalatest:3.0.5`
+
+### Version 0.8.0 (2018-08-20)
 
 * update to `com.ubirch.util:config:0.2.3`
 * update to `com.ubirch.util:crypto:0.4.11`
