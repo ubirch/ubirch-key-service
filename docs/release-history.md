@@ -1,8 +1,9 @@
 ## Release History
 
-### Version 0.8.1 (tbd)
+### Version 0.8.1 (2018-08-21)
 
 * update to `org.scalatest:scalatest:3.0.5`
+* update to `net.logstash.logback:logstash-logback-encoder:5.0`
 
 ### Version 0.8.0 (2018-08-20)
 
