@@ -1,5 +1,9 @@
 ## Release History
 
+### Version 0.8.2 (tbd)
+
+* tbd
+
 ### Version 0.8.1 (2018-08-21)
 
 * update to `org.scalatest:scalatest:3.0.5`
