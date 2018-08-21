@@ -248,7 +248,7 @@ val scalaLogging = Seq(
   "org.slf4j" % "jul-to-slf4j" % slf4jV,
   "ch.qos.logback" % "logback-core" % logbackV,
   "ch.qos.logback" % "logback-classic" % logbackV,
-  "net.logstash.logback" % "logstash-logback-encoder" % "4.11",
+  "net.logstash.logback" % "logstash-logback-encoder" % "5.0",
   "com.typesafe.scala-logging" %% "scala-logging-slf4j" % scalaLogSLF4JV,
   "com.typesafe.scala-logging" %% "scala-logging" % scalaLogV,
   "com.internetitem" % "logback-elasticsearch-appender" % logbackESV
