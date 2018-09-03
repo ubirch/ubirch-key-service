@@ -1,6 +1,6 @@
 ## Local Setup
 
-1. download and install [Neo4j 3.1.x](https://neo4j.com/download/community-edition/) (community edition)
+1. download and install [Neo4j 3.3.x](https://neo4j.com/download/community-edition/) (community edition)
 
 1. start Neo4j
 
