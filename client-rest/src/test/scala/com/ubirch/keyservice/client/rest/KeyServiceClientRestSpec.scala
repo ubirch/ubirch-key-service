@@ -8,6 +8,7 @@ import com.ubirch.keyService.testTools.data.generator.TestDataGeneratorDb
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
 import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.core.manager.PublicKeyManager
+import com.ubirch.util.date.DateUtil
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonResponse
@@ -83,15 +84,15 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
 
     }
 
-    scenario("key already exists") {
+    scenario("key already exists -> Some") {
 
       // prepare
       val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
       val publicKey = TestDataGeneratorDb.createPublicKey(
         privateKey = privKey1,
         infoPubKey = pubKey1,
-        infoValidNotBefore = DateTime.now.minusDays(1),
-        infoValidNotAfter = Some(DateTime.now.plusDays(1))
+        infoValidNotBefore = DateUtil.nowUTC.minusDays(1),
+        infoValidNotAfter = Some(DateUtil.nowUTC.plusDays(1))
       )
       val restPubKey = Json4sUtil.any2any[rest.PublicKey](publicKey)
       PublicKeyManager.create(publicKey) flatMap {
@@ -106,7 +107,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
           KeyServiceClientRest.pubKeyPOST(restPubKey) map { result =>
 
             // verify
-            result shouldBe empty
+            result shouldBe Some(restPubKey)
 
           }
 

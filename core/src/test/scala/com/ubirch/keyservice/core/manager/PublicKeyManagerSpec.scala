@@ -91,12 +91,15 @@ class PublicKeyManagerSpec extends Neo4jSpec {
             // verify
             case Left(e) =>
 
-              e.isInstanceOf[Exception] shouldBe true
-              e.getMessage should startWith("unable to create publicKey if it already exists")
+              fail("no exception should have been triggered")
 
-            case Right(_) =>
+            case Right(Some(result: PublicKey)) =>
 
-              fail("should have resulted in Exception")
+              result shouldBe publicKey
+
+            case Right(None) =>
+
+              fail("should returned Some(publicKey)")
 
           }
 
@@ -221,12 +224,16 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
             case Left(e) =>
 
-              e.isInstanceOf[Exception] shouldBe true
-              e.getMessage should startWith("unable to create publicKey if it already exists")
+              fail("no exception should have been triggered")
 
-            case Right(_) =>
+            case Right(Some(result: PublicKey)) =>
 
-              fail("an Exception should have been thrown")
+              result shouldBe publicKey
+
+            case Right(None) =>
+
+              fail("should returned Some(publicKey)")
+
           }
 
       }
