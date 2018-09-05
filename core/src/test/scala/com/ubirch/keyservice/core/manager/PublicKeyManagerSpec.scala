@@ -1,11 +1,12 @@
 package com.ubirch.keyservice.core.manager
 
+import java.util.Base64
+
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete}
 import com.ubirch.keyService.testTools.data.generator.TestDataGeneratorDb
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
 import com.ubirch.util.uuid.UUIDUtil
-
 import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.concurrent.Future
@@ -486,12 +487,13 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
       val pubKeyString = pKey1.pubKeyInfo.pubKey
-      val signature = EccUtil.signPayload(privKey1, pubKeyString)
+      val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
+      val signature = EccUtil.signPayload(privKey1, decodedPubKey)
       val pubKeyDelete = PublicKeyDelete(
-        publicKey = pubKeyString,
+        publicKey = pubKey1,
         signature = signature
       )
-      EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe true
+      EccUtil.validateSignature(pubKeyString, signature, decodedPubKey) shouldBe true
 
       // test & verify
       PublicKeyManager.deleteByPubKey(pubKeyDelete) map (_ shouldBe true)
@@ -535,12 +537,13 @@ class PublicKeyManagerSpec extends Neo4jSpec {
         case true =>
 
           val pubKeyString = pKey1.pubKeyInfo.pubKey
-          val signature = EccUtil.signPayload(privKey1, pubKeyString)
+          val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
+          val signature = EccUtil.signPayload(privKey1, decodedPubKey)
           val pubKeyDelete = PublicKeyDelete(
             publicKey = pubKeyString,
             signature = signature
           )
-          EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe true
+          EccUtil.validateSignature(pubKeyString, signature, decodedPubKey) shouldBe true
 
           // test
           PublicKeyManager.deleteByPubKey(pubKeyDelete) map { result =>
@@ -611,12 +614,13 @@ class PublicKeyManagerSpec extends Neo4jSpec {
         case true =>
 
           val pubKeyString = pKey1.pubKeyInfo.pubKey
-          val signature = EccUtil.signPayload(privKey1, pubKeyString)
+          val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
+          val signature = EccUtil.signPayload(privKey1, decodedPubKey)
           val pubKeyDelete = PublicKeyDelete(
             publicKey = pubKeyString,
             signature = signature
           )
-          EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe true
+          EccUtil.validateSignature(pubKeyString, signature, decodedPubKey) shouldBe true
 
           // test
           PublicKeyManager.deleteByPubKey(pubKeyDelete) flatMap { result =>

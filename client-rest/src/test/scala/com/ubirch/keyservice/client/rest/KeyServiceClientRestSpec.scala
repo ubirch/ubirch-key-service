@@ -1,5 +1,7 @@
 package com.ubirch.keyservice.client.rest
 
+import java.util.Base64
+
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model._
 import com.ubirch.key.model.db.PublicKey
@@ -13,7 +15,6 @@ import com.ubirch.util.deepCheck.model.DeepCheckResponse
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonResponse
 import com.ubirch.util.uuid.UUIDUtil
-
 import org.joda.time.DateTime
 
 /**
@@ -123,15 +124,17 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
 
       // prepare
       val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
 
       val pubKeyString = pKey1.pubKeyInfo.pubKey
-      val signature = EccUtil.signPayload(privKey1, pubKeyString)
+      val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
+      val signature = EccUtil.signPayload(privKey1, decodedPubKey)
       val pubKeyDelete = PublicKeyDelete(
-        publicKey = pubKeyString,
+        publicKey = pubKey1,
         signature = signature
       )
-      EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe true
+      EccUtil.validateSignature(pubKeyString, signature, decodedPubKey) shouldBe true
 
       // test & verify
       KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) map (_ shouldBe true)
@@ -147,12 +150,13 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
 
       val pubKeyString = pKey1.pubKeyInfo.pubKey
+      val pubKeyDecoded = Base64.getDecoder.decode(pubKeyString)
       val signature = EccUtil.signPayload(privKey2, pubKeyString)
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKeyString,
         signature = signature
       )
-      EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe false
+      EccUtil.validateSignature(pubKeyString, signature, pubKeyDecoded) shouldBe false
 
       // test & verify
       KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) map (_ shouldBe false)
@@ -166,12 +170,13 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
 
       val pubKeyString = pKey1.pubKeyInfo.pubKey
-      val signature = EccUtil.signPayload(privKey1, pubKeyString)
+      val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
+      val signature = EccUtil.signPayload(privKey1, decodedPubKey)
       val pubKeyDelete = PublicKeyDelete(
-        publicKey = pubKeyString,
+        publicKey = pubKey1,
         signature = signature
       )
-      EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe true
+      EccUtil.validateSignature(pubKeyString, signature, decodedPubKey) shouldBe true
 
       PublicKeyManager.create(pKey1) flatMap {
 
