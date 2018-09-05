@@ -1,5 +1,9 @@
 ## Release History
 
+### Version 0.9.1 (tbd)
+
+* tbd
+
 ### Version 0.9.0 (2018-09-05)
 
 * added new REST client module `com.ubirch.key:client-rest-cache-redis` (based on existing `client-rest` with additional Redis based caching)
