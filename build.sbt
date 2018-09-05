@@ -14,7 +14,7 @@ val commonSettings = Seq(
     url("https://github.com/ubirch/ubirch-key-service"),
     "scm:git:git@github.com:ubirch/ubirch-key-service.git"
   )),
-  version := "0.8.2-SNAPSHOT",
+  version := "0.9.0-SNAPSHOT",
   test in assembly := {},
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases"),
@@ -34,6 +34,7 @@ lazy val keyService = (project in file("."))
   )
   .aggregate(
     clientRest,
+    clientRestCacheRedis,
     cmdtools,
     config,
     core,
@@ -47,11 +48,30 @@ lazy val keyService = (project in file("."))
 
 lazy val clientRest = (project in file("client-rest"))
   .settings(commonSettings)
-  .dependsOn(config, modelRest, util, testTools % "test", core % "test")
+  .dependsOn(
+    config,
+    modelRest,
+    util,
+    core % "test",
+    testTools % "test"
+  )
   .settings(
     name := "client-rest",
     description := "REST client of the key-service",
     libraryDependencies ++= depClientRest
+  )
+
+lazy val clientRestCacheRedis = (project in file("client-rest-cache-redis"))
+  .settings(commonSettings)
+  .dependsOn(
+    clientRest,
+    core % "test",
+    testTools % "test"
+  )
+  .settings(
+    name := "client-rest-cache-redis",
+    description := "REST client of the key-service (with Redis based cache)",
+    libraryDependencies ++= depClientRestCacheRedis
   )
 
 lazy val config = project
@@ -148,6 +168,11 @@ lazy val depClientRest = Seq(
   ubirchResponse,
   ubirchDeepCheckModel
 ) ++ scalaLogging
+
+lazy val depClientRestCacheRedis = Seq(
+  ubirchUtilRedisUtil,
+  ubirchUtilRedisTestUtil % "test"
+)
 
 lazy val depConfig = Seq(
   ubirchConfig
@@ -275,6 +300,8 @@ val ubirchDate = ubirchUtilG %% "date" % "0.5.3" excludeAll (excludedLoggers: _*
 val ubirchDeepCheckModel = ubirchUtilG %% "deep-check-model" % "0.3.0" excludeAll (excludedLoggers: _*)
 val ubirchJson = ubirchUtilG %% "json" % "0.5.1" excludeAll (excludedLoggers: _*)
 val ubirchNeo4jUtils = ubirchUtilG %% "neo4j-utils" % "0.1.0" excludeAll (excludedLoggers: _*)
+val ubirchUtilRedisTestUtil = ubirchUtilG %% "redis-test-util" % "0.5.1"
+val ubirchUtilRedisUtil = ubirchUtilG %% "redis-util" % "0.5.1"
 val ubirchResponse = ubirchUtilG %% "response-util" % "0.4.0" excludeAll (excludedLoggers: _*)
 val ubirchRestAkkaHttp = ubirchUtilG %% "rest-akka-http" % "0.4.0" excludeAll (excludedLoggers: _*)
 val ubirchRestAkkaHttpTest = ubirchUtilG %% "rest-akka-http-test" % "0.4.0" excludeAll (excludedLoggers: _*)

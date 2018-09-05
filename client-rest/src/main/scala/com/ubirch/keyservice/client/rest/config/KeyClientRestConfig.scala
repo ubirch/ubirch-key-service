@@ -9,7 +9,9 @@ import com.ubirch.util.config.ConfigBase
   * author: cvandrei
   * since: 2017-06-20
   */
-object KeyClientRestConfig extends ConfigBase {
+object KeyClientRestConfig extends KeyClientRestConfigBase {}
+
+trait KeyClientRestConfigBase extends ConfigBase {
 
   /**
     * The host the REST API runs on.
@@ -24,7 +26,7 @@ object KeyClientRestConfig extends ConfigBase {
 
   val pubKey = s"$host${RouteConstants.pathPubKey}"
 
-  def findPubKey(pubKeyString: String) = {
+  def findPubKey(pubKeyString: String): String = {
     s"$pubKey/${URLEncoder.encode(pubKeyString, "UTF-8")}"
   }
 
