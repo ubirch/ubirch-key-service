@@ -60,19 +60,20 @@ class PublicKeyUtilSpec extends FeatureSpec
       val hardwareDeviceId = UUIDUtil.uuid
 
       val now = DateUtil.nowUTC
+      val pubKeyUUID = UUIDUtil.uuidStr
       val pubKeyInfo = PublicKeyInfo(
         algorithm = "ECC_ED25519",
         created = now,
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = None,
         pubKey = newPublicKey,
-        pubKeyId = UUIDUtil.uuidStr,
+        pubKeyId = pubKeyUUID,
         validNotAfter = None,
         validNotBefore = now
       )
 
       val nowString = dateTimeFormat.print(now)
-      val expected = s"""{"algorithm":"${pubKeyInfo.algorithm}","created":"$nowString","hwDeviceId":"$hardwareDeviceId","pubKey":"$newPublicKey","validNotBefore":"$nowString"}"""
+      val expected = s"""{"algorithm":"${pubKeyInfo.algorithm}","created":"$nowString","hwDeviceId":"$hardwareDeviceId","pubKey":"$newPublicKey","pubKeyId":"$pubKeyUUID","validNotBefore":"$nowString"}"""
 
       // test & verify
       PublicKeyUtil.publicKeyInfo2String(pubKeyInfo) shouldBe Some(expected)

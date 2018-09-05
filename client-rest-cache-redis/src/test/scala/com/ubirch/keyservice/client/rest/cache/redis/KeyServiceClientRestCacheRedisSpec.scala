@@ -1,4 +1,4 @@
-package com.ubirch.keyservice.client.rest
+package com.ubirch.keyservice.client.rest.cache.redis
 
 import java.util.Base64
 
@@ -12,24 +12,43 @@ import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.core.manager.PublicKeyManager
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
-import com.ubirch.util.json.Json4sUtil
+import com.ubirch.util.json.{Json4sUtil, MyJsonProtocol}
 import com.ubirch.util.model.JsonResponse
+import com.ubirch.util.redis.RedisClientUtil
+import com.ubirch.util.redis.test.RedisCleanup
 import com.ubirch.util.uuid.UUIDUtil
 
 import org.joda.time.DateTime
+import org.json4s.native.Serialization.read
+import org.scalatest.Assertion
+
+import redis.RedisClient
+
+import scala.concurrent.Future
 
 /**
   * author: cvandrei
-  * since: 2017-06-20
+  * since: 2018-09-05
   */
-class KeyServiceClientRestSpec extends Neo4jSpec {
+class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
+  with RedisCleanup
+  with MyJsonProtocol {
+
+  implicit val redisClient: RedisClient = RedisClientUtil.getRedisClient
+
+  override protected def beforeEach(): Unit = {
+
+    super.beforeEach()
+    deleteAll(configPrefix = "ubirch.redisUtil")
+
+  }
 
   feature("check()") {
 
     scenario("check without errors") {
 
       // test
-      KeyServiceClientRest.check() map {
+      KeyServiceClientRestCacheRedis.check() map {
 
         // verify
         case None => fail("expected a result other than None")
@@ -50,7 +69,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
     scenario("check without errors") {
 
       // test
-      KeyServiceClientRest.deepCheck() map { deepCheckResponse =>
+      KeyServiceClientRestCacheRedis.deepCheck() map { deepCheckResponse =>
 
         // verify
         deepCheckResponse shouldBe DeepCheckResponse()
@@ -70,13 +89,13 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
       val publicKey = TestDataGeneratorDb.createPublicKey(
         privateKey = privKey1,
         infoPubKey = pubKey1,
-        infoValidNotBefore = DateTime.now.minusDays(1),
+        infoValidNotBefore = DateUtil.nowUTC.minusDays(1),
         infoValidNotAfter = Some(DateTime.now.plusDays(1))
       )
       val restPubKey = Json4sUtil.any2any[rest.PublicKey](publicKey)
 
       // test
-      KeyServiceClientRest.pubKeyPOST(restPubKey) map { result =>
+      KeyServiceClientRestCacheRedis.pubKeyPOST(restPubKey) map { result =>
 
         // verify
         result shouldBe defined
@@ -106,7 +125,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
         case Right(Some(_: PublicKey)) =>
 
           // test
-          KeyServiceClientRest.pubKeyPOST(restPubKey) map { result =>
+          KeyServiceClientRestCacheRedis.pubKeyPOST(restPubKey) map { result =>
 
             // verify
             result shouldBe Some(restPubKey)
@@ -138,7 +157,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
       EccUtil.validateSignature(pubKeyString, signature, decodedPubKey) shouldBe true
 
       // test & verify
-      KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) map (_ shouldBe true)
+      KeyServiceClientRestCacheRedis.pubKeyDELETE(pubKeyDelete) map (_ shouldBe true)
 
     }
 
@@ -160,7 +179,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
       EccUtil.validateSignature(pubKeyString, signature, pubKeyDecoded) shouldBe false
 
       // test & verify
-      KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) map (_ shouldBe false)
+      KeyServiceClientRestCacheRedis.pubKeyDELETE(pubKeyDelete) map (_ shouldBe false)
 
     }
 
@@ -188,7 +207,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
         case Right(Some(_: PublicKey)) =>
 
           // test
-          KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) flatMap { result =>
+          KeyServiceClientRestCacheRedis.pubKeyDELETE(pubKeyDelete) flatMap { result =>
 
             // verify
             result shouldBe true
@@ -224,7 +243,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
         case Right(Some(_: PublicKey)) =>
 
           // test
-          KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) flatMap { result =>
+          KeyServiceClientRestCacheRedis.pubKeyDELETE(pubKeyDelete) flatMap { result =>
 
             // verify
             result shouldBe false
@@ -246,16 +265,16 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
       val (pubKey1, _) = EccUtil.generateEccKeyPairEncoded
 
       // test
-      KeyServiceClientRest.findPubKey(pubKey1) map { result =>
+      KeyServiceClientRestCacheRedis.findPubKey(pubKey1) map { result =>
 
         // verify
-        result shouldBe 'isEmpty
+        result shouldBe empty
 
       }
 
     }
 
-    scenario("key exists --> find it") {
+    scenario("key exists --> Some") {
 
       // prepare
       val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
@@ -274,11 +293,53 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
         case Right(Some(pubKeyDb: PublicKey)) =>
 
           // test
-          KeyServiceClientRest.findPubKey(pubKey1) map { result =>
+          KeyServiceClientRestCacheRedis.findPubKey(pubKey1) flatMap { result =>
 
             // verify
             val expected = Some(Json4sUtil.any2any[rest.PublicKey](pubKeyDb))
             result shouldBe expected
+            verifyCachedKey(publicKey, expected)
+
+          }
+
+      }
+
+    }
+
+    scenario("key exists in cache (for test purposes it is different from the database copy) --> Some") {
+
+      // prepare
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val publicKey = TestDataGeneratorDb.createPublicKey(
+        privateKey = privKey1,
+        infoPubKey = pubKey1,
+        infoValidNotBefore = DateTime.now.minusDays(1),
+        infoValidNotAfter = Some(DateTime.now.plusDays(1))
+      )
+      PublicKeyManager.create(publicKey) flatMap {
+
+        case Left(t) => fail(s"failed to prepare public key", t)
+
+        case Right(None) => fail("failed to prepare public key")
+
+        case Right(Some(pubKeyDb: PublicKey)) =>
+
+          val modifiedKey = Json4sUtil.any2any[rest.PublicKey](pubKeyDb).copy(signature = "1234_invalid_signature")
+          KeyServiceClientRedisCacheUtil.cachePublicKey(Some(modifiedKey)) flatMap {
+
+            case None => fail("failed to prepare cache during test setup")
+
+            case Some(_) =>
+
+              // test
+              KeyServiceClientRestCacheRedis.findPubKey(pubKey1) flatMap { result =>
+
+                // verify
+                val expected = Some(modifiedKey)
+                result shouldBe expected
+                verifyCachedKey(publicKey, expected)
+
+              }
 
           }
 
@@ -290,10 +351,10 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
 
   feature("currentlyValidPubKeys()") {
 
-    scenario("has no keys") {
+    scenario("has no keys --> None") {
 
       // test
-      KeyServiceClientRest.currentlyValidPubKeys("1234") map { result =>
+      KeyServiceClientRestCacheRedis.currentlyValidPubKeys("1234") map { result =>
 
         // verify
         result shouldBe defined
@@ -303,7 +364,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
 
     }
 
-    scenario("has valid key(s)") {
+    scenario("has valid key(s) --> Some") {
 
       // prepare
       val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
@@ -320,18 +381,97 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
 
         case Right(Some(existingPubKey: PublicKey)) =>
 
+          val hardwareId = existingPubKey.pubKeyInfo.hwDeviceId
           // test
-          KeyServiceClientRest.currentlyValidPubKeys(existingPubKey.pubKeyInfo.hwDeviceId) map { result =>
+          KeyServiceClientRestCacheRedis.currentlyValidPubKeys(hardwareId) flatMap { result =>
 
             // verify
             result shouldBe defined
             val actual = result.get
             val expected = Set(Json4sUtil.any2any[rest.PublicKey](existingPubKey))
             actual shouldBe expected
+            verifyCachedKeySet(hardwareId, expected)
 
           }
 
       }
+
+    }
+
+    scenario("has valid key(s) in cache (for test purpose they differ from the database copy) --> Some") {
+
+      // prepare
+      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val publicKey = TestDataGeneratorDb.createPublicKey(
+        privateKey = privKey1,
+        infoPubKey = pubKey1,
+        infoValidNotBefore = DateTime.now.minusDays(1)
+      )
+      PublicKeyManager.create(publicKey) flatMap {
+
+        case Left(t) => fail("failed to prepare public key", t)
+
+        case Right(None) => fail("failed to prepare public key")
+
+        case Right(Some(existingPubKey: PublicKey)) =>
+
+          val hardwareId = existingPubKey.pubKeyInfo.hwDeviceId
+          val modifiedKey = Json4sUtil.any2any[rest.PublicKey](existingPubKey).copy(signature = "1234_invalid_signature")
+          KeyServiceClientRedisCacheUtil.cacheValidKeys(hardwareId, Some(Set(modifiedKey))) flatMap {
+
+            case None => fail("failed to prepare cache during test setup")
+
+            case Some(_) =>
+
+              // test
+              KeyServiceClientRestCacheRedis.currentlyValidPubKeys(hardwareId) flatMap { result =>
+
+                // verify
+                result shouldBe defined
+                val actual = result.get
+                val expected = Set(modifiedKey)
+                actual shouldBe expected
+                verifyCachedKeySet(hardwareId, expected)
+
+              }
+
+          }
+
+      }
+
+    }
+
+  }
+
+  private def verifyCachedKey(publicKey: PublicKey, expected: Option[rest.PublicKey]): Future[Assertion] = {
+
+    val cacheKey = CacheHelperUtil.cacheKeyPublicKey(publicKey.pubKeyInfo.pubKey)
+    redisClient.get[String](cacheKey) map {
+
+      case None =>
+
+        fail("public key should have been cached")
+
+      case Some(json) =>
+
+        Some(read[rest.PublicKey](json)) shouldBe expected
+
+    }
+
+  }
+
+  private def verifyCachedKeySet(hardwareId: String, expected: Set[rest.PublicKey]): Future[Assertion] = {
+
+    val cacheKey = CacheHelperUtil.cacheKeyHardwareId(hardwareId)
+    redisClient.get[String](cacheKey) map {
+
+      case None =>
+
+        fail("public key set should have been cached")
+
+      case Some(json) =>
+
+        read[Set[rest.PublicKey]](json) shouldBe expected
 
     }
 

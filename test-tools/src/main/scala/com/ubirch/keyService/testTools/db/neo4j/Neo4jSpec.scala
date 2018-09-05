@@ -13,6 +13,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.ActorMaterializer
 
+import scala.concurrent.ExecutionContextExecutor
 import scala.language.postfixOps
 
 /**
@@ -26,6 +27,7 @@ trait Neo4jSpec extends AsyncFeatureSpec
   with StrictLogging {
 
   implicit val system: ActorSystem = ActorSystem()
+  implicit val ec: ExecutionContextExecutor = system.dispatcher
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val httpClient: HttpExt = Http()
 
@@ -53,10 +55,16 @@ trait Neo4jSpec extends AsyncFeatureSpec
       fail("failed to create indices")
     }
 
+    super.beforeEach()
+
   }
 
   override protected def afterAll(): Unit = {
+    super.afterAll()
+    system.terminate()
+    httpClient.shutdownAllConnectionPools()
     neo4jDriver.close()
+    Thread.sleep(500)
     System.exit(0)
   }
 

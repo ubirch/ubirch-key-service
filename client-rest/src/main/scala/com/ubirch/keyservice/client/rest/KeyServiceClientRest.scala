@@ -23,7 +23,9 @@ import scala.concurrent.Future
   * author: cvandrei
   * since: 2017-06-20
   */
-object KeyServiceClientRest extends MyJsonProtocol
+object KeyServiceClientRest extends KeyServiceClientRestBase {}
+
+trait KeyServiceClientRestBase extends MyJsonProtocol
   with StrictLogging {
 
   def check()(implicit httpClient: HttpExt, materializer: Materializer): Future[Option[JsonResponse]] = {

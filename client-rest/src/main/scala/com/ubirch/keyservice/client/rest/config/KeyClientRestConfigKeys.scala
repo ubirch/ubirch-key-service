@@ -4,10 +4,12 @@ package com.ubirch.keyservice.client.rest.config
   * author: cvandrei
   * since: 2017-06-20
   */
-object KeyClientRestConfigKeys {
+object KeyClientRestConfigKeys extends KeyClientRestConfigKeysBase {}
 
-  private val base = "ubirchKeyService.client.rest"
+trait KeyClientRestConfigKeysBase {
 
-  val HOST = s"$base.host"
+  protected val base = "ubirchKeyService.client"
+
+  val HOST = s"$base.rest.host"
 
 }

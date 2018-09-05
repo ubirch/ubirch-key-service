@@ -22,7 +22,7 @@ is only possible if you control the private key, too).
 
 This service has the following dependencies:
 
-* Neo4j 3.1.x (constraints and indices are created during server startup)
+* Neo4j 3.3.x (constraints and indices are created during server startup)
 
 
 ## Automated Tests
@@ -30,6 +30,11 @@ This service has the following dependencies:
 run all tests
 
     ./sbt test
+
+Most tests are in the following modules:
+
+* `core`
+* `client-rest`
 
 ### generate coverage report
 

@@ -31,6 +31,9 @@ If not healthy the status is `false` and the `messages` array not empty:
 
 #### Create
 
+This method is idempotent. Hence uploading an existing key does not produce an error but instead behaves as if the
+upload had been successful.
+
 All examples are based on the following key pair:
 
 * public key  = MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=
