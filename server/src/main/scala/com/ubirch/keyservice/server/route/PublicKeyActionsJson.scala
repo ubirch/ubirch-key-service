@@ -7,13 +7,15 @@ import akka.http.scaladsl.server.directives.{FutureDirectives, RouteDirectives}
 import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.StrictLogging
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys}
+
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys, TrustedKey}
 import com.ubirch.key.model.{db, rest}
 import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, QueryCurrentlyValid}
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
+
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 
 import scala.concurrent.ExecutionContextExecutor
@@ -151,4 +153,12 @@ trait PublicKeyActionsJson extends ResponseUtil {
     }
 
   }
+
+  def trustKey(trustedKey: TrustedKey): Route = {
+
+    // TODO UP-167: implement once there is agreement on the API
+    complete(StatusCodes.OK)
+
+  }
+
 }
