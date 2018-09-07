@@ -2,7 +2,7 @@ package com.ubirch.keyservice.server.route
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete}
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, SignedGetTrustedKeys}
 import com.ubirch.keyservice.server.actor.PublicKeyActor
 import com.ubirch.keyservice.server.actor.util.ActorNames
 import com.ubirch.keyservice.util.server.RouteConstants
@@ -50,6 +50,16 @@ class PublicKeyRoute(implicit neo4jDriver: Driver)
 
         }
 
+      } ~ path(RouteConstants.getTrusted) {
+        respondWithCORS {
+
+          post {
+            entity(as[SignedGetTrustedKeys]) { signedGetTrusted =>
+              getTrusted(signedGetTrusted)
+            }
+          }
+
+        }
       } ~ path(RouteConstants.current / RouteConstants.hardwareId / Segment) { hardwareId =>
         respondWithCORS {
 

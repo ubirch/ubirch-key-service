@@ -1,19 +1,23 @@
 package com.ubirch.keyservice.server.route
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.directives.{FutureDirectives, RouteDirectives}
-import akka.pattern.ask
-import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.StrictLogging
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys}
+
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeyInfo, PublicKeys, SignedGetTrustedKeys}
 import com.ubirch.key.model.{db, rest}
 import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, QueryCurrentlyValid}
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
+
+import org.joda.time.DateTime
+
+import akka.actor.{ActorRef, ActorSystem}
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.directives.{FutureDirectives, RouteDirectives}
+import akka.pattern.ask
+import akka.util.Timeout
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 
 import scala.concurrent.ExecutionContextExecutor
@@ -151,4 +155,23 @@ trait PublicKeyActionsJson extends ResponseUtil {
     }
 
   }
+
+  def getTrusted(signedGetTrusted: SignedGetTrustedKeys): Route = {
+
+    val pubKey = PublicKey(
+      pubKeyInfo = PublicKeyInfo(
+        algorithm = "ECC_ED25519",
+        created = DateTime.parse("2018-09-07T13:36:26.703Z"),
+        hwDeviceId = "db5f2882-0b08-49f8-85b1-cf709ec9af9f",
+        pubKey = "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+        pubKeyId = "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+        validNotBefore = DateTime.parse("2018-09-07T14:35:26.795Z")
+      ),
+      signature = "kDG1tut0GWe+gjXmy0aIfTeUxXLtKFjY0t06ua5V+2BsP7lPjQCbVKMecsBryuqdx5Sko1u1e3B7h2FjlW7cDw=="
+    )
+
+    complete(Set(pubKey))
+
+  }
+
 }

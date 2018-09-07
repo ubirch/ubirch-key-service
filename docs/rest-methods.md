@@ -238,6 +238,36 @@ If the server has problems the response is:
       }
     }
 
+#### Query Trusted Keys
+
+This method allows us to query all keys we trust. To ensure the underlying web-of-trust's privacy we only allow queries
+on keys which the caller has full control over which is ensured by a mandatory request signature.
+
+The request includes a `depth` field which we'll ignore for now. We'll start to use it only once full control over whom
+can see which trust relations has been implemented.
+
+##### Curl Example
+
+The example is based on the following key pair:
+
+* public key  = MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=
+* private key = MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==
+
+```bash
+# upload public key
+curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-07T13:36:26.703Z","hwDeviceId":"db5f2882-0b08-49f8-85b1-cf709ec9af9f","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-07T14:35:26.795Z"},"signature":"kDG1tut0GWe+gjXmy0aIfTeUxXLtKFjY0t06ua5V+2BsP7lPjQCbVKMecsBryuqdx5Sko1u1e3B7h2FjlW7cDw=="}'
+
+# get trusted keys
+curl -XPOST localhost:8095/api/keyService/v1/pubkey/getTrusted -H "Content-Type: application/json" -d '{
+  "getTrustedKeys": {
+    "created":"2018-09-07T14:36:27.236Z",
+    "depth":1,
+    "key":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4="
+  },
+  "signature":"cfHsFgKxu316rwUTnds5QOjcol8Cge9g3H4cYjvoc2vj0YZGZKU2R8MAqK/Edu4WOGrwRbl6B1xW6EhRYJ0aBw=="
+}'
+```
+
 #### Delete Public Key
 
 Key pair used for this example:

@@ -2,7 +2,7 @@
 
 ### Version 0.9.1 (tbd)
 
-* tbd
+* added proposal for new endpoint:`/pubkey/getTrusted`
 
 ### Version 0.9.0 (2018-09-05)
 
