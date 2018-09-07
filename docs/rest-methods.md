@@ -282,3 +282,28 @@ If the server has a problem:
         "errorMessage": "failed to delete public key"
       }
     }
+
+#### Revoke Key
+
+This method is idempotent. Hence revoking a key that already has been revoked is successful.
+
+##### Curl Example
+
+The example is based on the following key pair:
+
+* public key  = MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=
+* private key = MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==
+
+```bash
+# upload public key
+curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-07T11:14:16.394Z","hwDeviceId":"89c85d3d-7aee-4107-827e-d9e33f62158f","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-07T12:13:16.440Z"},"signature":"4K+HA5QIUG93Au1jlOGhrN7S4nmiPteR5x2zvShanoAQbcRfsvHznEelqiLADd3ax+5/IGOwzeCzXNH/8L2NAA=="}'
+
+# revoke key
+curl -XPOST localhost:8095/api/keyService/v1/pubkey/revoke -H "Content-Type: application/json" -d '{
+  "revoke":{
+    "created":"2018-09-07T12:14:16.872Z",
+    "key":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4="
+  },
+  "signature":"ES6OIkm1UP/Z/jrlnzm0abHbCYaBZCv/PzfNsJmmgd1DlrVSMGMV5WGUSdFP5qNQseNAaQyBogoy/IsRelZkAw=="
+}'
+```

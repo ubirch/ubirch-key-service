@@ -2,7 +2,7 @@
 
 ### Version 0.9.1 (tbd)
 
-* tbd
+* added proposal for new key revokation endpoint:`/pubkey/revoke`
 
 ### Version 0.9.0 (2018-09-05)
 

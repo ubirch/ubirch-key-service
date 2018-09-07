@@ -17,6 +17,7 @@ object RouteConstants {
   final val mpack = "mpack"
   final val current = "current"
   final val hardwareId = "hardwareId"
+  final val revoke = "revoke"
 
   val pathPrefix = s"/$apiPrefix/$serviceName/$currentVersion"
 
@@ -25,7 +26,9 @@ object RouteConstants {
 
   val pathPubKey = s"$pathPrefix/$pubKey"
 
-  val pathPubKeyMsgPack = s"$pathPrefix/$pubKey/$mpack"
+  val pathPubKeyMsgPack = s"$pathPubKey/$mpack"
+
+  val pathPubKeyRevoke = s"$pathPubKey/$revoke"
 
   private val pathPubKeyCurrentHardwareId = s"$pathPubKey/$current/$hardwareId"
   def pathPubKeyCurrentHardwareId(hardwareId: String): String = s"$pathPubKeyCurrentHardwareId/$hardwareId"
