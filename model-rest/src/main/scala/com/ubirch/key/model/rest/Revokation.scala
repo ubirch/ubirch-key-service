@@ -8,11 +8,11 @@ import org.joda.time.DateTime
   * author: cvandrei
   * since: 2018-09-07
   */
-case class SignedRevoke(revoke: Revoke,
+case class SignedRevoke(revokation: Revokation,
                         signature: String
                        )
 
 // fields should be ordered alphabetically as some client libs only produce JSON with alphabetically ordered fields!!!
-case class Revoke(created: DateTime = DateUtil.nowUTC,
-                  key: String
-                 )
+case class Revokation(publicKey: String,
+                      revokationDate: DateTime = DateUtil.nowUTC
+                     )

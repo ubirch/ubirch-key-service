@@ -1,7 +1,7 @@
 package com.ubirch.keyservice.cmd
 
 import com.ubirch.crypto.ecc.EccUtil
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo, Revoke, SignedRevoke}
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo, Revokation, SignedRevoke}
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
@@ -50,9 +50,9 @@ object RevokeExampleGenerator extends App {
 
   private def revokeKey(publicKey: String, privateKey: String): SignedRevoke = {
 
-    val revoke = Revoke(
-      created = DateUtil.nowUTC,
-      key = publicKey
+    val revoke = Revokation(
+      revokationDate = DateUtil.nowUTC,
+      publicKey = publicKey
     )
     val revokeJson = Json4sUtil.any2String(revoke).get
     val signature = EccUtil.signPayload(privateKey, revokeJson)

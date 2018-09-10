@@ -294,16 +294,16 @@ The example is based on the following key pair:
 * public key  = MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=
 * private key = MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==
 
-```bash
+```
 # upload public key
-curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-07T11:14:16.394Z","hwDeviceId":"89c85d3d-7aee-4107-827e-d9e33f62158f","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-07T12:13:16.440Z"},"signature":"4K+HA5QIUG93Au1jlOGhrN7S4nmiPteR5x2zvShanoAQbcRfsvHznEelqiLADd3ax+5/IGOwzeCzXNH/8L2NAA=="}'
+curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-10T11:10:28.286Z","hwDeviceId":"fcc0fca2-9dc5-4abe-9bc1-fa8221d1d7ef","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-10T12:09:28.365Z"},"signature":"XCSqmCSljuyOAfi2mVVfNj9nkWAs9oJdyFJccUFiYA/D0gxpnAYjJxJGY3Vds27O5KHm4WHOX96oa8LbF52VBw=="}'
 
 # revoke key
 curl -XPOST localhost:8095/api/keyService/v1/pubkey/revoke -H "Content-Type: application/json" -d '{
-  "revoke":{
-    "created":"2018-09-07T12:14:16.872Z",
-    "key":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4="
+  "revokation": {
+    "publicKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+    "revokationDate": "2018-09-10T12:10:29.188Z"
   },
-  "signature":"ES6OIkm1UP/Z/jrlnzm0abHbCYaBZCv/PzfNsJmmgd1DlrVSMGMV5WGUSdFP5qNQseNAaQyBogoy/IsRelZkAw=="
+  "signature": "4Nlml972DyFdCrVwzrDYnkuY2vcBOHe4txpI4rpTBILeKvtyOnHSi8M1Q00dTdF6VKcyTeWOrsZ0aQeEqY+wDQ=="
 }'
 ```
