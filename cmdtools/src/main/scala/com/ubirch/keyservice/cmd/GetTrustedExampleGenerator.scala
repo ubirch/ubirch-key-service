@@ -1,7 +1,7 @@
 package com.ubirch.keyservice.cmd
 
 import com.ubirch.crypto.ecc.EccUtil
-import com.ubirch.key.model.rest.{GetTrustedKeys, PublicKey, PublicKeyInfo, SignedGetTrustedKeys}
+import com.ubirch.key.model.rest.{TrustedKeys, PublicKey, PublicKeyInfo, SignedTrustedKeys}
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
@@ -15,19 +15,26 @@ object GetTrustedExampleGenerator extends App {
   override def main(args: Array[String]): Unit = {
 
     //val (publicKey, privateKey) = EccUtil.generateEccKeyPairEncoded
-    //val keyMaterialObject = keyMaterial(publicKey, privateKey)
     val (publicKey, privateKey) = ("MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=", "MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==")
-    val keyMaterialObject = keyMaterial("MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=", "MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==")
+    val keyMaterialObject = keyMaterial(publicKey, privateKey)
     val keyJson = Json4sUtil.any2String(keyMaterialObject.publicKey).get
 
-    println(s"====== curl call: upload public key")
+    val (anotherPublicKey, anotherPrivateKey) = EccUtil.generateEccKeyPairEncoded
+    val anotherKeyMaterialObject = keyMaterial(anotherPublicKey, anotherPrivateKey)
+    val anotherKeyJson = Json4sUtil.any2String(anotherKeyMaterialObject.publicKey).get
+
+    println(s"====== curl call: upload public keys")
+    println("# our key")
     println(s"""curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '$keyJson'""".stripMargin)
+    println("# another key")
+    println(s"""curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '$anotherKeyJson'""".stripMargin)
+    println("# TODO trust the other key, too, so it'll be included in the set of trusted keys")
 
     val signedGetTrusted = getTrustedSigned(publicKey = publicKey, privateKey = privateKey)
     val signedGetTrustedJson = Json4sUtil.any2String(signedGetTrusted).get
 
     println(s"====== curl call: get trusted keys")
-    println(s"""curl -XPOST localhost:8095/api/keyService/v1/pubkey/getTrusted -H "Content-Type: application/json" -d '$signedGetTrustedJson'""")
+    println(s"""curl -XGET localhost:8095/api/keyService/v1/pubkey/trusted -H "Content-Type: application/json" -d '$signedGetTrustedJson'""")
 
   }
 
@@ -48,16 +55,16 @@ object GetTrustedExampleGenerator extends App {
 
   }
 
-  private def getTrustedSigned(publicKey: String, privateKey: String): SignedGetTrustedKeys = {
+  private def getTrustedSigned(publicKey: String, privateKey: String): SignedTrustedKeys = {
 
-    val getTrusted = GetTrustedKeys(
-      created = DateUtil.nowUTC,
-      key = publicKey
+    val getTrusted = TrustedKeys(
+      originatorPublicKey = publicKey,
+      queryDate = DateUtil.nowUTC
     )
     val getTrustedJson = Json4sUtil.any2String(getTrusted).get
     val signature = EccUtil.signPayload(privateKey, getTrustedJson)
 
-    SignedGetTrustedKeys(getTrusted, signature)
+    SignedTrustedKeys(signature, getTrusted)
 
   }
 

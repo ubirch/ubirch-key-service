@@ -2,7 +2,7 @@ package com.ubirch.keyservice.server.route
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, SignedGetTrustedKeys}
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, SignedTrustedKeys}
 import com.ubirch.keyservice.server.actor.PublicKeyActor
 import com.ubirch.keyservice.server.actor.util.ActorNames
 import com.ubirch.keyservice.util.server.RouteConstants
@@ -50,11 +50,16 @@ class PublicKeyRoute(implicit neo4jDriver: Driver)
 
         }
 
-      } ~ path(RouteConstants.getTrusted) {
+      } ~ path(RouteConstants.trusted) {
         respondWithCORS {
 
-          post {
-            entity(as[SignedGetTrustedKeys]) { signedGetTrusted =>
+          get {
+            entity(as[SignedTrustedKeys]) { signedGetTrusted =>
+              getTrusted(signedGetTrusted)
+            }
+          } ~ post {
+            // NOTE this route is only for clients unable to send a body in a GET request
+            entity(as[SignedTrustedKeys]) { signedGetTrusted =>
               getTrusted(signedGetTrusted)
             }
           }

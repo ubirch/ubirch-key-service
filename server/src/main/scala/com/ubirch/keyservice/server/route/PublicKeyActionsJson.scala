@@ -2,7 +2,7 @@ package com.ubirch.keyservice.server.route
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeyInfo, PublicKeys, SignedGetTrustedKeys}
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeyInfo, PublicKeys, SignedTrustedKeys}
 import com.ubirch.key.model.{db, rest}
 import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, QueryCurrentlyValid}
@@ -156,8 +156,9 @@ trait PublicKeyActionsJson extends ResponseUtil {
 
   }
 
-  def getTrusted(signedGetTrusted: SignedGetTrustedKeys): Route = {
+  def getTrusted(signedGetTrusted: SignedTrustedKeys): Route = {
 
+    // TODO UP-173: replace with actual implemention
     val pubKey = PublicKey(
       pubKeyInfo = PublicKeyInfo(
         algorithm = "ECC_ED25519",
