@@ -8,7 +8,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys, TrustedKey}
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys, SignedTrustRelation}
 import com.ubirch.key.model.{db, rest}
 import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, QueryCurrentlyValid}
@@ -154,7 +154,7 @@ trait PublicKeyActionsJson extends ResponseUtil {
 
   }
 
-  def trustKey(trustedKey: TrustedKey): Route = {
+  def trustKey(trustedKey: SignedTrustRelation): Route = {
 
     // TODO UP-167: implement once there is agreement on the API
     complete(StatusCodes.OK)

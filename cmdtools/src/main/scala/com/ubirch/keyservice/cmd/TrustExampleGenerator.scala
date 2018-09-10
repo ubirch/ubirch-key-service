@@ -1,7 +1,7 @@
 package com.ubirch.keyservice.cmd
 
 import com.ubirch.crypto.ecc.EccUtil
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo, TrustedKey, TrustRelation}
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo, SignedTrustRelation, TrustRelation}
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
@@ -14,31 +14,34 @@ object TrustExampleGenerator extends App {
 
   override def main(args: Array[String]): Unit = {
 
-    val (fromPublicKey, fromPrivateKey) = EccUtil.generateEccKeyPairEncoded
-    val fromKeyMaterial = keyMaterial(fromPublicKey, fromPrivateKey)
-    //val fromKeyMaterial = keyMaterial("MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=", "MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==")
-    val fromKeyJson = Json4sUtil.any2String(fromKeyMaterial.publicKey).get
+    //val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded
+    //val keyMaterialA = keyMaterial(publicKeyA, privateKeyA)
+    val keyMaterialA = keyMaterial("MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=", "MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==")
+    val keyJsonA = Json4sUtil.any2String(keyMaterialA.publicKey).get
 
-    val (toPublicKey, toPrivateKey) = EccUtil.generateEccKeyPairEncoded
-    val toKeyMaterial = keyMaterial(toPublicKey, toPrivateKey)
-    //val toKeyMaterial = keyMaterial("MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=", "MC8CAQAwCAYDK2VkCgEBBCCnZ7tKYA/dzNPqgRRe6yBb+q7cj0AvWA6FVf6nxOtGlg==")
-    val toKeyJson = Json4sUtil.any2String(toKeyMaterial.publicKey).get
+    //val (publicKeyB, privateKeyB) = EccUtil.generateEccKeyPairEncoded
+    //val keyMaterialB = keyMaterial(publicKeyB, privateKeyB)
+    val keyMaterialB = keyMaterial("MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=", "MC8CAQAwCAYDK2VkCgEBBCCnZ7tKYA/dzNPqgRRe6yBb+q7cj0AvWA6FVf6nxOtGlg==")
+    val keyJsonB = Json4sUtil.any2String(keyMaterialB.publicKey).get
 
-    println(s"====== curl calls to upload public keys")
-    println(s"""(from) curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '$fromKeyJson'""".stripMargin)
-    println(s"""(to  ) curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '$toKeyJson'""".stripMargin)
+    println(s"## upload public keys")
+    println("# Key A")
+    println(s"""curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '$keyJsonA'""".stripMargin)
+    println("# Key B")
+    println(s"""curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '$keyJsonB'""".stripMargin)
 
-    val trustKeyFromTo = trustKey(fromKeyMaterial, toKeyMaterial)
-    val trustKeyJsonFromTo = Json4sUtil.any2String(trustKeyFromTo).get
+    println(s"## trusting public keys")
+    val trustKeyAToB = trustKey(keyMaterialA, keyMaterialB)
+    val trustKeyJsonAToB = Json4sUtil.any2String(trustKeyAToB).get
 
-    println(s"====== curl call to have one key trust another (from --> to)")
-    println(s"""curl -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonFromTo'""")
+    println(s"# trust(A --> B)")
+    println(s"""curl -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonAToB'""")
 
-    val trustKeyToFrom = trustKey(toKeyMaterial, fromKeyMaterial)
-    val trustKeyJsonToFrom = Json4sUtil.any2String(trustKeyToFrom).get
+    val trustKeyBToA = trustKey(keyMaterialB, keyMaterialA)
+    val trustKeyJsonBToA = Json4sUtil.any2String(trustKeyBToA).get
 
-    println(s"====== curl call to have one key trust another (to --> from)")
-    println(s"""curl -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonToFrom'""")
+    println(s"# trust(B --> a)")
+    println(s"""curl -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonBToA'""")
 
   }
 
@@ -59,18 +62,18 @@ object TrustExampleGenerator extends App {
 
   }
 
-  private def trustKey(from: KeyMaterial, to: KeyMaterial): TrustedKey = {
+  private def trustKey(from: KeyMaterial, to: KeyMaterial): SignedTrustRelation = {
 
     val trustRelation = TrustRelation(
       created = DateUtil.nowUTC,
-      fromKey = from.publicKey.pubKeyInfo.pubKey,
-      toKey = to.publicKey.pubKeyInfo.pubKey,
+      sourcePublicKey = from.publicKey.pubKeyInfo.pubKey,
+      targetPublicKey = to.publicKey.pubKeyInfo.pubKey,
       validNotAfter = Some(DateUtil.nowUTC.plusMonths(3))
     )
     val trustRelationJson = Json4sUtil.any2String(trustRelation).get
     val signature = EccUtil.signPayload(from.privateKeyString, trustRelationJson)
 
-    TrustedKey(signature, trustRelation)
+    SignedTrustRelation(signature, trustRelation)
 
   }
 

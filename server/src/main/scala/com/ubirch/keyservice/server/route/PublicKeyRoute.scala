@@ -2,7 +2,7 @@ package com.ubirch.keyservice.server.route
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, TrustedKey}
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, SignedTrustRelation}
 import com.ubirch.keyservice.server.actor.PublicKeyActor
 import com.ubirch.keyservice.server.actor.util.ActorNames
 import com.ubirch.keyservice.util.server.RouteConstants
@@ -54,7 +54,7 @@ class PublicKeyRoute(implicit neo4jDriver: Driver)
         respondWithCORS {
 
           post {
-            entity(as[TrustedKey]) { trustedKey =>
+            entity(as[SignedTrustRelation]) { trustedKey =>
               trustKey(trustedKey)
             }
           }
