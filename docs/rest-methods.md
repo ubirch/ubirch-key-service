@@ -135,6 +135,9 @@ curl -XPOST localhost:8095/api/keyService/v1/pubkey/mpack --data-binary '1001010
 
 This method is idempotent. Hence trusting a key that already has the callers trust is successful.
 
+NOTE: Details about the semantics of the `trustLevel` field have yet to be finalized. So far we at least know that it's
+mandatory and will most likely have a range of 1 to 100 with higher values having more weight.
+
 ##### Curl Example
 
 All examples are based on the following key pairs:
@@ -167,7 +170,7 @@ curl -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: appl
     "created": "2018-09-10T12:37:56.544Z",
     "sourcePublicKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
     "targetPublicKey": "MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=",
-    "trustLevel":10,
+    "trustLevel":50,
     "validNotAfter":"2018-12-10T12:37:56.544Z"
   },
   "signature": "yWMI1pe6Hi7Wf4UxUb1NOUHNBLu/ZyjpDVIqG6mK6mveKoqbU5K1z7cizthAUVVg8HLWRR3uIYLUV/Rx+06ADw=="

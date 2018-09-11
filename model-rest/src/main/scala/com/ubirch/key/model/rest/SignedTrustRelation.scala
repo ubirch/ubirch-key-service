@@ -16,6 +16,6 @@ case class SignedTrustRelation(trustRelation: TrustRelation,
 case class TrustRelation(created: DateTime = DateUtil.nowUTC,
                          sourcePublicKey: String,
                          targetPublicKey: String,
-                         trustLevel: Int = 10,
+                         trustLevel: Int = 50, // value range: 1, ..., 100 (higher values have more weight)
                          validNotAfter: Option[DateTime] = None
                         )
