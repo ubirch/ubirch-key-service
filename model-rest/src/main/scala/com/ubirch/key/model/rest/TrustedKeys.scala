@@ -14,6 +14,6 @@ case class TrustedKeys(depth: Int = 1,
                        queryDate: DateTime = DateUtil.nowUTC
                       )
 
-case class SignedTrustedKeys(signature: String,
-                             trustedKeys: TrustedKeys
+case class SignedTrustedKeys(trustedKeys: TrustedKeys,
+                             signature: String
                             )

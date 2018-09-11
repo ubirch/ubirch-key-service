@@ -241,7 +241,8 @@ If the server has problems the response is:
 #### Query Trusted Keys
 
 This method allows us to query all keys we trust. To ensure the underlying web-of-trust's privacy we only allow queries
-on keys which the caller has full control over which is ensured by a mandatory request signature.
+on keys which the caller has full control over which is ensured by a mandatory request signature. As a simple protection
+from replay attacks we also check if the `queryDate` is recent from the last few minutes.
 
 The request includes a `depth` field which we'll ignore for now. We'll start to use it only once full control over whom
 can see which trust relations has been implemented.
@@ -259,13 +260,13 @@ curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: applicatio
 
 # get trusted keys (client unable to handle sending a JSON with a GET request can also use '-XPOST'
 curl -XGET localhost:8095/api/keyService/v1/pubkey/trusted -H "Content-Type: application/json" -d '{
-  "signature": "qDi0+r7r+NecaeetzjBIGUdyIU8XQ7hZ5wZ4z89joZZwc5ue3Tej/jLHrF0IkK6uZDapci5q3TEQo9uACLatAw==",
   "trustedKeys": {
     "depth": 1,
     "minTrustLevel": 10,
     "originatorPublicKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
     "queryDate": "2018-09-10T14:15:18.450Z"
-  }
+  },
+  "signature": "qDi0+r7r+NecaeetzjBIGUdyIU8XQ7hZ5wZ4z89joZZwc5ue3Tej/jLHrF0IkK6uZDapci5q3TEQo9uACLatAw=="
 }'
 ```
 
