@@ -73,7 +73,7 @@ object TrustExampleGenerator extends App {
     val trustRelationJson = Json4sUtil.any2String(trustRelation).get
     val signature = EccUtil.signPayload(from.privateKeyString, trustRelationJson)
 
-    SignedTrustRelation(signature, trustRelation)
+    SignedTrustRelation(trustRelation, signature)
 
   }
 
