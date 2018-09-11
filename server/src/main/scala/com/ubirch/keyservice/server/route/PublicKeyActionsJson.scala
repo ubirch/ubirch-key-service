@@ -1,11 +1,5 @@
 package com.ubirch.keyservice.server.route
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.directives.{FutureDirectives, RouteDirectives}
-import akka.pattern.ask
-import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys, SignedTrustRelation}
@@ -16,6 +10,12 @@ import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
 
+import akka.actor.{ActorRef, ActorSystem}
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.directives.{FutureDirectives, RouteDirectives}
+import akka.pattern.ask
+import akka.util.Timeout
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 
 import scala.concurrent.ExecutionContextExecutor
@@ -37,6 +37,7 @@ trait PublicKeyActionsJson extends ResponseUtil {
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
   protected val pubKeyActor: ActorRef
+  protected val trustActor: ActorRef
 
   implicit val timeout: Timeout = Timeout(KeyConfig.actorTimeout seconds)
 
@@ -156,8 +157,39 @@ trait PublicKeyActionsJson extends ResponseUtil {
 
   def trustKey(trustedKey: SignedTrustRelation): Route = {
 
-    // TODO UP-167: implement once there is agreement on the API
-    complete(StatusCodes.OK)
+    onComplete(trustActor ? trustedKey) {
+
+      case Success(resp) =>
+
+        resp match {
+
+          case signedTrust: rest.SignedTrustRelation =>
+
+            logger.debug(s"trustKey() -- result(rest)=$signedTrust")
+            complete(signedTrust)
+
+          case jr: JsonErrorResponse =>
+
+            logger.error(s"failed to create trust relationship: JsonErrorResponse=$jr")
+            if (jr.errorType == "ServerError") {
+              complete(serverErrorResponse(jr))
+            } else {
+              complete(requestErrorResponse(jr))
+            }
+
+          case _ =>
+
+            logger.error("failed to create trust relationship due to unhandled response type in trustKey()")
+            complete(serverErrorResponse(errorType = "ServerError", errorMessage = "failed to create trust relationship"))
+
+        }
+
+      case Failure(t) =>
+
+        logger.error("create trust relationship call responded with an unhandled message (check PublicKeyRoute for bugs!!!)", t)
+        complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
+
+    }
 
   }
 

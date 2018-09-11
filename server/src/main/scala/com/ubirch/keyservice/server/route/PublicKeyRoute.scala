@@ -3,7 +3,7 @@ package com.ubirch.keyservice.server.route
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, SignedTrustRelation}
-import com.ubirch.keyservice.server.actor.PublicKeyActor
+import com.ubirch.keyservice.server.actor.{PublicKeyActor, TrustActor}
 import com.ubirch.keyservice.server.actor.util.ActorNames
 import com.ubirch.keyservice.util.server.RouteConstants
 import com.ubirch.util.http.response.ResponseUtil
@@ -31,6 +31,7 @@ class PublicKeyRoute(implicit neo4jDriver: Driver)
     with PublicKeyActionsJson {
 
   override protected val pubKeyActor: ActorRef = system.actorOf(PublicKeyActor.props(), ActorNames.PUB_KEY)
+  override protected val trustActor: ActorRef = system.actorOf(TrustActor.props(), ActorNames.TRUST)
 
   val route: Route = {
 
