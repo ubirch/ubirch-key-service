@@ -38,7 +38,7 @@ class TrustActor(implicit neo4jDriver: Driver) extends Actor
     val dbSignedTrust = Json4sUtil.any2any[db.SignedTrustRelation](signedTrust)
     try {
 
-      TrustManager.create(dbSignedTrust) onComplete {
+      TrustManager.upsert(dbSignedTrust) onComplete {
 
         case Success(Right(dbResult)) =>
 

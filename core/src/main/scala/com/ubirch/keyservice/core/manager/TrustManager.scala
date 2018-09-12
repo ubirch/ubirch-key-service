@@ -22,7 +22,7 @@ import scala.language.postfixOps
   */
 object TrustManager extends StrictLogging {
 
-  def create(signedTrust: SignedTrustRelation)
+  def upsert(signedTrust: SignedTrustRelation)
             (implicit neo4jDriver: Driver): Future[Either[ExpressingTrustException, SignedTrustRelation]] = {
 
     // TODO automated tests
