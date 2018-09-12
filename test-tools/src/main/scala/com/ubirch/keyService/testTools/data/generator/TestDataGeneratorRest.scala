@@ -1,7 +1,10 @@
 package com.ubirch.keyService.testTools.data.generator
 
+import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.crypto.hash.HashUtil
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo}
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo, SignedTrustRelation, TrustRelation}
+import com.ubirch.util.date.DateUtil
+import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
 
 import org.joda.time.{DateTime, DateTimeZone}
@@ -156,4 +159,22 @@ object TestDataGeneratorRest {
 
   }
 
+  def signedTrustRelation(from: KeyMaterial, to: KeyMaterial, trustLevel: Int = 50): SignedTrustRelation = {
+
+    val trustRelation = TrustRelation(
+      created = DateUtil.nowUTC,
+      sourcePublicKey = from.publicKey.pubKeyInfo.pubKey,
+      targetPublicKey = to.publicKey.pubKeyInfo.pubKey,
+      trustLevel = trustLevel,
+      validNotAfter = Some(DateUtil.nowUTC.plusMonths(3))
+    )
+    val trustRelationJson = Json4sUtil.any2String(trustRelation).get
+    val signature = EccUtil.signPayload(from.privateKeyString, trustRelationJson)
+
+    SignedTrustRelation(trustRelation, signature)
+
+  }
+
 }
+
+case class KeyMaterial(privateKeyString: String, publicKey: PublicKey)

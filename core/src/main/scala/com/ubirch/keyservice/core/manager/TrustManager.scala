@@ -35,76 +35,86 @@ object TrustManager extends StrictLogging {
 
     if (signatureValid) {
 
-      delete(signedTrust) map {
+      val trustLevel = signedTrust.trustRelation.trustLevel
+      if (trustLevel < 1 || trustLevel > 100) {
 
-        case Left(e: DeleteTrustException) =>
+        logger.error(s"create() -- invalid trustLevel value: signedTrust=$signedTrust")
+        Future(Left(new ExpressingTrustException(s"invalid trustLevel value")))
 
-          logger.error(s"create() -- DeleteTrustException: e.message=${e.getMessage}", e)
-          Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
+      } else {
 
-        case Right(false) =>
+        delete(signedTrust) map {
 
-          logger.error(s"create() -- failed to delete existing trust relationship before creating the latest version")
-          Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
+          case Left(e: DeleteTrustException) =>
 
-        case Right(true) =>
+            logger.error(s"create() -- DeleteTrustException: e.message=${e.getMessage}", e)
+            Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
 
-          val srcPubKey = signedTrust.trustRelation.sourcePublicKey
-          val targetPubKey = signedTrust.trustRelation.targetPublicKey
+          case Right(false) =>
 
-          val query =
-            s"""MATCH (source: PublicKey), (target: PublicKey)
-               | WHERE source.infoPubKey = '$srcPubKey' AND target.infoPubKey = '$targetPubKey'
-               | CREATE (source)-[trust:TRUST ${entityToString(signedTrust)}]->(target)
-               | RETURN trust""".stripMargin
-          logger.debug(s"Cypher query: $query")
-          val createResult = try {
+            logger.error(s"create() -- failed to delete existing trust relationship before creating the latest version")
+            Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
 
-            val session = neo4jDriver.session
-            try {
+          case Right(true) =>
 
-              session.writeTransaction(new TransactionWork[Either[ExpressingTrustException, SignedTrustRelation]]() {
-                def execute(tx: Transaction): Either[ExpressingTrustException, SignedTrustRelation] = {
+            val srcPubKey = signedTrust.trustRelation.sourcePublicKey
+            val targetPubKey = signedTrust.trustRelation.targetPublicKey
 
-                  val result = tx.run(query)
-                  val records = result.list().toSeq
-                  logger.info(s"create() -- found ${records.size} results for trust relationship=$signedTrust")
-                  val convertedResults = recordsToSignedTrustRelationship(records, "trust")
+            val query =
+              s"""MATCH (source: PublicKey), (target: PublicKey)
+                 | WHERE source.infoPubKey = '$srcPubKey' AND target.infoPubKey = '$targetPubKey'
+                 | CREATE (source)-[trust:TRUST ${entityToString(signedTrust)}]->(target)
+                 | RETURN trust""".stripMargin
+            logger.debug(s"Cypher query: $query")
+            val createResult = try {
 
-                  if (convertedResults.isEmpty) {
-                    logger.error(s"create() -- failed writing trust relationship with probably at least one key missing in database: signedTTrust=$signedTrust")
-                    Left(new ExpressingTrustException(s"it seems not all public key in the trust relationship are in our database. are you sure all of them have been uploaded?"))
-                  } else if (convertedResults.size == 1) {
-                    Right(convertedResults.head)
-                  } else {
-                    logger.error(s"create() -- failed while writing trust relationship to database: convertedResults.size=${convertedResults.size}; signedTTrust=$signedTrust")
-                    Left(new ExpressingTrustException(s"failed while writing trust relationship to database"))
+              val session = neo4jDriver.session
+              try {
+
+                session.writeTransaction(new TransactionWork[Either[ExpressingTrustException, SignedTrustRelation]]() {
+                  def execute(tx: Transaction): Either[ExpressingTrustException, SignedTrustRelation] = {
+
+                    val result = tx.run(query)
+                    val records = result.list().toSeq
+                    logger.info(s"create() -- found ${records.size} results for trust relationship=$signedTrust")
+                    val convertedResults = recordsToSignedTrustRelationship(records, "trust")
+
+                    if (convertedResults.isEmpty) {
+                      logger.error(s"create() -- failed writing trust relationship with probably at least one key missing in database: signedTTrust=$signedTrust")
+                      Left(new ExpressingTrustException(s"it seems not all public keys in the trust relationship are in our database. are you sure all of them have been uploaded?"))
+                    } else if (convertedResults.size == 1) {
+                      Right(convertedResults.head)
+                    } else {
+                      logger.error(s"create() -- failed while writing trust relationship to database: convertedResults.size=${convertedResults.size}; signedTTrust=$signedTrust")
+                      Left(new ExpressingTrustException(s"failed while writing trust relationship to database"))
+                    }
+
                   }
+                })
 
-                }
-              })
+              } finally if (session != null) session.close()
 
-            } finally if (session != null) session.close()
+            } catch {
 
-          } catch {
+              case su: ServiceUnavailableException =>
 
-            case su: ServiceUnavailableException =>
+                logger.error(s"create() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+                Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
 
-              logger.error(s"create() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
-              Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
+              case e: Exception =>
 
-            case e: Exception =>
+                logger.error(s"create() -- Exception: e.message=${e.getMessage}", e)
+                Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
 
-              logger.error(s"create() -- Exception: e.message=${e.getMessage}", e)
-              Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
+              case re: RuntimeException =>
 
-            case re: RuntimeException =>
+                logger.error(s"create() -- RuntimeException: re.message=${re.getMessage}", re)
+                Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
 
-              logger.error(s"create() -- RuntimeException: re.message=${re.getMessage}", re)
-              Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
+            }
+            createResult
 
-          }
-          createResult
+        }
 
       }
 
@@ -175,6 +185,61 @@ object TrustManager extends StrictLogging {
 
   }
 
+  def findBySourceTarget(sourcePubKey: String, targetPubKey: String)
+            (implicit neo4jDriver: Driver): Future[Either[FindTrustException, Option[SignedTrustRelation]]] = {
+
+    // TODO automated tests
+    val query = s"""MATCH ()-[trust:TRUST {trustSource: '$sourcePubKey', trustTarget: '$targetPubKey'}]->() RETURN trust""".stripMargin
+    logger.debug(s"findSourceTarget() -- query=$query")
+
+    val findResult = try {
+
+      val session = neo4jDriver.session
+      try {
+
+        session.writeTransaction(new TransactionWork[Either[FindTrustException, Option[SignedTrustRelation]]]() {
+          def execute(tx: Transaction): Either[FindTrustException, Option[SignedTrustRelation]] = {
+
+            val result = tx.run(query)
+            val recordsFound = result.list().toSeq
+            logger.info(s"findSourceTarget() -- found ${recordsFound.size} results for: sourcePubKey=$sourcePubKey, targetPubKey=$targetPubKey")
+            val convertedResults = recordsToSignedTrustRelationship(recordsFound, "trust")
+
+            if (convertedResults.isEmpty) {
+              logger.debug(s"findSourceTarget() -- failed finding trust relationship in database: sourcePubKey=$sourcePubKey, targetPubKey=$targetPubKey")
+              Right(convertedResults.headOption)
+            } else {
+              logger.error(s"findSourceTarget() -- failed while finding trust relationship in database: convertedResults.size=${convertedResults.size}; sourcePubKey=$sourcePubKey, targetPubKey=$targetPubKey")
+              Left(new FindTrustException(s"failed while writing trust relationship to database"))
+            }
+
+          }
+        })
+
+      } finally if (session != null) session.close()
+
+    } catch {
+
+      case su: ServiceUnavailableException =>
+
+        logger.error(s"findSourceTarget() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+        Left(new FindTrustException(s"failed to find trust relationship: sourcePubKey=$sourcePubKey, targetPubKey=$targetPubKey"))
+
+      case e: Exception =>
+
+        logger.error(s"findSourceTarget() -- Exception: sourcePubKey=$sourcePubKey, targetPubKey=$targetPubKey, e.message=${e.getMessage}", e)
+        Left(new FindTrustException(s"failed to find trust relationship: sourcePubKey=$sourcePubKey, targetPubKey=$targetPubKey"))
+
+      case re: RuntimeException =>
+
+        logger.error(s"findSourceTarget() -- RuntimeException: sourcePubKey=$sourcePubKey, targetPubKey=$targetPubKey, re.message=${re.getMessage}", re)
+        Left(new FindTrustException(s"failed to find trust relationship: sourcePubKey=$sourcePubKey, targetPubKey=$targetPubKey"))
+
+    }
+    Future(findResult)
+
+  }
+
   private def toKeyValueMap(signedTrustRelation: SignedTrustRelation): Map[String, Any] = {
 
     var keyValue: Map[String, Any] = Map(
@@ -223,3 +288,5 @@ object TrustManager extends StrictLogging {
 class ExpressingTrustException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)
 
 class DeleteTrustException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)
+
+class FindTrustException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)

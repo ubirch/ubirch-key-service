@@ -83,7 +83,7 @@ lazy val config = project
 
 lazy val cmdtools = project
   .settings(commonSettings)
-  .dependsOn(config, modelRest, util, utilsNeo4j)
+  .dependsOn(config, modelRest, util, utilsNeo4j, testTools)
   .settings(
     description := "command line tools",
     libraryDependencies ++= depCmdTools

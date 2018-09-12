@@ -1,10 +1,8 @@
 package com.ubirch.keyservice.cmd
 
 import com.ubirch.crypto.ecc.EccUtil
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo, SignedTrustRelation, TrustRelation}
-import com.ubirch.util.date.DateUtil
+import com.ubirch.keyService.testTools.data.generator.{KeyGenUtil, TestDataGeneratorRest}
 import com.ubirch.util.json.Json4sUtil
-import com.ubirch.util.uuid.UUIDUtil
 
 /**
   * author: cvandrei
@@ -16,12 +14,12 @@ object TrustExampleGenerator extends App {
 
     val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded
     //val (publicKeyA, privateKeyA) = ("MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=", "MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==")
-    val keyMaterialA = keyMaterial(publicKeyA, privateKeyA)
+    val keyMaterialA = KeyGenUtil.keyMaterial(publicKeyA, privateKeyA)
     val keyJsonA = Json4sUtil.any2String(keyMaterialA.publicKey).get
 
     val (publicKeyB, privateKeyB) = EccUtil.generateEccKeyPairEncoded
     //val (publicKeyB, privateKeyB) = ("MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=", "MC8CAQAwCAYDK2VkCgEBBCCnZ7tKYA/dzNPqgRRe6yBb+q7cj0AvWA6FVf6nxOtGlg==")
-    val keyMaterialB = keyMaterial(publicKeyB, privateKeyB)
+    val keyMaterialB = KeyGenUtil.keyMaterial(publicKeyB, privateKeyB)
     val keyJsonB = Json4sUtil.any2String(keyMaterialB.publicKey).get
 
     println(s"## upload public keys")
@@ -31,19 +29,19 @@ object TrustExampleGenerator extends App {
     println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '$keyJsonB'""".stripMargin)
 
     println(s"## trusting public keys")
-    val trustKeyAToBLevel50 = trustKey(keyMaterialA, keyMaterialB, 50)
+    val trustKeyAToBLevel50 = TestDataGeneratorRest.signedTrustRelation(keyMaterialA, keyMaterialB, 50)
     val trustKeyJsonAToBLevel50 = Json4sUtil.any2String(trustKeyAToBLevel50).get
 
     println(s"# trust(A --trustLevel:50--> B)")
     println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonAToBLevel50'""")
 
-    val trustKeyAToBLevel80 = trustKey(keyMaterialA, keyMaterialB, 80)
+    val trustKeyAToBLevel80 = TestDataGeneratorRest.signedTrustRelation(keyMaterialA, keyMaterialB, 80)
     val trustKeyJsonAToBLevel80 = Json4sUtil.any2String(trustKeyAToBLevel80).get
 
     println(s"# trust(A --trustLevel:80--> B)")
     println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonAToBLevel80'""")
 
-    val trustKeyBToA = trustKey(keyMaterialB, keyMaterialA)
+    val trustKeyBToA = TestDataGeneratorRest.signedTrustRelation(keyMaterialB, keyMaterialA)
     val trustKeyJsonBToA = Json4sUtil.any2String(trustKeyBToA).get
 
     println(s"# trust(B --> A)")
@@ -51,39 +49,4 @@ object TrustExampleGenerator extends App {
 
   }
 
-  private def keyMaterial(publicKey: String, privateKey: String): KeyMaterial = {
-
-    val info = PublicKeyInfo(
-      algorithm = "ECC_ED25519",
-      created = DateUtil.nowUTC.minusHours(1),
-      hwDeviceId = UUIDUtil.uuidStr,
-      pubKey = publicKey,
-      pubKeyId = publicKey,
-      validNotBefore = DateUtil.nowUTC.minusMinutes(1)
-    )
-    val signature = EccUtil.signPayload(privateKey, Json4sUtil.any2String(info).get)
-    val publicKeyObject = PublicKey(info, signature)
-
-    KeyMaterial(privateKey, publicKeyObject)
-
-  }
-
-  private def trustKey(from: KeyMaterial, to: KeyMaterial, trustLevel: Int = 50): SignedTrustRelation = {
-
-    val trustRelation = TrustRelation(
-      created = DateUtil.nowUTC,
-      sourcePublicKey = from.publicKey.pubKeyInfo.pubKey,
-      targetPublicKey = to.publicKey.pubKeyInfo.pubKey,
-      trustLevel = trustLevel,
-      validNotAfter = Some(DateUtil.nowUTC.plusMonths(3))
-    )
-    val trustRelationJson = Json4sUtil.any2String(trustRelation).get
-    val signature = EccUtil.signPayload(from.privateKeyString, trustRelationJson)
-
-    SignedTrustRelation(trustRelation, signature)
-
-  }
-
 }
-
-case class KeyMaterial(privateKeyString: String, publicKey: PublicKey)
