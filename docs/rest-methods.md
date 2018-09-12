@@ -156,28 +156,28 @@ All examples are based on the following key pairs:
 
 ```
 # Key A
-curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-10T11:37:56.094Z","hwDeviceId":"a7f0023c-59b1-463a-8377-bc575c2d6ec6","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-10T12:36:56.159Z"},"signature":"Yd85sqbcN6m1lPQbGtLjEfiBTSZqnW1lrLCgPFQhSsZtq8qQ17w6gzh2Azt+B5exhD+0RUnKKaYGnKy7DyzvBg=="}'
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-12T10:36:57.040Z","hwDeviceId":"3735c611-9543-4462-956f-da91560cc0a4","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-12T11:35:57.105Z"},"signature":"ntju7MUMEF5wrHjPC5/eRFE8GOPaFAfcw2fYLyU5ww3oGuLiRmKWRTNdFGlII65G2Uiiz3PLWscCt9QBGXwRAw=="}'
 # Key B
-curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-10T11:37:56.535Z","hwDeviceId":"08c378c3-086a-4e8e-93b9-a416e125e251","pubKey":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","pubKeyId":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","validNotBefore":"2018-09-10T12:36:56.535Z"},"signature":"rbtYmRQ93a8SQ72rxn5zC10FqAa9o2QDqtg13CYVJ0+Z/QC/bz4qPgKeIbdrTgh+MmAhClUHlscc/Kw64TeBAA=="}'
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-12T10:36:57.698Z","hwDeviceId":"306e6f70-52dd-4d29-a6af-b7c0a418be9d","pubKey":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","pubKeyId":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","validNotBefore":"2018-09-12T11:35:57.698Z"},"signature":"WzGya40WRQ3ahBkvxPqkKTJ+VYY4D0fYesHJ5u88OG++PWWtxQDiIEYMSdEp5SU17OAYdVXtlq9xFjML6M6WDw=="}'
 ```
 
 ###### Trust In Both Directions
 
 ```
 # trust(A --> B)
-curl -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '{
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '{
   "trustRelation": {
-    "created": "2018-09-10T12:37:56.544Z",
+    "created": "2018-09-12T11:36:57.710Z",
     "sourcePublicKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
     "targetPublicKey": "MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=",
-    "trustLevel":50,
-    "validNotAfter":"2018-12-10T12:37:56.544Z"
+    "trustLevel": 50,
+    "validNotAfter": "2018-12-12T11:36:57.710Z"
   },
-  "signature": "yWMI1pe6Hi7Wf4UxUb1NOUHNBLu/ZyjpDVIqG6mK6mveKoqbU5K1z7cizthAUVVg8HLWRR3uIYLUV/Rx+06ADw=="
+  "signature":"WoCkUWWcmUy7KorlR55SpeME3zsVEhUGklhYEosYLt/pqI1ib5zvRWh0l817AFt6fNnuMH+nKNpBQa3UzwzJBA=="
 }'
 
 # trust(B --> a)
-curl -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '{"trustRelation":{"created":"2018-09-10T12:37:56.558Z","sourcePublicKey":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","targetPublicKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","trustLevel":10,"validNotAfter":"2018-12-10T12:37:56.558Z"},"signature":"REbdGZ2gkXlRopNXz0p7w9r+fWxYNyvNp7eCgTKLBb48hRLhgUT/ur/dHrr8/CKc0pELL0Ne1jawKOU0SINZBw=="}'
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '{"trustRelation":{"created":"2018-09-12T11:36:57.749Z","sourcePublicKey":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","targetPublicKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","trustLevel":50,"validNotAfter":"2018-12-12T11:36:57.749Z"},"signature":"eUH0jVRHCgq3dK9wKmN/CBobC9X5vmaK3Ebc6/hev+dFePh1m+plcIYvIhj5ENJ+ZWjcEm1jxCJG6HT494p8DQ=="}'
 ```
 
 #### Query Public Keys by HardwareId (currently active only)
