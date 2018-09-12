@@ -152,33 +152,33 @@ All examples are based on the following key pairs:
 * public key  = MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=
 * private key = MC8CAQAwCAYDK2VkCgEBBCCnZ7tKYA/dzNPqgRRe6yBb+q7cj0AvWA6FVf6nxOtGlg==
 
-###### Uploading Both Keys
-
 ```
+## upload public keys
 # Key A
-curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-12T10:36:57.040Z","hwDeviceId":"3735c611-9543-4462-956f-da91560cc0a4","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-12T11:35:57.105Z"},"signature":"ntju7MUMEF5wrHjPC5/eRFE8GOPaFAfcw2fYLyU5ww3oGuLiRmKWRTNdFGlII65G2Uiiz3PLWscCt9QBGXwRAw=="}'
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-12T11:02:17.280Z","hwDeviceId":"6d0157ae-f53e-43a9-ad0d-f3d0a9d56176","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-12T12:01:17.326Z"},"signature":"RXX0HzCvtuiD6xOQ3Sw/BKLnyfCwgJdDBH7JKkKe7yTXStTlVZOYSyNAPI6uh5IMuXhejxFL6uhU7SAQtcxxDQ=="}'
 # Key B
-curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-12T10:36:57.698Z","hwDeviceId":"306e6f70-52dd-4d29-a6af-b7c0a418be9d","pubKey":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","pubKeyId":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","validNotBefore":"2018-09-12T11:35:57.698Z"},"signature":"WzGya40WRQ3ahBkvxPqkKTJ+VYY4D0fYesHJ5u88OG++PWWtxQDiIEYMSdEp5SU17OAYdVXtlq9xFjML6M6WDw=="}'
-```
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-12T11:02:17.705Z","hwDeviceId":"f02a3429-684a-42e2-b3f7-dc6f546bfed5","pubKey":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","pubKeyId":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","validNotBefore":"2018-09-12T12:01:17.706Z"},"signature":"ouXiAXlFoA+6vCgB7uNWlFP0ilbb1r1t9par2f77g7APXjnCXGrh84aRY22ogz6+sdhu2IXLd0WxbnyQffEEBw=="}'
 
-###### Trust In Both Directions
-
-```
-# trust(A --> B)
+## trusting public keys
+# trust(A --trustLevel:50--> B)
 curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '{
   "trustRelation": {
-    "created": "2018-09-12T11:36:57.710Z",
+    "created":"2018-09-12T12:02:17.717Z",
     "sourcePublicKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
     "targetPublicKey": "MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=",
     "trustLevel": 50,
-    "validNotAfter": "2018-12-12T11:36:57.710Z"
+    "validNotAfter": "2018-12-12T12:02:17.717Z"
   },
-  "signature":"WoCkUWWcmUy7KorlR55SpeME3zsVEhUGklhYEosYLt/pqI1ib5zvRWh0l817AFt6fNnuMH+nKNpBQa3UzwzJBA=="
+  "signature":"GfFLMrseDHoq7IcJu7dtNnUB4aHOfpKAQLLya1n7175Hk8uDG3JxEqKUKGWdpGnMc5pqQ+cDn0Horb8eI25iDA=="
 }'
 
-# trust(B --> a)
-curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '{"trustRelation":{"created":"2018-09-12T11:36:57.749Z","sourcePublicKey":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","targetPublicKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","trustLevel":50,"validNotAfter":"2018-12-12T11:36:57.749Z"},"signature":"eUH0jVRHCgq3dK9wKmN/CBobC9X5vmaK3Ebc6/hev+dFePh1m+plcIYvIhj5ENJ+ZWjcEm1jxCJG6HT494p8DQ=="}'
+# trust(A --trustLevel:80--> B)
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '{"trustRelation":{"created":"2018-09-12T12:02:17.740Z","sourcePublicKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","targetPublicKey":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","trustLevel":80,"validNotAfter":"2018-12-12T12:02:17.740Z"},"signature":"MjiYzGDMR1zlShrjoTZa/DTx2GO3Og70Z6i+NBhyNZU8LQpqq5BsQKtjhjsI9SiuHGSRseIQkCDH4zYD7zErBQ=="}'
+
+# trust(B --> A)
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '{"trustRelation":{"created":"2018-09-12T12:02:17.744Z","sourcePublicKey":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","targetPublicKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","trustLevel":50,"validNotAfter":"2018-12-12T12:02:17.744Z"},"signature":"HqR6L3jght47vQdCF2019wLC/rOgZ8BSt0j8garBSQ2SqaN0AKxkckTkPROO809bLg/CaGvwLu4MQFiJqkuYBg=="}'
 ```
+
 
 #### Query Public Keys by HardwareId (currently active only)
 

@@ -31,16 +31,22 @@ object TrustExampleGenerator extends App {
     println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '$keyJsonB'""".stripMargin)
 
     println(s"## trusting public keys")
-    val trustKeyAToB = trustKey(keyMaterialA, keyMaterialB)
-    val trustKeyJsonAToB = Json4sUtil.any2String(trustKeyAToB).get
+    val trustKeyAToBLevel50 = trustKey(keyMaterialA, keyMaterialB, 50)
+    val trustKeyJsonAToBLevel50 = Json4sUtil.any2String(trustKeyAToBLevel50).get
 
-    println(s"# trust(A --> B)")
-    println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonAToB'""")
+    println(s"# trust(A --trustLevel:50--> B)")
+    println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonAToBLevel50'""")
+
+    val trustKeyAToBLevel80 = trustKey(keyMaterialA, keyMaterialB, 80)
+    val trustKeyJsonAToBLevel80 = Json4sUtil.any2String(trustKeyAToBLevel80).get
+
+    println(s"# trust(A --trustLevel:80--> B)")
+    println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonAToBLevel80'""")
 
     val trustKeyBToA = trustKey(keyMaterialB, keyMaterialA)
     val trustKeyJsonBToA = Json4sUtil.any2String(trustKeyBToA).get
 
-    println(s"# trust(B --> a)")
+    println(s"# trust(B --> A)")
     println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonBToA'""")
 
   }
@@ -62,12 +68,13 @@ object TrustExampleGenerator extends App {
 
   }
 
-  private def trustKey(from: KeyMaterial, to: KeyMaterial): SignedTrustRelation = {
+  private def trustKey(from: KeyMaterial, to: KeyMaterial, trustLevel: Int = 50): SignedTrustRelation = {
 
     val trustRelation = TrustRelation(
       created = DateUtil.nowUTC,
       sourcePublicKey = from.publicKey.pubKeyInfo.pubKey,
       targetPublicKey = to.publicKey.pubKeyInfo.pubKey,
+      trustLevel = trustLevel,
       validNotAfter = Some(DateUtil.nowUTC.plusMonths(3))
     )
     val trustRelationJson = Json4sUtil.any2String(trustRelation).get
