@@ -38,11 +38,11 @@ class TrustActor(implicit neo4jDriver: Driver) extends Actor
     val dbSignedTrust = Json4sUtil.any2any[db.SignedTrustRelation](signedTrust)
     try {
 
-      TrustManager.upsert(dbSignedTrust) onComplete {
+      TrustManager.create(dbSignedTrust) onComplete {
 
         case Success(Right(dbResult)) =>
 
-          log.debug(s"executeExpressTruss() -- successful: dbResult=$dbResult")
+          log.debug(s"executeExpressTrust() -- successful: dbResult=$dbResult")
           val restResult = Json4sUtil.any2any[rest.SignedTrustRelation](dbResult)
           log.debug(s"executeExpressTrust() -- successful: restResult=$restResult")
           sender ! restResult

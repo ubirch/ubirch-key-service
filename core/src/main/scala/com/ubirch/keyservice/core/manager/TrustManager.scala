@@ -22,11 +22,10 @@ import scala.language.postfixOps
   */
 object TrustManager extends StrictLogging {
 
-  def upsert(signedTrust: SignedTrustRelation)
+  def create(signedTrust: SignedTrustRelation)
             (implicit neo4jDriver: Driver): Future[Either[ExpressingTrustException, SignedTrustRelation]] = {
 
     // TODO automated tests
-    // TODO continue tests of relationship being upserted (e.g. trustLevel changes)
     val payloadJson = Json4sUtil.any2String(signedTrust.trustRelation).get
     val signatureValid = EccUtil.validateSignature(
       publicKey = signedTrust.trustRelation.sourcePublicKey,
@@ -36,58 +35,78 @@ object TrustManager extends StrictLogging {
 
     if (signatureValid) {
 
-      val query =
-        s"""MATCH (source: PublicKey), (target: PublicKey)
-          | WHERE source.infoPubKey = '${signedTrust.trustRelation.sourcePublicKey}' AND target.infoPubKey = '${signedTrust.trustRelation.targetPublicKey}'
-          | MERGE (source)-[trust:TRUST ${entityToString(signedTrust)}]->(target)
-          | RETURN trust""".stripMargin
-      val createResult = try {
+      delete(signedTrust) map {
 
-        val session = neo4jDriver.session
-        try {
+        case Left(e: DeleteTrustException) =>
 
-          session.writeTransaction(new TransactionWork[Either[ExpressingTrustException, SignedTrustRelation]]() {
-            def execute(tx: Transaction): Either[ExpressingTrustException, SignedTrustRelation] = {
-
-              val result = tx.run(query)
-              val records = result.list().toSeq
-              logger.info(s"found ${records.size} results for trust relationship=$signedTrust")
-              val convertedResults = recordsToSignedTrustRelationship(records, "trust")
-
-              if (convertedResults.isEmpty) {
-                logger.error(s"create() -- failed writing trust relationship with probably at least one key missing in database: signedTTrust=$signedTrust")
-                Left(new ExpressingTrustException(s"it seems not all public key in the trust relationship are in our database. are you sure all of them have been uploaded?"))
-              } else if (convertedResults.size == 1) {
-                Right(convertedResults.head)
-              } else {
-                logger.error(s"create() -- failed while writing trust relationship to database: convertedResults.size=${convertedResults.size}; signedTTrust=$signedTrust")
-                Left(new ExpressingTrustException(s"failed while writing trust relationship to database"))
-              }
-
-            }
-          })
-
-        } finally if (session != null) session.close()
-
-      } catch {
-
-        case su: ServiceUnavailableException =>
-
-          logger.error(s"create() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+          logger.error(s"create() -- DeleteTrustException: e.message=${e.getMessage}", e)
           Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
 
-        case e: Exception =>
+        case Right(false) =>
 
-          logger.error(s"create() -- Exception: e.message=${e.getMessage}", e)
+          logger.error(s"create() -- failed to delete existing trust relationship before creating the latest version")
           Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
 
-        case re: RuntimeException =>
+        case Right(true) =>
 
-          logger.error(s"create() -- RuntimeException: re.message=${re.getMessage}", re)
-          Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
+          val srcPubKey = signedTrust.trustRelation.sourcePublicKey
+          val targetPubKey = signedTrust.trustRelation.targetPublicKey
+
+          val query =
+            s"""MATCH (source: PublicKey), (target: PublicKey)
+               | WHERE source.infoPubKey = '$srcPubKey' AND target.infoPubKey = '$targetPubKey'
+               | CREATE (source)-[trust:TRUST ${entityToString(signedTrust)}]->(target)
+               | RETURN trust""".stripMargin
+          logger.debug(s"Cypher query: $query")
+          val createResult = try {
+
+            val session = neo4jDriver.session
+            try {
+
+              session.writeTransaction(new TransactionWork[Either[ExpressingTrustException, SignedTrustRelation]]() {
+                def execute(tx: Transaction): Either[ExpressingTrustException, SignedTrustRelation] = {
+
+                  val result = tx.run(query)
+                  val records = result.list().toSeq
+                  logger.info(s"create() -- found ${records.size} results for trust relationship=$signedTrust")
+                  val convertedResults = recordsToSignedTrustRelationship(records, "trust")
+
+                  if (convertedResults.isEmpty) {
+                    logger.error(s"create() -- failed writing trust relationship with probably at least one key missing in database: signedTTrust=$signedTrust")
+                    Left(new ExpressingTrustException(s"it seems not all public key in the trust relationship are in our database. are you sure all of them have been uploaded?"))
+                  } else if (convertedResults.size == 1) {
+                    Right(convertedResults.head)
+                  } else {
+                    logger.error(s"create() -- failed while writing trust relationship to database: convertedResults.size=${convertedResults.size}; signedTTrust=$signedTrust")
+                    Left(new ExpressingTrustException(s"failed while writing trust relationship to database"))
+                  }
+
+                }
+              })
+
+            } finally if (session != null) session.close()
+
+          } catch {
+
+            case su: ServiceUnavailableException =>
+
+              logger.error(s"create() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+              Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
+
+            case e: Exception =>
+
+              logger.error(s"create() -- Exception: e.message=${e.getMessage}", e)
+              Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
+
+            case re: RuntimeException =>
+
+              logger.error(s"create() -- RuntimeException: re.message=${re.getMessage}", re)
+              Left(new ExpressingTrustException(s"failed to create trust relationship: $signedTrust"))
+
+          }
+          createResult
 
       }
-      Future(createResult)
 
     } else {
 
@@ -96,6 +115,63 @@ object TrustManager extends StrictLogging {
       Future(Left(new ExpressingTrustException("signature verification failed")))
 
     }
+
+  }
+
+  def delete(signedTrust: SignedTrustRelation)
+            (implicit neo4jDriver: Driver): Future[Either[DeleteTrustException, Boolean]] = {
+
+    // TODO automated tests
+    val srcPubKey = signedTrust.trustRelation.sourcePublicKey
+    val targetPubKey = signedTrust.trustRelation.targetPublicKey
+
+    val query = s"""MATCH ()-[trust:TRUST {trustSource: '$srcPubKey', trustTarget: '$targetPubKey'}]->()  DELETE trust RETURN trust""".stripMargin
+    logger.debug(s"delete() -- query=$query")
+
+    val deleteResult = try {
+
+      val session = neo4jDriver.session
+      try {
+
+        session.writeTransaction(new TransactionWork[Either[DeleteTrustException, Boolean]]() {
+          def execute(tx: Transaction): Either[DeleteTrustException, Boolean] = {
+
+            val result = tx.run(query)
+            val recordsDeleted = result.list()
+            logger.info(s"delete() -- found ${recordsDeleted.size} results for trust relationship=$signedTrust")
+
+            if (recordsDeleted.isEmpty || recordsDeleted.size == 1) {
+              logger.debug(s"delete() -- deleted ${recordsDeleted.size} trust relationships: signedTTrust=$signedTrust")
+              Right(true)
+            } else {
+              logger.error(s"delete() -- deleted ${recordsDeleted.size} trust relationships insetad of just one: signedTTrust=$signedTrust")
+              Left(new DeleteTrustException(s"deleted too many trust relationships"))
+            }
+
+          }
+        })
+
+      } finally if (session != null) session.close()
+
+    } catch {
+
+      case su: ServiceUnavailableException =>
+
+        logger.error(s"delete() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+        Left(new DeleteTrustException(s"failed to delete trust relationship: $signedTrust"))
+
+      case e: Exception =>
+
+        logger.error(s"delete() -- Exception: e.message=${e.getMessage}", e)
+        Left(new DeleteTrustException(s"failed to delete trust relationship: $signedTrust"))
+
+      case re: RuntimeException =>
+
+        logger.error(s"delete() -- RuntimeException: re.message=${re.getMessage}", re)
+        Left(new DeleteTrustException(s"failed to delete trust relationship: $signedTrust"))
+
+    }
+    Future(deleteResult)
 
   }
 
@@ -145,3 +221,5 @@ object TrustManager extends StrictLogging {
 }
 
 class ExpressingTrustException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)
+
+class DeleteTrustException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)
