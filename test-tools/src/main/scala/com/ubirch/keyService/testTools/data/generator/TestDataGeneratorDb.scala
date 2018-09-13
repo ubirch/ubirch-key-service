@@ -150,4 +150,33 @@ object TestDataGeneratorDb {
 
   }
 
+  def generateTwoKeyPairs(): KeyMaterialAAndBDb = {
+
+    val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded
+    val keyMaterialA = KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA)
+    val (publicKeyB, privateKeyB) = EccUtil.generateEccKeyPairEncoded
+    val keyMaterialB = KeyGenUtil.keyMaterial(publicKey = publicKeyB, privateKey = privateKeyB)
+
+    val publicKeys = Set(
+      Json4sUtil.any2any[PublicKey](keyMaterialA.publicKey),
+      Json4sUtil.any2any[PublicKey](keyMaterialB.publicKey)
+    )
+
+    KeyMaterialAAndBDb(
+      keyMaterialA = keyMaterialA,
+      keyMaterialB = keyMaterialB,
+      publicKeys = publicKeys
+    )
+
+  }
+
+}
+
+case class KeyMaterialAAndBDb(keyMaterialA: KeyMaterial,
+                            keyMaterialB: KeyMaterial,
+                            publicKeys: Set[PublicKey]
+                           ) {
+
+  def privateKeyA(): String = keyMaterialA.privateKeyString
+
 }

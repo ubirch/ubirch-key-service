@@ -2,7 +2,7 @@ package com.ubirch.keyservice.core.manager
 
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model.db.{PublicKey, SignedTrustRelation}
-import com.ubirch.keyService.testTools.data.generator.{KeyGenUtil, KeyMaterial, TestDataGeneratorDb}
+import com.ubirch.keyService.testTools.data.generator.{KeyGenUtil, TestDataGeneratorDb}
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
 import com.ubirch.util.json.Json4sUtil
 
@@ -21,7 +21,7 @@ class TrustManagerSpec extends Neo4jSpec {
     scenario("empty database --> error") {
 
       // prepare
-      val twoKeyPairs = generateTwoKeyPairs()
+      val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
 
       val signedTrustRelation = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
 
@@ -52,7 +52,7 @@ class TrustManagerSpec extends Neo4jSpec {
     scenario("invalid signature --> error") {
 
       // prepare
-      val twoKeyPairs = generateTwoKeyPairs()
+      val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
 
       val signedTrustRelationPrelim = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
       val signedTrustRelation = signedTrustRelationPrelim.copy(
@@ -87,7 +87,7 @@ class TrustManagerSpec extends Neo4jSpec {
     scenario("only sourceKey exists --> error") {
 
       // prepare
-      val twoKeyPairs = generateTwoKeyPairs()
+      val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
 
       val signedTrustRelation = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
 
@@ -121,7 +121,7 @@ class TrustManagerSpec extends Neo4jSpec {
     scenario("only targetKey exists --> error") {
 
       // prepare
-      val twoKeyPairs = generateTwoKeyPairs()
+      val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
 
       val signedTrustRelation = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
 
@@ -155,7 +155,7 @@ class TrustManagerSpec extends Neo4jSpec {
     scenario("source- and targetKey exist --> create") {
 
       // prepare
-      val twoKeyPairs = generateTwoKeyPairs()
+      val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
 
       persistPublicKeys(twoKeyPairs.publicKeys) flatMap { publicKeysPersisted =>
 
@@ -187,14 +187,14 @@ class TrustManagerSpec extends Neo4jSpec {
     scenario("one sourceKey trusting two different targetKeys --> create") {
 
       // prepare
-      val twoKeyPairs = generateTwoKeyPairs()
+      val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
       val (publicKeyC, privateKeyC) = EccUtil.generateEccKeyPairEncoded
       val keyMaterialC = KeyGenUtil.keyMaterial(publicKey = publicKeyC, privateKey = privateKeyC)
 
       val publicKeys = twoKeyPairs.publicKeys ++ Set(Json4sUtil.any2any[PublicKey](keyMaterialC.publicKey))
       persistPublicKeys(publicKeys) flatMap { publicKeysPersisted =>
 
-        val expectPublicKeysPersisted = publicKeys.map { pk => Right(Some(pk))}
+        val expectPublicKeysPersisted = publicKeys.map { pk => Right(Some(pk)) }
         publicKeysPersisted shouldBe expectPublicKeysPersisted
 
         val signedTrustRelationAToB = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
@@ -236,7 +236,7 @@ class TrustManagerSpec extends Neo4jSpec {
     scenario("source- and targetKey exist; trust exists; change 'trustLevel' --> update") {
 
       // prepare
-      val twoKeyPairs = generateTwoKeyPairs()
+      val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
 
       val signedTrustRelation1 = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
       val trustRelation1 = signedTrustRelation1.trustRelation
@@ -254,7 +254,7 @@ class TrustManagerSpec extends Neo4jSpec {
     scenario("source- and targetKey exist; trust exists; change 'created' --> update") {
 
       // prepare
-      val twoKeyPairs = generateTwoKeyPairs()
+      val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
 
       val signedTrustRelation1 = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
       val trustRelation1 = signedTrustRelation1.trustRelation
@@ -272,7 +272,7 @@ class TrustManagerSpec extends Neo4jSpec {
     scenario("source- and targetKey exist; trust exists; change 'validNotAfter' --> update") {
 
       // prepare
-      val twoKeyPairs = generateTwoKeyPairs()
+      val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
 
       val signedTrustRelation1 = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
       val trustRelation1 = signedTrustRelation1.trustRelation
@@ -290,7 +290,7 @@ class TrustManagerSpec extends Neo4jSpec {
     scenario("source- and targetKey exist; trust exists; remove 'validNotAfter' --> update") {
 
       // prepare
-      val twoKeyPairs = generateTwoKeyPairs()
+      val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
 
       val signedTrustRelation1 = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
       val trustRelation1 = signedTrustRelation1.trustRelation
@@ -312,7 +312,7 @@ class TrustManagerSpec extends Neo4jSpec {
     scenario("empty database --> true") {
 
       // prepare
-      val twoKeyPairs = generateTwoKeyPairs()
+      val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
       val signedTrustRelation = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
 
       // test
@@ -323,7 +323,7 @@ class TrustManagerSpec extends Neo4jSpec {
     scenario("non-empty database; trust relationship to delete does not exist --> true") {
 
       // prepare
-      val twoKeyPairs = generateTwoKeyPairs()
+      val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
       val (publicKeyC, privateKeyC) = EccUtil.generateEccKeyPairEncoded
       val keyMaterialC = KeyGenUtil.keyMaterial(publicKey = publicKeyC, privateKey = privateKeyC)
 
@@ -349,7 +349,7 @@ class TrustManagerSpec extends Neo4jSpec {
             TrustManager.findBySourceTarget(
               sourcePubKey = signedTrustRelationAToB.trustRelation.sourcePublicKey,
               targetPubKey = signedTrustRelationAToB.trustRelation.targetPublicKey
-            ) map(_ shouldBe Right(Some(signedTrustRelationAToB)))
+            ) map (_ shouldBe Right(Some(signedTrustRelationAToB)))
 
           }
 
@@ -362,7 +362,7 @@ class TrustManagerSpec extends Neo4jSpec {
     scenario("trust relationship exists --> true") {
 
       // prepare
-      val twoKeyPairs = generateTwoKeyPairs()
+      val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
       val (publicKeyC, privateKeyC) = EccUtil.generateEccKeyPairEncoded
       val keyMaterialC = KeyGenUtil.keyMaterial(publicKey = publicKeyC, privateKey = privateKeyC)
 
@@ -387,7 +387,7 @@ class TrustManagerSpec extends Neo4jSpec {
             TrustManager.findBySourceTarget(
               sourcePubKey = signedTrustRelation.trustRelation.sourcePublicKey,
               targetPubKey = signedTrustRelation.trustRelation.targetPublicKey
-            ) map(_ shouldBe Right(None))
+            ) map (_ shouldBe Right(None))
 
           }
 
@@ -402,7 +402,7 @@ class TrustManagerSpec extends Neo4jSpec {
   private def testWithInvalidTrustLevel(trustLevel: Int): Future[Assertion] = {
 
     // prepare
-    val twoKeyPairs = generateTwoKeyPairs()
+    val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
 
     val signedTrustRelation = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB, trustLevel = trustLevel)
 
@@ -429,9 +429,9 @@ class TrustManagerSpec extends Neo4jSpec {
   }
 
   private def testUpsertWithModifiedField(publicKeys: Set[PublicKey],
-                                  signedTrustRelation1: SignedTrustRelation,
-                                  signedTrustRelation2: SignedTrustRelation
-                                 ): Future[Assertion] = {
+                                          signedTrustRelation1: SignedTrustRelation,
+                                          signedTrustRelation2: SignedTrustRelation
+                                         ): Future[Assertion] = {
 
     persistPublicKeys(publicKeys) flatMap { publicKeysPersisted =>
 
@@ -466,34 +466,5 @@ class TrustManagerSpec extends Neo4jSpec {
     }
 
   }
-
-  private def generateTwoKeyPairs(): KeyMaterialAAndB = {
-
-    val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded
-    val keyMaterialA = KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA)
-    val (publicKeyB, privateKeyB) = EccUtil.generateEccKeyPairEncoded
-    val keyMaterialB = KeyGenUtil.keyMaterial(publicKey = publicKeyB, privateKey = privateKeyB)
-
-    val publicKeys = Set(
-      Json4sUtil.any2any[PublicKey](keyMaterialA.publicKey),
-      Json4sUtil.any2any[PublicKey](keyMaterialB.publicKey)
-    )
-
-    KeyMaterialAAndB(
-      keyMaterialA = keyMaterialA,
-      keyMaterialB = keyMaterialB,
-      publicKeys = publicKeys
-    )
-
-  }
-
-}
-
-case class KeyMaterialAAndB(keyMaterialA: KeyMaterial,
-                            keyMaterialB: KeyMaterial,
-                            publicKeys: Set[PublicKey]
-                           ) {
-
-  def privateKeyA(): String = keyMaterialA.privateKeyString
 
 }

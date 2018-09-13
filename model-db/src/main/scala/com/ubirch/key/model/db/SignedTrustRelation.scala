@@ -9,7 +9,8 @@ import org.joda.time.DateTime
   * since: 2018-09-11
   */
 case class SignedTrustRelation(trustRelation: TrustRelation,
-                               signature: String
+                               signature: String,
+                               created: DateTime = DateUtil.nowUTC
                               )
 
 // fields should be ordered alphabetically as some client libs only produce JSON with alphabetically ordered fields!!!

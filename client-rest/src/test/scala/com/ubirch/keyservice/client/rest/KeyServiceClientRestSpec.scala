@@ -5,18 +5,20 @@ import java.util.Base64
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model._
 import com.ubirch.key.model.db.PublicKey
-import com.ubirch.key.model.rest.PublicKeyDelete
-import com.ubirch.keyService.testTools.data.generator.TestDataGeneratorDb
+import com.ubirch.key.model.rest.{PublicKeyDelete, SignedTrustRelation}
+import com.ubirch.keyService.testTools.data.generator.{TestDataGeneratorDb, TestDataGeneratorRest}
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
 import com.ubirch.keyservice.config.KeyConfig
-import com.ubirch.keyservice.core.manager.PublicKeyManager
+import com.ubirch.keyservice.core.manager.{PublicKeyManager, TrustManager}
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
 import com.ubirch.util.json.Json4sUtil
-import com.ubirch.util.model.JsonResponse
+import com.ubirch.util.model.{JsonErrorResponse, JsonResponse}
 import com.ubirch.util.uuid.UUIDUtil
 
 import org.joda.time.DateTime
+
+import scala.concurrent.Future
 
 /**
   * author: cvandrei
@@ -334,6 +336,78 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
       }
 
     }
+
+  }
+
+  feature("pubKeyTrustPOST()") {
+
+    scenario("empty database --> error") {
+
+      // prepare
+      val twoKeyPairs = TestDataGeneratorRest.generateTwoKeyPairs()
+
+      val signedTrustRelation = TestDataGeneratorRest.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
+
+      // test
+      KeyServiceClientRest.pubKeyTrustPOST(signedTrustRelation) flatMap { result =>
+
+        result shouldBe Left(JsonErrorResponse(errorType = "TrustError", errorMessage = "it seems not all public keys in the trust relationship are in our database. are you sure all of them have been uploaded?"))
+
+        TrustManager.findBySourceTarget(
+          sourcePubKey = signedTrustRelation.trustRelation.sourcePublicKey,
+          targetPubKey = signedTrustRelation.trustRelation.targetPublicKey
+        ) map { inDatabase =>
+
+          inDatabase shouldBe Right(None)
+
+        }
+
+      }
+
+    }
+
+    scenario("both keys exist --> create") {
+
+      // prepare
+      val twoKeyPairs = TestDataGeneratorRest.generateTwoKeyPairs()
+
+      val signedTrustRelation = TestDataGeneratorRest.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
+
+      uploadPublicKeys(twoKeyPairs.publicKeys) flatMap { publicKeysUploaded =>
+
+        val expectedUploadResult = twoKeyPairs.publicKeys.map(Some(_))
+        publicKeysUploaded shouldBe expectedUploadResult
+
+        // test
+        KeyServiceClientRest.pubKeyTrustPOST(signedTrustRelation) flatMap { result =>
+
+          result shouldBe Right(signedTrustRelation)
+
+          TrustManager.findBySourceTarget(
+            sourcePubKey = signedTrustRelation.trustRelation.sourcePublicKey,
+            targetPubKey = signedTrustRelation.trustRelation.targetPublicKey
+          ) map {
+
+            case Left(_) => fail("trust should be in database")
+
+            case Right(trustInDb) =>
+
+              val dbObjectToRest = Json4sUtil.any2any[SignedTrustRelation](trustInDb)
+              dbObjectToRest shouldBe signedTrustRelation
+
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
+  private def uploadPublicKeys(publicKeys: Set[rest.PublicKey]): Future[Set[Option[rest.PublicKey]]] = {
+
+    Future.sequence(publicKeys map KeyServiceClientRest.pubKeyPOST)
 
   }
 

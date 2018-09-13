@@ -268,6 +268,7 @@ object TrustManager extends StrictLogging {
 
     var keyValue: Map[String, Any] = Map(
       "signature" -> signedTrustRelation.signature,
+      "created" -> signedTrustRelation.created,
       "trustCreated" -> signedTrustRelation.trustRelation.created,
       "trustSource" -> signedTrustRelation.trustRelation.sourcePublicKey,
       "trustTarget" -> signedTrustRelation.trustRelation.targetPublicKey,
@@ -300,7 +301,8 @@ object TrustManager extends StrictLogging {
           trustLevel = Neo4jParseUtil.asType[Long](trustRelation, "trustLevel").toInt,
           validNotAfter = Neo4jParseUtil.asDateTimeOption(trustRelation, "trustNotValidAfter")
         ),
-        signature = Neo4jParseUtil.asType[String](trustRelation, "signature")
+        signature = Neo4jParseUtil.asType[String](trustRelation, "signature"),
+        created = Neo4jParseUtil.asDateTime(trustRelation, "created")
       )
 
     } toSet
