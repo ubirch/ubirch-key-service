@@ -3,10 +3,12 @@ package com.ubirch.keyservice.core.manager
 import java.util.Base64
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
+
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete, PublicKeyInfo}
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
 import com.ubirch.util.neo4j.utils.Neo4jParseUtil
+
 import org.joda.time.{DateTime, DateTimeZone}
 import org.neo4j.driver.v1.Values.parameters
 import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
@@ -323,24 +325,9 @@ object PublicKeyManager extends StrictLogging {
 
   }
 
-  private def keyValueToString(keyValue: Map[String, Any]): String = {
-
-    val data: String = keyValue map {
-      case (key, value: Int) => s"""$key: $value"""
-      case (key, value: Long) => s"""$key: $value"""
-      case (key, value: Boolean) => s"""$key: $value"""
-      case (key, value: String) => s"""$key: "$value""""
-      case (key, value) => s"""$key: "$value""""
-    } mkString("{", ", ", "}")
-    logger.debug(s"keyValues.string -- $data")
-
-    data
-
-  }
-
   private def entityToString(publicKey: PublicKey): String = {
     val keyValue = toKeyValueMap(publicKey)
-    keyValueToString(keyValue)
+    Neo4jParseUtil.keyValueToString(keyValue)
   }
 
   private def recordsToPublicKeys(records: Seq[Record], recordLabel: String): Set[PublicKey] = {

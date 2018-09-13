@@ -14,6 +14,7 @@ object RouteConstants {
   final val deepCheck = "deepCheck"
 
   final val pubKey = "pubkey"
+  final val trust = "trust"
   final val mpack = "mpack"
   final val current = "current"
   final val hardwareId = "hardwareId"
@@ -24,6 +25,8 @@ object RouteConstants {
   val pathDeepCheck = s"$pathPrefix/$deepCheck"
 
   val pathPubKey = s"$pathPrefix/$pubKey"
+
+  val pathPubKeyTrust = s"$pathPubKey/$trust"
 
   val pathPubKeyMsgPack = s"$pathPrefix/$pubKey/$mpack"
 

@@ -2,7 +2,7 @@
 
 ### Version 0.9.1 (tbd)
 
-* tbd
+* added endpoint to allow trusting public keys:`POST /pubkey/trust`
 
 ### Version 0.9.0 (2018-09-05)
 
