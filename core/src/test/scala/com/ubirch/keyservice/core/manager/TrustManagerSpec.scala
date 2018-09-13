@@ -157,13 +157,9 @@ class TrustManagerSpec extends Neo4jSpec {
       // prepare
       val twoKeyPairs = generateTwoKeyPairs()
 
-      val publicKeys = Set(
-        Json4sUtil.any2any[PublicKey](twoKeyPairs.keyMaterialA.publicKey),
-        Json4sUtil.any2any[PublicKey](twoKeyPairs.keyMaterialB.publicKey)
-      )
-      persistPublicKeys(publicKeys) flatMap { publicKeysPersisted =>
+      persistPublicKeys(twoKeyPairs.publicKeys) flatMap { publicKeysPersisted =>
 
-        val expectPublicKeysPersisted = publicKeys.map { pk => Right(Some(pk)) }
+        val expectPublicKeysPersisted = twoKeyPairs.publicKeys.map { pk => Right(Some(pk)) }
         publicKeysPersisted shouldBe expectPublicKeysPersisted
 
         val signedTrustRelation = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
@@ -195,11 +191,7 @@ class TrustManagerSpec extends Neo4jSpec {
       val (publicKeyC, privateKeyC) = EccUtil.generateEccKeyPairEncoded
       val keyMaterialC = KeyGenUtil.keyMaterial(publicKey = publicKeyC, privateKey = privateKeyC)
 
-      val publicKeys = Set(
-        Json4sUtil.any2any[PublicKey](twoKeyPairs.keyMaterialA.publicKey),
-        Json4sUtil.any2any[PublicKey](twoKeyPairs.keyMaterialB.publicKey),
-        Json4sUtil.any2any[PublicKey](keyMaterialC.publicKey)
-      )
+      val publicKeys = twoKeyPairs.publicKeys ++ Set(Json4sUtil.any2any[PublicKey](keyMaterialC.publicKey))
       persistPublicKeys(publicKeys) flatMap { publicKeysPersisted =>
 
         val expectPublicKeysPersisted = publicKeys.map { pk => Right(Some(pk))}
@@ -315,15 +307,104 @@ class TrustManagerSpec extends Neo4jSpec {
 
   }
 
+  feature("delete()") {
+
+    scenario("empty database --> true") {
+
+      // prepare
+      val twoKeyPairs = generateTwoKeyPairs()
+      val signedTrustRelation = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
+
+      // test
+      TrustManager.delete(signedTrustRelation) map (_ shouldBe Right(true))
+
+    }
+
+    scenario("non-empty database; trust relationship to delete does not exist --> true") {
+
+      // prepare
+      val twoKeyPairs = generateTwoKeyPairs()
+      val (publicKeyC, privateKeyC) = EccUtil.generateEccKeyPairEncoded
+      val keyMaterialC = KeyGenUtil.keyMaterial(publicKey = publicKeyC, privateKey = privateKeyC)
+
+      val publicKeys = twoKeyPairs.publicKeys ++ Set(Json4sUtil.any2any[PublicKey](keyMaterialC.publicKey))
+      persistPublicKeys(publicKeys) flatMap { publicKeysPersisted =>
+
+        val expectPublicKeysPersisted = publicKeys.map { pk => Right(Some(pk)) }
+        publicKeysPersisted shouldBe expectPublicKeysPersisted
+
+        val signedTrustRelationAToB = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
+        val signedTrustRelationAToC = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = keyMaterialC)
+
+        TrustManager.upsert(signedTrustRelationAToB) flatMap { signTrustAToBPersisted =>
+
+          signTrustAToBPersisted shouldBe Right(signedTrustRelationAToB)
+
+          // test
+          TrustManager.delete(signedTrustRelationAToC) flatMap { deleteResult =>
+
+            // verify
+            deleteResult shouldBe Right(true)
+
+            TrustManager.findBySourceTarget(
+              sourcePubKey = signedTrustRelationAToB.trustRelation.sourcePublicKey,
+              targetPubKey = signedTrustRelationAToB.trustRelation.targetPublicKey
+            ) map(_ shouldBe Right(Some(signedTrustRelationAToB)))
+
+          }
+
+        }
+
+      }
+
+    }
+
+    scenario("trust relationship exists --> true") {
+
+      // prepare
+      val twoKeyPairs = generateTwoKeyPairs()
+      val (publicKeyC, privateKeyC) = EccUtil.generateEccKeyPairEncoded
+      val keyMaterialC = KeyGenUtil.keyMaterial(publicKey = publicKeyC, privateKey = privateKeyC)
+
+      val publicKeys = twoKeyPairs.publicKeys ++ Set(Json4sUtil.any2any[PublicKey](keyMaterialC.publicKey))
+      persistPublicKeys(publicKeys) flatMap { publicKeysPersisted =>
+
+        val expectPublicKeysPersisted = publicKeys.map { pk => Right(Some(pk)) }
+        publicKeysPersisted shouldBe expectPublicKeysPersisted
+
+        val signedTrustRelation = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
+
+        TrustManager.upsert(signedTrustRelation) flatMap { signTrustAToBPersisted =>
+
+          signTrustAToBPersisted shouldBe Right(signedTrustRelation)
+
+          // test
+          TrustManager.delete(signedTrustRelation) flatMap { deleteResult =>
+
+            // verify
+            deleteResult shouldBe Right(true)
+
+            TrustManager.findBySourceTarget(
+              sourcePubKey = signedTrustRelation.trustRelation.sourcePublicKey,
+              targetPubKey = signedTrustRelation.trustRelation.targetPublicKey
+            ) map(_ shouldBe Right(None))
+
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
   private def testWithInvalidTrustLevel(trustLevel: Int): Future[Assertion] = {
 
     // prepare
-    val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded
-    val keyMaterialA = KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA)
-    val (publicKeyB, privateKeyB) = EccUtil.generateEccKeyPairEncoded
-    val keyMaterialB = KeyGenUtil.keyMaterial(publicKey = publicKeyB, privateKey = privateKeyB)
+    val twoKeyPairs = generateTwoKeyPairs()
 
-    val signedTrustRelation = TestDataGeneratorDb.signedTrustRelation(from = keyMaterialA, to = keyMaterialB, trustLevel = trustLevel)
+    val signedTrustRelation = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB, trustLevel = trustLevel)
 
     // test
     TrustManager.upsert(signedTrustRelation) map {

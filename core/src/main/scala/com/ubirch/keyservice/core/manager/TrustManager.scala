@@ -22,6 +22,16 @@ import scala.language.postfixOps
   */
 object TrustManager extends StrictLogging {
 
+  /**
+    * Upserts a trust relationship if:
+    *
+    * * trustLevel is valid (range: 1-100)
+    * * signature is valid
+    *
+    * @param signedTrust trust relationship to persist.
+    * @param neo4jDriver database connection
+    * @return
+    */
   def upsert(signedTrust: SignedTrustRelation)
             (implicit neo4jDriver: Driver): Future[Either[ExpressingTrustException, SignedTrustRelation]] = {
 
@@ -127,10 +137,16 @@ object TrustManager extends StrictLogging {
 
   }
 
+  /**
+    * Delete a trust relationship if it exists.
+    *
+    * @param signedTrust
+    * @param neo4jDriver database connection
+    * @return true if delete was successful or there was nothing to delete; a `DeleteTrustException` if something went wrong
+    */
   def delete(signedTrust: SignedTrustRelation)
             (implicit neo4jDriver: Driver): Future[Either[DeleteTrustException, Boolean]] = {
 
-    // TODO automated tests
     val srcPubKey = signedTrust.trustRelation.sourcePublicKey
     val targetPubKey = signedTrust.trustRelation.targetPublicKey
 
