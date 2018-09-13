@@ -64,7 +64,7 @@ object GetTrustedExampleGenerator extends App {
     val getTrustedJson = Json4sUtil.any2String(getTrusted).get
     val signature = EccUtil.signPayload(privateKey, getTrustedJson)
 
-    SignedTrustedKeys(signature, getTrusted)
+    SignedTrustedKeys(getTrusted, signature)
 
   }
 
