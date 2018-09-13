@@ -25,7 +25,6 @@ object TrustManager extends StrictLogging {
   def upsert(signedTrust: SignedTrustRelation)
             (implicit neo4jDriver: Driver): Future[Either[ExpressingTrustException, SignedTrustRelation]] = {
 
-    // TODO automated tests
     val payloadJson = Json4sUtil.any2String(signedTrust.trustRelation).get
     val signatureValid = EccUtil.validateSignature(
       publicKey = signedTrust.trustRelation.sourcePublicKey,
@@ -188,7 +187,7 @@ object TrustManager extends StrictLogging {
   def findBySourceTarget(sourcePubKey: String, targetPubKey: String)
             (implicit neo4jDriver: Driver): Future[Either[FindTrustException, Option[SignedTrustRelation]]] = {
 
-    // TODO automated tests
+    // NOTE: this method has only been introduced for the test of "upsert()" and is implicitly covered by those tests
     val query = s"""MATCH ()-[trust:TRUST {trustSource: '$sourcePubKey', trustTarget: '$targetPubKey'}]->() RETURN trust""".stripMargin
     logger.debug(s"findSourceTarget() -- query=$query")
 
@@ -205,12 +204,12 @@ object TrustManager extends StrictLogging {
             logger.info(s"findSourceTarget() -- found ${recordsFound.size} results for: sourcePubKey=$sourcePubKey, targetPubKey=$targetPubKey")
             val convertedResults = recordsToSignedTrustRelationship(recordsFound, "trust")
 
-            if (convertedResults.isEmpty) {
+            if (convertedResults.size < 2) {
               logger.debug(s"findSourceTarget() -- failed finding trust relationship in database: sourcePubKey=$sourcePubKey, targetPubKey=$targetPubKey")
               Right(convertedResults.headOption)
             } else {
               logger.error(s"findSourceTarget() -- failed while finding trust relationship in database: convertedResults.size=${convertedResults.size}; sourcePubKey=$sourcePubKey, targetPubKey=$targetPubKey")
-              Left(new FindTrustException(s"failed while writing trust relationship to database"))
+              Left(new FindTrustException(s"found too many matches while searching for trust relationship in database"))
             }
 
           }
