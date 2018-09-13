@@ -305,10 +305,10 @@ The example is based on the following key pair:
 
 ```
 # upload public key
-curl -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-10T13:15:18.020Z","hwDeviceId":"a493c8a3-d6f3-47b9-aa11-e245a0e3fedd","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-10T14:14:18.103Z"},"signature":"/c6xrxV5Y/6z+HWuHS1sWHtTIqu/Q8Cix3NqO8Hrf9aEmQnuY6/0K2bxsxsB+eiN3dtMk/1XWOWuQ0hdqJ3SBg=="}'
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-10T13:15:18.020Z","hwDeviceId":"a493c8a3-d6f3-47b9-aa11-e245a0e3fedd","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-10T14:14:18.103Z"},"signature":"/c6xrxV5Y/6z+HWuHS1sWHtTIqu/Q8Cix3NqO8Hrf9aEmQnuY6/0K2bxsxsB+eiN3dtMk/1XWOWuQ0hdqJ3SBg=="}'
 
 # get trusted keys (client unable to handle sending a JSON with a GET request can also use '-XPOST'
-curl -XGET localhost:8095/api/keyService/v1/pubkey/trusted -H "Content-Type: application/json" -d '{
+curl -i -XGET localhost:8095/api/keyService/v1/pubkey/trusted -H "Content-Type: application/json" -d '{
   "trustedKeys": {
     "depth": 1,
     "minTrustLevel": 10,

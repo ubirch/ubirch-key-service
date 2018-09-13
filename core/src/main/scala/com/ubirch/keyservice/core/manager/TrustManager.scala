@@ -3,10 +3,12 @@ package com.ubirch.keyservice.core.manager
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.crypto.ecc.EccUtil
-import com.ubirch.key.model.db.{SignedTrustRelation, TrustRelation}
+import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo, SignedTrustRelation, TrustRelation}
+import com.ubirch.key.model.rest.SignedTrustedKeys
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.neo4j.utils.Neo4jParseUtil
 
+import org.joda.time.DateTime
 import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
 import org.neo4j.driver.v1.{Driver, Record, Transaction, TransactionWork}
 
@@ -264,6 +266,26 @@ object TrustManager extends StrictLogging {
 
   }
 
+  def findTrusted(signedGetTrusted: SignedTrustedKeys): Future[Either[FindTrustedException, Set[PublicKey]]] = {
+
+    // TODO UP-174: automated tests
+    // TODO UP-173: replace with actual implementation
+    val pubKey = PublicKey(
+      pubKeyInfo = PublicKeyInfo(
+        algorithm = "ECC_ED25519",
+        created = DateTime.parse("2018-09-07T13:36:26.703Z"),
+        hwDeviceId = "db5f2882-0b08-49f8-85b1-cf709ec9af9f",
+        pubKey = "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+        pubKeyId = "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+        validNotBefore = DateTime.parse("2018-09-07T14:35:26.795Z")
+      ),
+      signature = "kDG1tut0GWe+gjXmy0aIfTeUxXLtKFjY0t06ua5V+2BsP7lPjQCbVKMecsBryuqdx5Sko1u1e3B7h2FjlW7cDw=="
+    )
+
+    Future(Right(Set(pubKey)))
+
+  }
+
   private def toKeyValueMap(signedTrustRelation: SignedTrustRelation): Map[String, Any] = {
 
     var keyValue: Map[String, Any] = Map(
@@ -316,3 +338,5 @@ class ExpressingTrustException(private val message: String = "", private val cau
 class DeleteTrustException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)
 
 class FindTrustException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)
+
+class FindTrustedException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)

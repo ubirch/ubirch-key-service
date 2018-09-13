@@ -2,15 +2,13 @@ package com.ubirch.keyservice.server.route
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys, PublicKeyInfo, SignedTrustRelation, SignedTrustedKeys}
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys, SignedTrustRelation, SignedTrustedKeys}
 import com.ubirch.key.model.{db, rest}
 import com.ubirch.keyservice.config.KeyConfig
-import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, QueryCurrentlyValid}
+import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, QueryCurrentlyValid, TrustedKeysResult}
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
-
-import org.joda.time.DateTime
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCodes
@@ -197,20 +195,39 @@ trait PublicKeyActionsJson extends ResponseUtil {
 
   def getTrusted(signedGetTrusted: SignedTrustedKeys): Route = {
 
-    // TODO UP-173: replace with actual implemention
-    val pubKey = PublicKey(
-      pubKeyInfo = PublicKeyInfo(
-        algorithm = "ECC_ED25519",
-        created = DateTime.parse("2018-09-07T13:36:26.703Z"),
-        hwDeviceId = "db5f2882-0b08-49f8-85b1-cf709ec9af9f",
-        pubKey = "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
-        pubKeyId = "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
-        validNotBefore = DateTime.parse("2018-09-07T14:35:26.795Z")
-      ),
-      signature = "kDG1tut0GWe+gjXmy0aIfTeUxXLtKFjY0t06ua5V+2BsP7lPjQCbVKMecsBryuqdx5Sko1u1e3B7h2FjlW7cDw=="
-    )
+    onComplete(trustActor ? signedGetTrusted) {
 
-    complete(Set(pubKey))
+      case Success(resp) =>
+
+        resp match {
+
+          case trustedKeysResult: TrustedKeysResult =>
+
+            logger.debug(s"getTrusted() -- result(rest)=$trustedKeysResult")
+            complete(trustedKeysResult.trusted)
+
+          case jr: JsonErrorResponse =>
+
+            logger.error(s"failed to get trusted public keys: JsonErrorResponse=$jr")
+            if (jr.errorType == "ServerError") {
+              complete(serverErrorResponse(jr))
+            } else {
+              complete(requestErrorResponse(jr))
+            }
+
+          case _ =>
+
+            logger.error("failed to get trusted public keys due to unhandled response type in getTrusted()")
+            complete(serverErrorResponse(errorType = "ServerError", errorMessage = "failed to get trust public keys"))
+
+        }
+
+      case Failure(t) =>
+
+        logger.error("get-trust-public-keys call responded with an unhandled message (check PublicKeyRoute for bugs!!!)", t)
+        complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
+
+    }
 
   }
 
