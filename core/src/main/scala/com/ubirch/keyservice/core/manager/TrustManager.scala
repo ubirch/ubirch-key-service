@@ -30,7 +30,7 @@ object TrustManager extends StrictLogging {
     *
     * @param signedTrust trust relationship to persist.
     * @param neo4jDriver database connection
-    * @return
+    * @return the created trust relationship; `ExpressingTrustException` with an error message describing the problem if there's an error
     */
   def upsert(signedTrust: SignedTrustRelation)
             (implicit neo4jDriver: Driver): Future[Either[ExpressingTrustException, SignedTrustRelation]] = {
@@ -140,9 +140,9 @@ object TrustManager extends StrictLogging {
   /**
     * Delete a trust relationship if it exists.
     *
-    * @param signedTrust
+    * @param signedTrust trust relationship to delete
     * @param neo4jDriver database connection
-    * @return true if delete was successful or there was nothing to delete; a `DeleteTrustException` if something went wrong
+    * @return true if delete was successful or there was nothing to delete; a `DeleteTrustException` with an error message describing the problem if there's an error
     */
   def delete(signedTrust: SignedTrustRelation)
             (implicit neo4jDriver: Driver): Future[Either[DeleteTrustException, Boolean]] = {
@@ -200,11 +200,20 @@ object TrustManager extends StrictLogging {
 
   }
 
+  /**
+    * Search for a trust relationship based on it's source- and targetPublicKey.
+    *
+    * @param sourcePubKey source public key
+    * @param targetPubKey target public key
+    * @param neo4jDriver  database connection
+    * @return trust relationship if it exists; None if not; `FindTrustException` with an error message describing the problem if there's an error
+    */
   def findBySourceTarget(sourcePubKey: String, targetPubKey: String)
-            (implicit neo4jDriver: Driver): Future[Either[FindTrustException, Option[SignedTrustRelation]]] = {
+                        (implicit neo4jDriver: Driver): Future[Either[FindTrustException, Option[SignedTrustRelation]]] = {
 
     // NOTE: this method has only been introduced for the test of "upsert()" and is implicitly covered by those tests
-    val query = s"""MATCH ()-[trust:TRUST {trustSource: '$sourcePubKey', trustTarget: '$targetPubKey'}]->() RETURN trust""".stripMargin
+    val query =
+      s"""MATCH ()-[trust:TRUST {trustSource: '$sourcePubKey', trustTarget: '$targetPubKey'}]->() RETURN trust""".stripMargin
     logger.debug(s"findSourceTarget() -- query=$query")
 
     val findResult = try {
