@@ -1,7 +1,7 @@
 package com.ubirch.keyservice.server.actor
 
 import com.ubirch.key.model._
-import com.ubirch.key.model.rest.{PublicKey, SignedTrustRelation, SignedTrustedKeys}
+import com.ubirch.key.model.rest.{FindTrustedSigned, SignedTrustRelation}
 import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.core.manager.TrustManager
 import com.ubirch.util.json.Json4sUtil
@@ -31,7 +31,7 @@ class TrustActor(implicit neo4jDriver: Driver) extends Actor
       val sender = context.sender()
       executeExpressTrust(signedTrust, sender)
 
-    case signedGetTrusted: SignedTrustedKeys =>
+    case signedGetTrusted: FindTrustedSigned =>
 
       val sender = context.sender()
       executeFindTrusted(signedGetTrusted, sender)
@@ -72,22 +72,23 @@ class TrustActor(implicit neo4jDriver: Driver) extends Actor
 
   }
 
-  private def executeFindTrusted(signedGetTrusted: SignedTrustedKeys, sender: ActorRef): Unit = {
+  private def executeFindTrusted(findTrustedSigned: rest.FindTrustedSigned, sender: ActorRef): Unit = {
 
     try {
 
-      TrustManager.findTrusted(signedGetTrusted) onComplete {
+      val findTrustedSignedDb = Json4sUtil.any2any[db.FindTrustedSigned](findTrustedSigned)
+      TrustManager.findTrusted(findTrustedSignedDb) onComplete {
 
-        case Success(Right(publicKeys)) =>
+        case Success(Right(trustedKeys)) =>
 
-          val trustedKeysResult = TrustedKeysResult(
-            publicKeys map Json4sUtil.any2any[rest.PublicKey]
+          val trustedKeysResult = TrustedKeyResultSet(
+            trustedKeys map Json4sUtil.any2any[rest.TrustedKeyResult]
           )
           sender ! trustedKeysResult
 
         case Success(Left(t)) =>
 
-          sender ! JsonErrorResponse(errorType = "TrustError", errorMessage = t.getMessage)
+          sender ! JsonErrorResponse(errorType = "FindTrustedError", errorMessage = t.getMessage)
 
         case Failure(t) =>
 
@@ -122,4 +123,4 @@ object TrustActor {
 
 }
 
-case class TrustedKeysResult(trusted: Set[PublicKey])
+case class TrustedKeyResultSet(trusted: Set[rest.TrustedKeyResult])

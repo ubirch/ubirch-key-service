@@ -3,8 +3,7 @@ package com.ubirch.keyservice.core.manager
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.crypto.ecc.EccUtil
-import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo, SignedTrustRelation, TrustRelation}
-import com.ubirch.key.model.rest.SignedTrustedKeys
+import com.ubirch.key.model.db.{FindTrustedSigned, PublicKey, PublicKeyInfo, SignedTrustRelation, TrustRelation, TrustedKeyResult}
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.neo4j.utils.Neo4jParseUtil
 
@@ -266,7 +265,7 @@ object TrustManager extends StrictLogging {
 
   }
 
-  def findTrusted(signedGetTrusted: SignedTrustedKeys): Future[Either[FindTrustedException, Set[PublicKey]]] = {
+  def findTrusted(signedGetTrusted: FindTrustedSigned): Future[Either[FindTrustedException, Set[TrustedKeyResult]]] = {
 
     // TODO UP-174: automated tests
     // TODO UP-173: replace with actual implementation
@@ -282,7 +281,13 @@ object TrustManager extends StrictLogging {
       signature = "kDG1tut0GWe+gjXmy0aIfTeUxXLtKFjY0t06ua5V+2BsP7lPjQCbVKMecsBryuqdx5Sko1u1e3B7h2FjlW7cDw=="
     )
 
-    Future(Right(Set(pubKey)))
+    val trustedKey1 = TrustedKeyResult(
+      depth = 1,
+      trustLevel = 50,
+      publicKey = pubKey
+    )
+
+    Future(Right(Set(trustedKey1)))
 
   }
 

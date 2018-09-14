@@ -2,10 +2,10 @@ package com.ubirch.keyservice.server.route
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys, SignedTrustRelation, SignedTrustedKeys}
+import com.ubirch.key.model.rest.{FindTrustedSigned, PublicKey, PublicKeyDelete, PublicKeys, SignedTrustRelation}
 import com.ubirch.key.model.{db, rest}
 import com.ubirch.keyservice.config.KeyConfig
-import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, QueryCurrentlyValid, TrustedKeysResult}
+import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, QueryCurrentlyValid, TrustedKeyResultSet}
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
@@ -22,8 +22,6 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
-
-// TODO duplicated code w/ PublicKeyActionsString
 
 /**
   * Add description.
@@ -193,7 +191,7 @@ trait PublicKeyActionsJson extends ResponseUtil {
 
   }
 
-  def getTrusted(signedGetTrusted: SignedTrustedKeys): Route = {
+  def getTrusted(signedGetTrusted: FindTrustedSigned): Route = {
 
     onComplete(trustActor ? signedGetTrusted) {
 
@@ -201,7 +199,7 @@ trait PublicKeyActionsJson extends ResponseUtil {
 
         resp match {
 
-          case trustedKeysResult: TrustedKeysResult =>
+          case trustedKeysResult: TrustedKeyResultSet =>
 
             logger.debug(s"getTrusted() -- result(rest)=$trustedKeysResult")
             complete(trustedKeysResult.trusted)

@@ -287,7 +287,7 @@ If the server has problems the response is:
       }
     }
 
-#### Query Trusted Keys
+#### Find Trusted Keys
 
 This method allows us to query all keys we trust. To ensure the underlying web-of-trust's privacy we only allow queries
 on keys which the caller has full control over which is ensured by a mandatory request signature. As a simple protection
@@ -298,24 +298,31 @@ can see which trust relations has been implemented.
 
 ##### Curl Example
 
-The example is based on the following key pair:
+The example is based on the Key A:
 
 * public key  = MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=
 * private key = MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==
 
 ```
-# upload public key
-curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-10T13:15:18.020Z","hwDeviceId":"a493c8a3-d6f3-47b9-aa11-e245a0e3fedd","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-10T14:14:18.103Z"},"signature":"/c6xrxV5Y/6z+HWuHS1sWHtTIqu/Q8Cix3NqO8Hrf9aEmQnuY6/0K2bxsxsB+eiN3dtMk/1XWOWuQ0hdqJ3SBg=="}'
+###### upload public keys
+# Key A
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-14T11:39:40.897Z","hwDeviceId":"0eae14e6-a832-4261-ba43-32c0961c5069","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-14T12:38:40.926Z"},"signature":"PDt8tszSKhAgn7DQG+asDN5n8iY0T2ijUdi6OAcFfFQlsNr6IpawzS6cYEq5821bVweM97RePTD9NEpZ9JE/Ag=="}'
+# Key B
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-14T11:39:41.301Z","hwDeviceId":"44f28c6c-aa1d-48fa-9f55-c6d7f81e790a","pubKey":"MC0wCAYDK2VkCgEBAyEASZ14+jC19qEmhLYMnMktVDq3gPWYVb3iupGHEG+YUiE=","pubKeyId":"MC0wCAYDK2VkCgEBAyEASZ14+jC19qEmhLYMnMktVDq3gPWYVb3iupGHEG+YUiE=","validNotBefore":"2018-09-14T12:38:41.302Z"},"signature":"SJZRefniGXy3S5fb4N3j0uITMCE/scFXHjPcXGUojHsX5O/Negfk/CtqjvcPvt9sCl7+o2nZEnu0y9pa2/GXCw=="}'
 
-# get trusted keys (client unable to handle sending a JSON with a GET request can also use '-XPOST'
+###### trust keys
+# trust(A --trustLevel:50--> B)
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '{"trustRelation":{"created":"2018-09-14T12:39:41.315Z","sourcePublicKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","targetPublicKey":"MC0wCAYDK2VkCgEBAyEASZ14+jC19qEmhLYMnMktVDq3gPWYVb3iupGHEG+YUiE=","trustLevel":50,"validNotAfter":"2018-12-14T12:39:41.315Z"},"signature":"XmRLZ2U9Hscad/CQgGm+XC20FAWiTSmej2QVykNJzK2w2wMWjR96KrQPm986uy/7yGE8s5C8wOviWx4Ug0MEDQ=="}'
+
+###### find keys trusted by A
 curl -i -XGET localhost:8095/api/keyService/v1/pubkey/trusted -H "Content-Type: application/json" -d '{
-  "trustedKeys": {
+  "findTrusted": {
     "depth": 1,
-    "minTrustLevel": 10,
-    "originatorPublicKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
-    "queryDate": "2018-09-10T14:15:18.450Z"
+    "minTrustLevel": 50,
+    "sourcePublicKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+    "queryDate": "2018-09-14T12:39:41.329Z"
   },
-  "signature": "qDi0+r7r+NecaeetzjBIGUdyIU8XQ7hZ5wZ4z89joZZwc5ue3Tej/jLHrF0IkK6uZDapci5q3TEQo9uACLatAw=="
+  "signature": "0guasaWheykTXbhdBrPn7DmcTUFwb6Y1wZrYOakYUHgJbdirXcLHAk4OFLZG17f3yROnZefhY0ryYlyvJPyKAQ=="
 }'
 ```
 

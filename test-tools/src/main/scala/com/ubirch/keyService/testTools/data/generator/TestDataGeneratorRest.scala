@@ -2,7 +2,7 @@ package com.ubirch.keyService.testTools.data.generator
 
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.crypto.hash.HashUtil
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo, SignedTrustRelation, TrustRelation}
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo, SignedTrustRelation, FindTrustedSigned, TrustRelation, FindTrusted}
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
@@ -172,6 +172,19 @@ object TestDataGeneratorRest {
     val signature = EccUtil.signPayload(from.privateKeyString, trustRelationJson)
 
     SignedTrustRelation(trustRelation, signature)
+
+  }
+
+  def findTrustedSigned(publicKey: String, privateKey: String): FindTrustedSigned = {
+
+    val findTrusted = FindTrusted(
+      sourcePublicKey = publicKey,
+      queryDate = DateUtil.nowUTC
+    )
+    val getTrustedJson = Json4sUtil.any2String(findTrusted).get
+    val signature = EccUtil.signPayload(privateKey, getTrustedJson)
+
+    FindTrustedSigned(findTrusted, signature)
 
   }
 

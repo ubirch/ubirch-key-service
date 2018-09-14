@@ -28,22 +28,20 @@ object TrustExampleGenerator extends App {
     println("# Key B")
     println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '$keyJsonB'""".stripMargin)
 
-    println(s"## trusting public keys")
     val trustKeyAToBLevel50 = TestDataGeneratorRest.signedTrustRelation(keyMaterialA, keyMaterialB, 50)
     val trustKeyJsonAToBLevel50 = Json4sUtil.any2String(trustKeyAToBLevel50).get
-
-    println(s"# trust(A --trustLevel:50--> B)")
-    println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonAToBLevel50'""")
 
     val trustKeyAToBLevel80 = TestDataGeneratorRest.signedTrustRelation(keyMaterialA, keyMaterialB, 80)
     val trustKeyJsonAToBLevel80 = Json4sUtil.any2String(trustKeyAToBLevel80).get
 
-    println(s"# trust(A --trustLevel:80--> B)")
-    println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonAToBLevel80'""")
-
     val trustKeyBToA = TestDataGeneratorRest.signedTrustRelation(keyMaterialB, keyMaterialA)
     val trustKeyJsonBToA = Json4sUtil.any2String(trustKeyBToA).get
 
+    println(s"## trusting public keys")
+    println(s"# trust(A --trustLevel:50--> B)")
+    println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonAToBLevel50'""")
+    println(s"# trust(A --trustLevel:80--> B)")
+    println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonAToBLevel80'""")
     println(s"# trust(B --> A)")
     println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonBToA'""")
 
