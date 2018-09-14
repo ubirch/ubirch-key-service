@@ -23,21 +23,31 @@ object FindTrustedExampleGenerator extends App {
     val keyMaterialB = KeyGenUtil.keyMaterial(publicKeyB, privateKeyB)
     val keyBJson = Json4sUtil.any2String(keyMaterialB.publicKey).get
 
+    val (publicKeyC, privateKeyC) = EccUtil.generateEccKeyPairEncoded
+    val keyMaterialC = KeyGenUtil.keyMaterial(publicKeyC, privateKeyC)
+    val keyCJson = Json4sUtil.any2String(keyMaterialC.publicKey).get
+
     println(s"###### upload public keys")
     println("# Key A")
     println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '$keyAJson'""".stripMargin)
     println("# Key B")
     println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '$keyBJson'""".stripMargin)
+    println("# Key C")
+    println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '$keyCJson'""".stripMargin)
 
     // ****** SET TRUST ******/
 
     val trustKeyAToBLevel50 = TestDataGeneratorRest.signedTrustRelation(keyMaterialA, keyMaterialB, 50)
     val trustKeyJsonAToBLevel50 = Json4sUtil.any2String(trustKeyAToBLevel50).get
+    val trustKeyAToCLevel70 = TestDataGeneratorRest.signedTrustRelation(keyMaterialA, keyMaterialC, 70)
+    val trustKeyJsonAToCLevel70 = Json4sUtil.any2String(trustKeyAToCLevel70).get
 
     println()
     println(s"###### trust keys")
     println(s"# trust(A --trustLevel:50--> B)")
     println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonAToBLevel50'""")
+    println(s"# trust(A --trustLevel:70--> C)")
+    println(s"""curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '$trustKeyJsonAToCLevel70'""")
 
     // ****** FIND TRUSTED KEYS ******/
 
