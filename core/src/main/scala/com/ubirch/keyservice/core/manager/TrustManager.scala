@@ -265,7 +265,6 @@ object TrustManager extends StrictLogging {
   def findTrusted(findTrustedSigned: FindTrustedSigned)
                  (implicit neo4jDriver: Driver): Future[Either[FindTrustedException, Set[TrustedKeyResult]]] = {
 
-    // TODO UP-174: automated tests
     val payloadJson = Json4sUtil.any2String(findTrustedSigned.findTrusted).get
     val signatureValid = EccUtil.validateSignature(
       publicKey = findTrustedSigned.findTrusted.sourcePublicKey,

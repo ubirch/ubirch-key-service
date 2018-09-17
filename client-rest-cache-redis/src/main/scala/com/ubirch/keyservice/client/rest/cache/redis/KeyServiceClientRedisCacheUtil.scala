@@ -43,17 +43,17 @@ object KeyServiceClientRedisCacheUtil extends StrictLogging {
         val pubKeyString = result.pubKeyInfo.pubKey
         val cacheKey = CacheHelperUtil.cacheKeyPublicKey(pubKeyString)
         val json = Json4sUtil.any2String(result).get
-        redis.set[String](cacheKey, json, exSeconds = Some(expiry), NX = true) flatMap {
+        redis.set[String](cacheKey, json, exSeconds = Some(expiry), NX = true) map {
 
           case true =>
 
             logger.debug(s"cached public key: key=$cacheKey (expiry = $expiry seconds)")
-            Future(Some(result))
+            Some(result)
 
           case false =>
 
             logger.error(s"failed to add to key-service rest client cache: key=$cacheKey")
-            Future(Some(result))
+            Some(result)
 
         }
 
@@ -86,17 +86,17 @@ object KeyServiceClientRedisCacheUtil extends StrictLogging {
 
         val cacheKey = CacheHelperUtil.cacheKeyHardwareId(hardwareId)
         val json = Json4sUtil.any2String(result).get
-        redis.set[String](cacheKey, json, exSeconds = Some(expiry), NX = true) flatMap {
+        redis.set[String](cacheKey, json, exSeconds = Some(expiry), NX = true) map {
 
           case true =>
 
             logger.debug(s"cached valid public keys: key=$cacheKey (expiry = $expiry seconds)")
-            Future(Some(result))
+            Some(result)
 
           case false =>
 
             logger.error(s"failed to add to key-service rest client cache: key=$cacheKey")
-            Future(Some(result))
+            Some(result)
 
         }
 
@@ -129,23 +129,25 @@ object KeyServiceClientRedisCacheUtil extends StrictLogging {
         val depth = findTrustedSigned.findTrusted.depth
         val minTrust = findTrustedSigned.findTrusted.minTrustLevel
         val cacheKey = CacheHelperUtil.cacheKeyFindTrusted(sourcePubKey, depth, minTrust)
+        logger.debug(s"cacheTrustedKeys() -- cacheKey=$cacheKey")
 
         val publicKeys = results map (_.publicKey)
         val expiry = expireInSeconds(publicKeys)
+        logger.debug(s"cacheTrustedKeys() -- expiry=$expiry")
 
         val json = Json4sUtil.any2String(results).get
         val redis = RedisClientUtil.getRedisClient
-        redis.set[String](cacheKey, json, exSeconds = Some(expiry), NX = true) flatMap {
+        redis.set[String](cacheKey, json, exSeconds = Some(expiry), NX = true) map {
 
           case true =>
 
             logger.debug(s"cached trusted public keys: key=$cacheKey (expiry = $expiry seconds)")
-            Future(trustedKeys)
+            trustedKeys
 
           case false =>
 
             logger.error(s"failed to add to key-service rest client cache: key=$cacheKey")
-            Future(trustedKeys)
+            trustedKeys
 
         }
 

@@ -224,9 +224,8 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
   }
 
   def pubKeyTrustedGET(findTrustedSigned: FindTrustedSigned)
-                     (implicit httpClient: HttpExt, materializer: Materializer): Future[Either[JsonErrorResponse, Set[TrustedKeyResult]]] = {
+                      (implicit httpClient: HttpExt, materializer: Materializer): Future[Either[JsonErrorResponse, Set[TrustedKeyResult]]] = {
 
-    // TODO UP-174 automated tests
     Json4sUtil.any2String(findTrustedSigned) match {
 
       case Some(trustJsonString: String) =>

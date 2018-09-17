@@ -2,7 +2,7 @@ package com.ubirch.keyService.testTools.data.generator
 
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.crypto.hash.HashUtil
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo, SignedTrustRelation, FindTrustedSigned, TrustRelation, FindTrusted}
+import com.ubirch.key.model.rest.{FindTrusted, FindTrustedSigned, PublicKey, PublicKeyInfo, SignedTrustRelation, TrustRelation}
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
@@ -175,16 +175,24 @@ object TestDataGeneratorRest {
 
   }
 
-  def findTrustedSigned(publicKey: String, privateKey: String): FindTrustedSigned = {
+  def findTrustedSigned(depth: Int = 1,
+                        sourcePublicKey: String,
+                        sourcePrivateKey: String,
+                        minTrust: Int = 50
+                       ): FindTrustedSigned = {
 
     val findTrusted = FindTrusted(
-      sourcePublicKey = publicKey,
-      queryDate = DateUtil.nowUTC
+      depth = depth,
+      sourcePublicKey = sourcePublicKey,
+      queryDate = DateUtil.nowUTC,
+      minTrustLevel = minTrust
     )
-    val getTrustedJson = Json4sUtil.any2String(findTrusted).get
-    val signature = EccUtil.signPayload(privateKey, getTrustedJson)
+    val payload = Json4sUtil.any2String(findTrusted).get
 
-    FindTrustedSigned(findTrusted, signature)
+    FindTrustedSigned(
+      findTrusted = findTrusted,
+      signature = EccUtil.signPayload(sourcePrivateKey, payload)
+    )
 
   }
 
@@ -213,9 +221,9 @@ object TestDataGeneratorRest {
 case class KeyMaterial(privateKeyString: String, publicKey: PublicKey)
 
 case class KeyMaterialAAndBRest(keyMaterialA: KeyMaterial,
-                            keyMaterialB: KeyMaterial,
-                            publicKeys: Set[PublicKey]
-                           ) {
+                                keyMaterialB: KeyMaterial,
+                                publicKeys: Set[PublicKey]
+                               ) {
 
   def privateKeyA(): String = keyMaterialA.privateKeyString
 

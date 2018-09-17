@@ -2,7 +2,7 @@ package com.ubirch.keyService.testTools.data.generator
 
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.crypto.hash.HashUtil
-import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo, SignedTrustRelation}
+import com.ubirch.key.model.db.{FindTrusted, FindTrustedSigned, PublicKey, PublicKeyInfo, SignedTrustRelation}
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
@@ -150,6 +150,24 @@ object TestDataGeneratorDb {
 
   }
 
+  def findTrustedSigned(sourcePublicKey: String,
+                        sourcePrivateKey: String,
+                        minTrust: Int = 50
+                       ): FindTrustedSigned = {
+
+    val findTrusted = FindTrusted(
+      minTrustLevel = minTrust,
+      sourcePublicKey = sourcePublicKey
+    )
+    val payload = Json4sUtil.any2String(findTrusted).get
+
+    FindTrustedSigned(
+      findTrusted = findTrusted,
+      signature = EccUtil.signPayload(sourcePrivateKey, payload)
+    )
+
+  }
+
   def generateTwoKeyPairs(): KeyMaterialAAndBDb = {
 
     val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded
@@ -173,9 +191,9 @@ object TestDataGeneratorDb {
 }
 
 case class KeyMaterialAAndBDb(keyMaterialA: KeyMaterial,
-                            keyMaterialB: KeyMaterial,
-                            publicKeys: Set[PublicKey]
-                           ) {
+                              keyMaterialB: KeyMaterial,
+                              publicKeys: Set[PublicKey]
+                             ) {
 
   def privateKeyA(): String = keyMaterialA.privateKeyString
 

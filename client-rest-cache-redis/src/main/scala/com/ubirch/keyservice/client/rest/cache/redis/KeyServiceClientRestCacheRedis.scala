@@ -63,7 +63,6 @@ object KeyServiceClientRestCacheRedis extends KeyServiceClientRestBase {
   def pubKeyTrustedGETCached(findTrustedSigned: FindTrustedSigned)
                             (implicit httpClient: HttpExt, materializer: Materializer, system: ActorSystem): Future[Either[JsonErrorResponse, Set[TrustedKeyResult]]] = {
 
-    // TODO UP-174 automated tests
     logger.debug(s"pubKeyTrustedGETCached(): findTrustedSigned=$findTrustedSigned")
 
     val sourcePubKey = findTrustedSigned.findTrusted.sourcePublicKey

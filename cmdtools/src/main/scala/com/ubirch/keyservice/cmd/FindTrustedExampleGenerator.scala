@@ -51,7 +51,7 @@ object FindTrustedExampleGenerator extends App {
 
     // ****** FIND TRUSTED KEYS ******/
 
-    val signedGetTrusted = TestDataGeneratorRest.findTrustedSigned(publicKey = publicKeyA, privateKey = privateKeyA)
+    val signedGetTrusted = TestDataGeneratorRest.findTrustedSigned(sourcePublicKey = publicKeyA, sourcePrivateKey = privateKeyA)
     val signedGetTrustedJson = Json4sUtil.any2String(signedGetTrusted).get
 
     println()
