@@ -108,8 +108,8 @@ object KeyServiceClientRedisCacheUtil extends StrictLogging {
     * Caches a set of valid public keys in Redis if necessary. The input result from a request to the `key-service` for
     * all currently valid public keys.
     *
-    * @param findTrustedSigned   the original request object
-    *                            @param trustedKeys resulting trusted keys; might be a JsonErrorResponse, too
+    * @param findTrustedSigned the original request object
+    * @param trustedKeys       resulting trusted keys; might be a JsonErrorResponse, too
     * @return the unchanged input after trying to cache it if necessary
     */
   def cacheTrustedKeys(findTrustedSigned: FindTrustedSigned,
@@ -130,7 +130,7 @@ object KeyServiceClientRedisCacheUtil extends StrictLogging {
         val minTrust = findTrustedSigned.findTrusted.minTrustLevel
         val cacheKey = CacheHelperUtil.cacheKeyFindTrusted(sourcePubKey, depth, minTrust)
 
-        val publicKeys = results map(_.publicKey)
+        val publicKeys = results map (_.publicKey)
         val expiry = expireInSeconds(publicKeys)
 
         val json = Json4sUtil.any2String(results).get
