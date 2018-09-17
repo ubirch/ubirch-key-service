@@ -257,7 +257,7 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
 
   }
 
-  feature("findPubKey()") {
+  feature("findPubKeyCached()") {
 
     scenario("key does not exist --> find nothing") {
 
@@ -265,7 +265,7 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
       val (pubKey1, _) = EccUtil.generateEccKeyPairEncoded
 
       // test
-      KeyServiceClientRestCacheRedis.findPubKey(pubKey1) map { result =>
+      KeyServiceClientRestCacheRedis.findPubKeyCached(pubKey1) map { result =>
 
         // verify
         result shouldBe empty
@@ -293,7 +293,7 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
         case Right(Some(pubKeyDb: PublicKey)) =>
 
           // test
-          KeyServiceClientRestCacheRedis.findPubKey(pubKey1) flatMap { result =>
+          KeyServiceClientRestCacheRedis.findPubKeyCached(pubKey1) flatMap { result =>
 
             // verify
             val expected = Some(Json4sUtil.any2any[rest.PublicKey](pubKeyDb))
@@ -332,7 +332,7 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
             case Some(_) =>
 
               // test
-              KeyServiceClientRestCacheRedis.findPubKey(pubKey1) flatMap { result =>
+              KeyServiceClientRestCacheRedis.findPubKeyCached(pubKey1) flatMap { result =>
 
                 // verify
                 val expected = Some(modifiedKey)
@@ -349,12 +349,12 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
 
   }
 
-  feature("currentlyValidPubKeys()") {
+  feature("currentlyValidPubKeysCached()") {
 
     scenario("has no keys --> None") {
 
       // test
-      KeyServiceClientRestCacheRedis.currentlyValidPubKeys("1234") map { result =>
+      KeyServiceClientRestCacheRedis.currentlyValidPubKeysCached("1234") map { result =>
 
         // verify
         result shouldBe defined
@@ -383,7 +383,7 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
 
           val hardwareId = existingPubKey.pubKeyInfo.hwDeviceId
           // test
-          KeyServiceClientRestCacheRedis.currentlyValidPubKeys(hardwareId) flatMap { result =>
+          KeyServiceClientRestCacheRedis.currentlyValidPubKeysCached(hardwareId) flatMap { result =>
 
             // verify
             result shouldBe defined
@@ -424,7 +424,7 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
             case Some(_) =>
 
               // test
-              KeyServiceClientRestCacheRedis.currentlyValidPubKeys(hardwareId) flatMap { result =>
+              KeyServiceClientRestCacheRedis.currentlyValidPubKeysCached(hardwareId) flatMap { result =>
 
                 // verify
                 result shouldBe defined

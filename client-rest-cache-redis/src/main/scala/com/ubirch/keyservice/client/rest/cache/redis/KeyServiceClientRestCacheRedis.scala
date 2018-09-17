@@ -19,8 +19,8 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
   */
 object KeyServiceClientRestCacheRedis extends KeyServiceClientRestBase {
 
-  def findPubKey(publicKey: String)
-                (implicit httpClient: HttpExt, materializer: Materializer, system: ActorSystem): Future[Option[PublicKey]] = {
+  def findPubKeyCached(publicKey: String)
+                      (implicit httpClient: HttpExt, materializer: Materializer, system: ActorSystem): Future[Option[PublicKey]] = {
 
     implicit val ec: ExecutionContextExecutor = system.dispatcher
     val redis = RedisClientUtil.getRedisClient
@@ -39,10 +39,10 @@ object KeyServiceClientRestCacheRedis extends KeyServiceClientRestBase {
 
   }
 
-  def currentlyValidPubKeys(hardwareId: String)
-                           (implicit httpClient: HttpExt, materializer: Materializer, system: ActorSystem): Future[Option[Set[PublicKey]]] = {
+  def currentlyValidPubKeysCached(hardwareId: String)
+                                 (implicit httpClient: HttpExt, materializer: Materializer, system: ActorSystem): Future[Option[Set[PublicKey]]] = {
 
-    logger.debug(s"currentlyValidPubKeys(): hardwareId=$hardwareId")
+    logger.debug(s"currentlyValidPubKeysCached(): hardwareId=$hardwareId")
     implicit val ec: ExecutionContextExecutor = system.dispatcher
     val redis = RedisClientUtil.getRedisClient
     val cacheKey = CacheHelperUtil.cacheKeyHardwareId(hardwareId)
@@ -60,11 +60,11 @@ object KeyServiceClientRestCacheRedis extends KeyServiceClientRestBase {
 
   }
 
-  def pubKeyTrustedGET(findTrustedSigned: FindTrustedSigned)
-                      (implicit httpClient: HttpExt, materializer: Materializer, system: ActorSystem): Future[Either[JsonErrorResponse, Set[TrustedKeyResult]]] = {
+  def pubKeyTrustedGETCached(findTrustedSigned: FindTrustedSigned)
+                            (implicit httpClient: HttpExt, materializer: Materializer, system: ActorSystem): Future[Either[JsonErrorResponse, Set[TrustedKeyResult]]] = {
 
     // TODO UP-174 automated tests
-    logger.debug(s"pubKeyTrustedGET(): findTrustedSigned=$findTrustedSigned")
+    logger.debug(s"pubKeyTrustedGETCached(): findTrustedSigned=$findTrustedSigned")
 
     val sourcePubKey = findTrustedSigned.findTrusted.sourcePublicKey
     val depth = findTrustedSigned.findTrusted.depth

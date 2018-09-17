@@ -125,16 +125,16 @@ object KeyServiceClientRedisCacheUtil extends StrictLogging {
 
       case Right(results) =>
 
-        val redis = RedisClientUtil.getRedisClient
-
-        val expiry = 600 // TODO read from config? does this have a dynamic component: e.g. any of the trusted keys expiring?
-
         val sourcePubKey = findTrustedSigned.findTrusted.sourcePublicKey
         val depth = findTrustedSigned.findTrusted.depth
         val minTrust = findTrustedSigned.findTrusted.minTrustLevel
         val cacheKey = CacheHelperUtil.cacheKeyFindTrusted(sourcePubKey, depth, minTrust)
 
+        val publicKeys = results map(_.publicKey)
+        val expiry = expireInSeconds(publicKeys)
+
         val json = Json4sUtil.any2String(results).get
+        val redis = RedisClientUtil.getRedisClient
         redis.set[String](cacheKey, json, exSeconds = Some(expiry), NX = true) flatMap {
 
           case true =>
