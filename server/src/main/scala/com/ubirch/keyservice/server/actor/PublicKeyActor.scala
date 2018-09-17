@@ -1,7 +1,7 @@
 package com.ubirch.keyservice.server.actor
 
 import com.ubirch.key.model._
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys}
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys, SignedRevoke}
 import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.core.manager.PublicKeyManager
 import com.ubirch.util.json.Json4sUtil
@@ -71,10 +71,19 @@ class PublicKeyActor(implicit neo4jDriver: Driver) extends Actor
       val dbPubKeyDelete = Json4sUtil.any2any[db.PublicKeyDelete](pubKeyDelete)
       PublicKeyManager.deleteByPubKey(dbPubKeyDelete) map (sender ! _)
 
-    case _ =>
+    case signedRevoke: SignedRevoke =>
 
-      log.error("unknown message (PublicKeyActor)")
-      sender ! JsonErrorResponse(errorType = "UnknownMessage", errorMessage = "unable to handle message")
+      val sender = context.sender()
+      val dbPubKeyRevoke = Json4sUtil.any2any[db.SignedRevoke](signedRevoke)
+      PublicKeyManager.revoke(dbPubKeyRevoke) map (sender ! _) // TODO (UP-177) handle Left/Right here and move this code into a private method?
+      // TODO (UP-177) implement --> return true/JsonErrorResponse?
+
+  }
+
+  override def unhandled(message: Any): Unit = {
+
+    log.error(s"received unknown message: ${message.toString} (${message.getClass.toGenericString}) from: ${context.sender()}")
+    context.sender ! JsonErrorResponse(errorType = "ServerError", errorMessage = s"sorry, we just had a problem")
 
   }
 

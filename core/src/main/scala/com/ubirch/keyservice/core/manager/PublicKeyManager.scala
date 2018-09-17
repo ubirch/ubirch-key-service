@@ -5,7 +5,7 @@ import java.util.Base64
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.crypto.ecc.EccUtil
-import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete}
+import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete, SignedRevoke}
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
 
 import org.joda.time.{DateTime, DateTimeZone}
@@ -296,4 +296,14 @@ object PublicKeyManager extends StrictLogging {
 
   }
 
+  def revoke(signedRevoke: SignedRevoke): Future[Either[KeyRevokeException, Boolean]] = {
+
+    // TODO (UP-178) automated tests
+    // TODO (UP-177) implement
+    ???
+
+  }
+
 }
+
+class KeyRevokeException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)
