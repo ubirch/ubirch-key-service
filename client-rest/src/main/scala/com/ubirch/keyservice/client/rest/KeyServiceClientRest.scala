@@ -2,12 +2,12 @@ package com.ubirch.keyservice.client.rest
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete}
+import com.ubirch.key.model.rest.{FindTrustedSigned, PublicKey, PublicKeyDelete, SignedTrustRelation, TrustedKeyResult}
 import com.ubirch.keyservice.client.rest.config.KeyClientRestConfig
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
 import com.ubirch.util.deepCheck.util.DeepCheckResponseUtil
 import com.ubirch.util.json.{Json4sUtil, MyJsonProtocol}
-import com.ubirch.util.model.JsonResponse
+import com.ubirch.util.model.{JsonErrorResponse, JsonResponse}
 
 import org.json4s.native.Serialization.read
 
@@ -79,7 +79,7 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
   }
 
   def pubKeyPOST(publicKey: PublicKey)
-            (implicit httpClient: HttpExt, materializer: Materializer): Future[Option[PublicKey]] = {
+                (implicit httpClient: HttpExt, materializer: Materializer): Future[Option[PublicKey]] = {
 
     Json4sUtil.any2String(publicKey) match {
 
@@ -118,7 +118,7 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
   }
 
   def pubKeyDELETE(publicKeyDelete: PublicKeyDelete)
-            (implicit httpClient: HttpExt, materializer: Materializer): Future[Boolean] = {
+                  (implicit httpClient: HttpExt, materializer: Materializer): Future[Boolean] = {
 
     Json4sUtil.any2String(publicKeyDelete) match {
 
@@ -155,7 +155,7 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
   }
 
   def findPubKey(publicKey: String)
-               (implicit httpClient: HttpExt, materializer: Materializer): Future[Option[PublicKey]] = {
+                (implicit httpClient: HttpExt, materializer: Materializer): Future[Option[PublicKey]] = {
 
     logger.debug(s"publicKey: $publicKey")
     val url = KeyClientRestConfig.findPubKey(publicKey)
@@ -182,6 +182,87 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
 
   }
 
+  def pubKeyTrustPOST(signedTrustRelation: SignedTrustRelation)
+                     (implicit httpClient: HttpExt, materializer: Materializer): Future[Either[JsonErrorResponse, SignedTrustRelation]] = {
+
+    Json4sUtil.any2String(signedTrustRelation) match {
+
+      case Some(trustJsonString: String) =>
+
+        logger.debug(s"trust public key (JSON): $signedTrustRelation")
+        val url = KeyClientRestConfig.pubKeyTrust
+        val req = HttpRequest(
+          method = HttpMethods.POST,
+          uri = url,
+          entity = HttpEntity.Strict(ContentTypes.`application/json`, data = ByteString(trustJsonString))
+        )
+        httpClient.singleRequest(req) flatMap {
+
+          case HttpResponse(StatusCodes.OK, _, entity, _) =>
+
+            entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
+              Right(read[SignedTrustRelation](body.utf8String))
+            }
+
+          case res@HttpResponse(code, _, entity, _) =>
+
+            res.discardEntityBytes()
+            logger.error(s"pubKeyTrustPOST() call to key-service failed: url=$url code=$code, status=${res.status}")
+            entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
+              Left(read[JsonErrorResponse](body.utf8String))
+            }
+
+        }
+
+      case None =>
+
+        logger.error(s"failed to to convert input to JSON: signedTrustRelation=$signedTrustRelation")
+        Future(Left(JsonErrorResponse(errorType = "RestClientError", errorMessage = "error before sending the request: failed to convert input to JSON")))
+
+    }
+
+  }
+
+  def pubKeyTrustedGET(findTrustedSigned: FindTrustedSigned)
+                      (implicit httpClient: HttpExt, materializer: Materializer): Future[Either[JsonErrorResponse, Set[TrustedKeyResult]]] = {
+
+    Json4sUtil.any2String(findTrustedSigned) match {
+
+      case Some(trustJsonString: String) =>
+
+        logger.debug(s"find trusted public keys (JSON): $findTrustedSigned")
+        val url = KeyClientRestConfig.pubKeyTrusted
+        val req = HttpRequest(
+          method = HttpMethods.GET,
+          uri = url,
+          entity = HttpEntity.Strict(ContentTypes.`application/json`, data = ByteString(trustJsonString))
+        )
+        httpClient.singleRequest(req) flatMap {
+
+          case HttpResponse(StatusCodes.OK, _, entity, _) =>
+
+            entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
+              Right(read[Set[TrustedKeyResult]](body.utf8String))
+            }
+
+          case res@HttpResponse(code, _, entity, _) =>
+
+            res.discardEntityBytes()
+            logger.error(s"pubKeyTrustedGET() call to key-service failed: url=$url code=$code, status=${res.status}")
+            entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
+              Left(read[JsonErrorResponse](body.utf8String))
+            }
+
+        }
+
+      case None =>
+
+        logger.error(s"failed to to convert input to JSON: findTrustedSigned=$findTrustedSigned")
+        Future(Left(JsonErrorResponse(errorType = "RestClientError", errorMessage = "error before sending the request: failed to convert input to JSON")))
+
+    }
+
+  }
 
   def currentlyValidPubKeys(hardwareId: String)
                            (implicit httpClient: HttpExt, materializer: Materializer): Future[Option[Set[PublicKey]]] = {

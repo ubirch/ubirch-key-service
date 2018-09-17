@@ -1,7 +1,10 @@
 package com.ubirch.keyService.testTools.data.generator
 
+import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.crypto.hash.HashUtil
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo}
+import com.ubirch.key.model.rest.{FindTrusted, FindTrustedSigned, PublicKey, PublicKeyInfo, SignedTrustRelation, TrustRelation}
+import com.ubirch.util.date.DateUtil
+import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
 
 import org.joda.time.{DateTime, DateTimeZone}
@@ -155,5 +158,73 @@ object TestDataGeneratorRest {
     pubKey.copy(previousPubKeySignature = None, pubKeyInfo = info)
 
   }
+
+  def signedTrustRelation(from: KeyMaterial, to: KeyMaterial, trustLevel: Int = 50): SignedTrustRelation = {
+
+    val trustRelation = TrustRelation(
+      created = DateUtil.nowUTC,
+      sourcePublicKey = from.publicKey.pubKeyInfo.pubKey,
+      targetPublicKey = to.publicKey.pubKeyInfo.pubKey,
+      trustLevel = trustLevel,
+      validNotAfter = Some(DateUtil.nowUTC.plusMonths(3))
+    )
+    val trustRelationJson = Json4sUtil.any2String(trustRelation).get
+    val signature = EccUtil.signPayload(from.privateKeyString, trustRelationJson)
+
+    SignedTrustRelation(trustRelation, signature)
+
+  }
+
+  def findTrustedSigned(depth: Int = 1,
+                        sourcePublicKey: String,
+                        sourcePrivateKey: String,
+                        minTrust: Int = 50
+                       ): FindTrustedSigned = {
+
+    val findTrusted = FindTrusted(
+      depth = depth,
+      sourcePublicKey = sourcePublicKey,
+      queryDate = DateUtil.nowUTC,
+      minTrustLevel = minTrust
+    )
+    val payload = Json4sUtil.any2String(findTrusted).get
+
+    FindTrustedSigned(
+      findTrusted = findTrusted,
+      signature = EccUtil.signPayload(sourcePrivateKey, payload)
+    )
+
+  }
+
+  def generateTwoKeyPairs(): KeyMaterialAAndBRest = {
+
+    val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded
+    val keyMaterialA = KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA)
+    val (publicKeyB, privateKeyB) = EccUtil.generateEccKeyPairEncoded
+    val keyMaterialB = KeyGenUtil.keyMaterial(publicKey = publicKeyB, privateKey = privateKeyB)
+
+    val publicKeys = Set(
+      Json4sUtil.any2any[PublicKey](keyMaterialA.publicKey),
+      Json4sUtil.any2any[PublicKey](keyMaterialB.publicKey)
+    )
+
+    KeyMaterialAAndBRest(
+      keyMaterialA = keyMaterialA,
+      keyMaterialB = keyMaterialB,
+      publicKeys = publicKeys
+    )
+
+  }
+
+}
+
+case class KeyMaterial(privateKeyString: String, publicKey: PublicKey)
+
+case class KeyMaterialAAndBRest(keyMaterialA: KeyMaterial,
+                                keyMaterialB: KeyMaterial,
+                                publicKeys: Set[PublicKey]
+                               ) {
+
+  def privateKeyA(): String = keyMaterialA.privateKeyString
 
 }

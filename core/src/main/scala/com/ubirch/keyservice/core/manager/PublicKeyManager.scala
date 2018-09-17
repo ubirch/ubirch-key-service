@@ -3,14 +3,15 @@ package com.ubirch.keyservice.core.manager
 import java.util.Base64
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
+
 import com.ubirch.crypto.ecc.EccUtil
-import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete, PublicKeyInfo}
+import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete}
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
-import com.ubirch.util.neo4j.utils.Neo4jParseUtil
+
 import org.joda.time.{DateTime, DateTimeZone}
 import org.neo4j.driver.v1.Values.parameters
 import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
-import org.neo4j.driver.v1.{Driver, Record, Transaction, TransactionWork}
+import org.neo4j.driver.v1.{Driver, Transaction, TransactionWork}
 
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -50,7 +51,7 @@ object PublicKeyManager extends StrictLogging {
 
         if (PublicKeyUtil.validateSignature(pubKey)) {
 
-          val data = entityToString(pubKey)
+          val data = DbModelUtils.publicKeyToString(pubKey)
           val query =
             s"""CREATE (pubKey:PublicKey $data)
                |RETURN pubKey""".stripMargin
@@ -67,7 +68,7 @@ object PublicKeyManager extends StrictLogging {
                   val records = result.list().toSeq
                   logger.info(s"found ${records.size} results for pubKey=$pubKey")
 
-                  Right(recordsToPublicKeys(records, "pubKey").headOption)
+                  Right(DbModelUtils.recordsToPublicKeys(records, "pubKey").headOption)
 
                 }
               })
@@ -147,7 +148,7 @@ object PublicKeyManager extends StrictLogging {
             val records = result.list().toSeq
             logger.info(s"currentlyValid() -- found ${records.size} results for: hardwareId=$hardwareId; now=$now")
 
-            recordsToPublicKeys(records, "pubKey")
+            DbModelUtils.recordsToPublicKeys(records, "pubKey")
 
           }
         })
@@ -200,7 +201,7 @@ object PublicKeyManager extends StrictLogging {
             val records = result.list().toSeq
             logger.info(s"found ${records.size} results for pubKey=$pubKey")
 
-            recordsToPublicKeys(records, "pubKey").headOption
+            DbModelUtils.recordsToPublicKeys(records, "pubKey").headOption
 
           }
         })
@@ -292,80 +293,6 @@ object PublicKeyManager extends StrictLogging {
       logger.error(s"unable to delete public key with invalid signature: $pubKeyDelete")
       Future(false)
     }
-
-  }
-
-  private def toKeyValueMap(publicKey: PublicKey): Map[String, Any] = {
-
-    var keyValue: Map[String, Any] = Map(
-      "infoHwDeviceId" -> publicKey.pubKeyInfo.hwDeviceId,
-      "infoPubKeyId" -> publicKey.pubKeyInfo.pubKeyId,
-      "infoPubKey" -> publicKey.pubKeyInfo.pubKey,
-      "infoAlgorithm" -> publicKey.pubKeyInfo.algorithm,
-      "infoCreated" -> publicKey.pubKeyInfo.created,
-      "infoValidNotBefore" -> publicKey.pubKeyInfo.validNotBefore,
-      "signature" -> publicKey.signature
-    )
-    if (publicKey.pubKeyInfo.validNotAfter.isDefined) {
-      keyValue += "infoValidNotAfter" -> publicKey.pubKeyInfo.validNotAfter.get
-    }
-    if (publicKey.pubKeyInfo.previousPubKeyId.isDefined) {
-      keyValue += "infoPreviousPubKeyId" -> publicKey.pubKeyInfo.previousPubKeyId.get
-    }
-    if (publicKey.previousPubKeySignature.isDefined) {
-      keyValue += "previousPubKeySignature" -> publicKey.previousPubKeySignature.get
-    }
-    if (publicKey.raw.isDefined) {
-      keyValue += "raw" -> publicKey.raw.get
-    }
-
-    keyValue
-
-  }
-
-  private def keyValueToString(keyValue: Map[String, Any]): String = {
-
-    val data: String = keyValue map {
-      case (key, value: Int) => s"""$key: $value"""
-      case (key, value: Long) => s"""$key: $value"""
-      case (key, value: Boolean) => s"""$key: $value"""
-      case (key, value: String) => s"""$key: "$value""""
-      case (key, value) => s"""$key: "$value""""
-    } mkString("{", ", ", "}")
-    logger.debug(s"keyValues.string -- $data")
-
-    data
-
-  }
-
-  private def entityToString(publicKey: PublicKey): String = {
-    val keyValue = toKeyValueMap(publicKey)
-    keyValueToString(keyValue)
-  }
-
-  private def recordsToPublicKeys(records: Seq[Record], recordLabel: String): Set[PublicKey] = {
-
-    records map { record =>
-
-      val pubKey = record.get(recordLabel)
-
-      PublicKey(
-        pubKeyInfo = PublicKeyInfo(
-          hwDeviceId = Neo4jParseUtil.asType[String](pubKey, "infoHwDeviceId"),
-          pubKey = Neo4jParseUtil.asType[String](pubKey, "infoPubKey"),
-          pubKeyId = Neo4jParseUtil.asTypeOrDefault[String](pubKey, "infoPubKeyId", "--UNDEFINED--"),
-          algorithm = Neo4jParseUtil.asType[String](pubKey, "infoAlgorithm"),
-          previousPubKeyId = Neo4jParseUtil.asTypeOption[String](pubKey, "infoPreviousPubKeyId"),
-          created = Neo4jParseUtil.asDateTime(pubKey, "infoCreated"),
-          validNotBefore = Neo4jParseUtil.asDateTime(pubKey, "infoValidNotBefore"),
-          validNotAfter = Neo4jParseUtil.asDateTimeOption(pubKey, "infoValidNotAfter")
-        ),
-        signature = Neo4jParseUtil.asType(pubKey, "signature"),
-        previousPubKeySignature = Neo4jParseUtil.asTypeOption[String](pubKey, "previousPubKeySignature"),
-        raw = Neo4jParseUtil.asTypeOption[String](pubKey, "raw")
-      )
-
-    } toSet
 
   }
 

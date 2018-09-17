@@ -2,9 +2,11 @@ package com.ubirch.keyService.testTools.data.generator
 
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.crypto.hash.HashUtil
-import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo}
+import com.ubirch.key.model.db.{FindTrusted, FindTrustedSigned, PublicKey, PublicKeyInfo, SignedTrustRelation}
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
+import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
+
 import org.joda.time.{DateTime, DateTimeZone}
 
 /**
@@ -134,6 +136,65 @@ object TestDataGeneratorDb {
     )
 
     pubKey
+
   }
+
+  def signedTrustRelation(from: KeyMaterial, to: KeyMaterial, trustLevel: Int = 50): SignedTrustRelation = {
+
+    val trustKeyRest = TestDataGeneratorRest.signedTrustRelation(
+      from = from,
+      to = to,
+      trustLevel = trustLevel
+    )
+    Json4sUtil.any2any[SignedTrustRelation](trustKeyRest)
+
+  }
+
+  def findTrustedSigned(sourcePublicKey: String,
+                        sourcePrivateKey: String,
+                        minTrust: Int = 50
+                       ): FindTrustedSigned = {
+
+    val findTrusted = FindTrusted(
+      minTrustLevel = minTrust,
+      sourcePublicKey = sourcePublicKey
+    )
+    val payload = Json4sUtil.any2String(findTrusted).get
+
+    FindTrustedSigned(
+      findTrusted = findTrusted,
+      signature = EccUtil.signPayload(sourcePrivateKey, payload)
+    )
+
+  }
+
+  def generateTwoKeyPairs(): KeyMaterialAAndBDb = {
+
+    val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded
+    val keyMaterialA = KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA)
+    val (publicKeyB, privateKeyB) = EccUtil.generateEccKeyPairEncoded
+    val keyMaterialB = KeyGenUtil.keyMaterial(publicKey = publicKeyB, privateKey = privateKeyB)
+
+    val publicKeys = Set(
+      Json4sUtil.any2any[PublicKey](keyMaterialA.publicKey),
+      Json4sUtil.any2any[PublicKey](keyMaterialB.publicKey)
+    )
+
+    KeyMaterialAAndBDb(
+      keyMaterialA = keyMaterialA,
+      keyMaterialB = keyMaterialB,
+      publicKeys = publicKeys
+    )
+
+  }
+
+}
+
+case class KeyMaterialAAndBDb(keyMaterialA: KeyMaterial,
+                              keyMaterialB: KeyMaterial,
+                              publicKeys: Set[PublicKey]
+                             ) {
+
+  def privateKeyA(): String = keyMaterialA.privateKeyString
 
 }
