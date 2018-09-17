@@ -3,12 +3,11 @@ package com.ubirch.keyservice.core.manager
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.crypto.ecc.EccUtil
-import com.ubirch.key.model.db.{SignedTrustRelation, TrustRelation}
+import com.ubirch.key.model.db.{FindTrustedSigned, SignedTrustRelation, TrustedKeyResult}
 import com.ubirch.util.json.Json4sUtil
-import com.ubirch.util.neo4j.utils.Neo4jParseUtil
 
 import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
-import org.neo4j.driver.v1.{Driver, Record, Transaction, TransactionWork}
+import org.neo4j.driver.v1.{Driver, Transaction, TransactionWork}
 
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -72,7 +71,7 @@ object TrustManager extends StrictLogging {
             val query =
               s"""MATCH (source: PublicKey), (target: PublicKey)
                  | WHERE source.infoPubKey = '$srcPubKey' AND target.infoPubKey = '$targetPubKey'
-                 | CREATE (source)-[trust:TRUST ${entityToString(signedTrust)}]->(target)
+                 | CREATE (source)-[trust:TRUST ${DbModelUtils.signedTrustRelationToString(signedTrust)}]->(target)
                  | RETURN trust""".stripMargin
             logger.debug(s"Cypher query: $query")
             val createResult = try {
@@ -86,7 +85,7 @@ object TrustManager extends StrictLogging {
                     val result = tx.run(query)
                     val records = result.list().toSeq
                     logger.info(s"create() -- found ${records.size} results for trust relationship=$signedTrust")
-                    val convertedResults = recordsToSignedTrustRelationship(records, "trust")
+                    val convertedResults = DbModelUtils.recordsToSignedTrustRelationship(records, "trust")
 
                     if (convertedResults.isEmpty) {
                       logger.error(s"create() -- failed writing trust relationship with probably at least one key missing in database: signedTTrust=$signedTrust")
@@ -130,7 +129,6 @@ object TrustManager extends StrictLogging {
     } else {
 
       logger.error(s"create() -- failed to verify signature: signedTrust=$signedTrust")
-      new ExpressingTrustException()
       Future(Left(new ExpressingTrustException("signature verification failed")))
 
     }
@@ -227,7 +225,7 @@ object TrustManager extends StrictLogging {
             val result = tx.run(query)
             val recordsFound = result.list().toSeq
             logger.info(s"findSourceTarget() -- found ${recordsFound.size} results for: sourcePubKey=$sourcePubKey, targetPubKey=$targetPubKey")
-            val convertedResults = recordsToSignedTrustRelationship(recordsFound, "trust")
+            val convertedResults = DbModelUtils.recordsToSignedTrustRelationship(recordsFound, "trust")
 
             if (convertedResults.size < 2) {
               logger.debug(s"findSourceTarget() -- failed finding trust relationship in database: sourcePubKey=$sourcePubKey, targetPubKey=$targetPubKey")
@@ -264,48 +262,79 @@ object TrustManager extends StrictLogging {
 
   }
 
-  private def toKeyValueMap(signedTrustRelation: SignedTrustRelation): Map[String, Any] = {
+  def findTrusted(findTrustedSigned: FindTrustedSigned)
+                 (implicit neo4jDriver: Driver): Future[Either[FindTrustedException, Set[TrustedKeyResult]]] = {
 
-    var keyValue: Map[String, Any] = Map(
-      "signature" -> signedTrustRelation.signature,
-      "created" -> signedTrustRelation.created,
-      "trustCreated" -> signedTrustRelation.trustRelation.created,
-      "trustSource" -> signedTrustRelation.trustRelation.sourcePublicKey,
-      "trustTarget" -> signedTrustRelation.trustRelation.targetPublicKey,
-      "trustLevel" -> signedTrustRelation.trustRelation.trustLevel
+    val payloadJson = Json4sUtil.any2String(findTrustedSigned.findTrusted).get
+    val signatureValid = EccUtil.validateSignature(
+      publicKey = findTrustedSigned.findTrusted.sourcePublicKey,
+      signature = findTrustedSigned.signature,
+      payload = payloadJson
     )
-    if (signedTrustRelation.trustRelation.validNotAfter.isDefined) {
-      keyValue += "trustNotValidAfter" -> signedTrustRelation.trustRelation.validNotAfter.get
+
+    if (signatureValid) {
+
+      val maxDepth = 1 // NOTE: currently we limit the maximum depth to one and ignore `findTrustedSigned.findTrusted.depth`
+      val sourcePubKey = findTrustedSigned.findTrusted.sourcePublicKey
+      val minTrustLevel = findTrustedSigned.findTrusted.minTrustLevel
+      val query =
+        s"""MATCH p=(source)-[trust:TRUST]->(trusted)
+           | WHERE source.infoPubKey = '$sourcePubKey' AND trust.trustLevel >= $minTrustLevel
+           | RETURN trusted, trust.trustLevel""".stripMargin
+      logger.debug(s"findTrusted() -- query=$query")
+
+      val pubKeyResults = try {
+
+        val session = neo4jDriver.session
+        try {
+
+          session.readTransaction(new TransactionWork[Either[FindTrustedException, Set[TrustedKeyResult]]]() {
+            def execute(tx: Transaction): Either[FindTrustedException, Set[TrustedKeyResult]] = {
+
+              val result = tx.run(query)
+              val records = result.list().toSeq
+              logger.info(s"findTrusted() -- found ${records.size} results for: findTrustedSigned=$findTrustedSigned")
+
+              val convertedResults = DbModelUtils.recordsToTrustedKeyResult(
+                records = records,
+                depth = maxDepth,
+                publicKeyLabel = "trusted",
+                trustLevelLabel = "trust.trustLevel"
+              )
+              Right(convertedResults)
+
+            }
+          })
+
+        } finally if (session != null) session.close()
+
+      } catch {
+
+        case su: ServiceUnavailableException =>
+
+          logger.error(s"findTrusted() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+          Left(new FindTrustedException(s"failed to find trusted public keys"))
+
+        case e: Exception =>
+
+          logger.error(s"findTrusted() -- Exception: findTrustedSigned=$findTrustedSigned, e.message=${e.getMessage}", e)
+          Left(new FindTrustedException(s"failed to find trusted public keys"))
+
+        case re: RuntimeException =>
+
+          logger.error(s"findTrusted() -- RuntimeException: findTrustedSigned=$findTrustedSigned, re.message=${re.getMessage}", re)
+          Left(new FindTrustedException(s"failed to find trusted public keys"))
+
+      }
+
+      Future(pubKeyResults)
+
+    } else {
+
+      logger.error(s"findTrusted() -- failed to verify signature: signedTrust=$findTrustedSigned")
+      Future(Left(new FindTrustedException("signature verification failed")))
+
     }
-
-    keyValue
-
-  }
-
-  private def entityToString(signedTrustRelation: SignedTrustRelation): String = {
-    val keyValue = toKeyValueMap(signedTrustRelation)
-    Neo4jParseUtil.keyValueToString(keyValue)
-  }
-
-  private def recordsToSignedTrustRelationship(records: Seq[Record], recordLabel: String): Set[SignedTrustRelation] = {
-
-    records map { record =>
-
-      val trustRelation = record.get(recordLabel)
-
-      SignedTrustRelation(
-        trustRelation = TrustRelation(
-          created = Neo4jParseUtil.asDateTime(trustRelation, "trustCreated"),
-          sourcePublicKey = Neo4jParseUtil.asType[String](trustRelation, "trustSource"),
-          targetPublicKey = Neo4jParseUtil.asType[String](trustRelation, "trustTarget"),
-          trustLevel = Neo4jParseUtil.asType[Long](trustRelation, "trustLevel").toInt,
-          validNotAfter = Neo4jParseUtil.asDateTimeOption(trustRelation, "trustNotValidAfter")
-        ),
-        signature = Neo4jParseUtil.asType[String](trustRelation, "signature"),
-        created = Neo4jParseUtil.asDateTime(trustRelation, "created")
-      )
-
-    } toSet
 
   }
 
@@ -316,3 +345,5 @@ class ExpressingTrustException(private val message: String = "", private val cau
 class DeleteTrustException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)
 
 class FindTrustException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)
+
+class FindTrustedException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)

@@ -6,8 +6,19 @@ package com.ubirch.keyservice.client.rest.cache.redis
   */
 object CacheHelperUtil {
 
-  def cacheKeyPublicKey(publicKey: String): String = s"keyService.cache.publicKey.$publicKey"
+  private val keyRoot = "keyService.cache"
 
-  def cacheKeyHardwareId(hardwareId: String): String = s"keyService.cache.hardwareId.$hardwareId"
+  def cacheKeyPublicKey(publicKey: String): String = s"$keyRoot.publicKey.$publicKey"
+
+  def cacheKeyHardwareId(hardwareId: String): String = s"$keyRoot.hardwareId.$hardwareId"
+
+  def cacheKeyFindTrusted(publicKey: String,
+                          depth: Int,
+                          minTrust: Int
+                         ): String = {
+
+    s"$keyRoot.findTrusted.$publicKey.$depth.$minTrust"
+
+  }
 
 }

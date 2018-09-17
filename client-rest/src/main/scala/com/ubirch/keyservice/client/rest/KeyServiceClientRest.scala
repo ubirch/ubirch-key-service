@@ -2,7 +2,7 @@ package com.ubirch.keyservice.client.rest
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, SignedTrustRelation}
+import com.ubirch.key.model.rest.{FindTrustedSigned, PublicKey, PublicKeyDelete, SignedTrustRelation, TrustedKeyResult}
 import com.ubirch.keyservice.client.rest.config.KeyClientRestConfig
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
 import com.ubirch.util.deepCheck.util.DeepCheckResponseUtil
@@ -223,6 +223,46 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
 
   }
 
+  def pubKeyTrustedGET(findTrustedSigned: FindTrustedSigned)
+                      (implicit httpClient: HttpExt, materializer: Materializer): Future[Either[JsonErrorResponse, Set[TrustedKeyResult]]] = {
+
+    Json4sUtil.any2String(findTrustedSigned) match {
+
+      case Some(trustJsonString: String) =>
+
+        logger.debug(s"find trusted public keys (JSON): $findTrustedSigned")
+        val url = KeyClientRestConfig.pubKeyTrusted
+        val req = HttpRequest(
+          method = HttpMethods.GET,
+          uri = url,
+          entity = HttpEntity.Strict(ContentTypes.`application/json`, data = ByteString(trustJsonString))
+        )
+        httpClient.singleRequest(req) flatMap {
+
+          case HttpResponse(StatusCodes.OK, _, entity, _) =>
+
+            entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
+              Right(read[Set[TrustedKeyResult]](body.utf8String))
+            }
+
+          case res@HttpResponse(code, _, entity, _) =>
+
+            res.discardEntityBytes()
+            logger.error(s"pubKeyTrustedGET() call to key-service failed: url=$url code=$code, status=${res.status}")
+            entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
+              Left(read[JsonErrorResponse](body.utf8String))
+            }
+
+        }
+
+      case None =>
+
+        logger.error(s"failed to to convert input to JSON: findTrustedSigned=$findTrustedSigned")
+        Future(Left(JsonErrorResponse(errorType = "RestClientError", errorMessage = "error before sending the request: failed to convert input to JSON")))
+
+    }
+
+  }
 
   def currentlyValidPubKeys(hardwareId: String)
                            (implicit httpClient: HttpExt, materializer: Materializer): Future[Option[Set[PublicKey]]] = {

@@ -1,7 +1,7 @@
 package com.ubirch.keyservice.server.actor
 
 import com.ubirch.key.model._
-import com.ubirch.key.model.rest.SignedTrustRelation
+import com.ubirch.key.model.rest.{FindTrustedSigned, SignedTrustRelation}
 import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.core.manager.TrustManager
 import com.ubirch.util.json.Json4sUtil
@@ -30,6 +30,11 @@ class TrustActor(implicit neo4jDriver: Driver) extends Actor
 
       val sender = context.sender()
       executeExpressTrust(signedTrust, sender)
+
+    case signedGetTrusted: FindTrustedSigned =>
+
+      val sender = context.sender()
+      executeFindTrusted(signedGetTrusted, sender)
 
   }
 
@@ -64,6 +69,41 @@ class TrustActor(implicit neo4jDriver: Driver) extends Actor
         sender ! JsonErrorResponse(errorType = "ServerError", errorMessage = e.getMessage)
 
     }
+
+  }
+
+  private def executeFindTrusted(findTrustedSigned: rest.FindTrustedSigned, sender: ActorRef): Unit = {
+
+    try {
+
+      val findTrustedSignedDb = Json4sUtil.any2any[db.FindTrustedSigned](findTrustedSigned)
+      TrustManager.findTrusted(findTrustedSignedDb) onComplete {
+
+        case Success(Right(trustedKeys)) =>
+
+          val trustedKeysResult = TrustedKeyResultSet(
+            trustedKeys map Json4sUtil.any2any[rest.TrustedKeyResult]
+          )
+          sender ! trustedKeysResult
+
+        case Success(Left(t)) =>
+
+          sender ! JsonErrorResponse(errorType = "FindTrustedError", errorMessage = t.getMessage)
+
+        case Failure(t) =>
+
+          sender ! JsonErrorResponse(errorType = "ServerError", errorMessage = t.getMessage)
+
+      }
+
+    } catch {
+
+      case e: Exception =>
+
+        sender ! JsonErrorResponse(errorType = "ServerError", errorMessage = e.getMessage)
+
+    }
+
   }
 
   override def unhandled(message: Any): Unit = {
@@ -82,3 +122,5 @@ object TrustActor {
   }
 
 }
+
+case class TrustedKeyResultSet(trusted: Set[rest.TrustedKeyResult])

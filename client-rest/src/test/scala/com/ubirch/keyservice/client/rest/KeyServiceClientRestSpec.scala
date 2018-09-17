@@ -5,7 +5,7 @@ import java.util.Base64
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model._
 import com.ubirch.key.model.db.PublicKey
-import com.ubirch.key.model.rest.{PublicKeyDelete, SignedTrustRelation}
+import com.ubirch.key.model.rest.{PublicKeyDelete, SignedTrustRelation, TrustedKeyResult}
 import com.ubirch.keyService.testTools.data.generator.{TestDataGeneratorDb, TestDataGeneratorRest}
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
 import com.ubirch.keyservice.config.KeyConfig
@@ -290,6 +290,126 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
 
   }
 
+  feature("pubKeyTrustedGET()") {
+
+    scenario("empty database --> empty") {
+
+      // prepare
+      val twoKeyPairs = TestDataGeneratorRest.generateTwoKeyPairs()
+
+      val findTrustedSigned = TestDataGeneratorRest.findTrustedSigned(
+        sourcePublicKey = twoKeyPairs.keyMaterialA.publicKey.pubKeyInfo.pubKey,
+        sourcePrivateKey = twoKeyPairs.keyMaterialA.privateKeyString,
+        minTrust = 100
+      )
+
+      // test
+      KeyServiceClientRest.pubKeyTrustedGET(findTrustedSigned) map { result =>
+
+        // verify
+        result shouldBe Right(Set.empty)
+
+      }
+
+    }
+
+    scenario("trust down to depth 2 --> all trusted keys down to depth=1") {
+
+      /* Trust Relationships (all with default trust level)
+         *
+         * A ---trust--> B ---trust--> E
+         *   |             |
+         *   |             |--trust--> F
+         *   |
+         *   |--trust--> C ---trust--> E
+         *   |             |
+         *   |             |--trust--> F
+         *   |
+         *   |--trust--> D ---trust--> E
+         *
+         * expected: keys B, C, D
+         */
+
+      // prepare
+      val keyPairsAAndB = TestDataGeneratorRest.generateTwoKeyPairs()
+      val keyPairsCAndD = TestDataGeneratorRest.generateTwoKeyPairs()
+      val keyPairsEAndF = TestDataGeneratorRest.generateTwoKeyPairs()
+
+      val publicKeys = keyPairsAAndB.publicKeys ++ keyPairsCAndD.publicKeys ++ keyPairsEAndF.publicKeys
+
+      uploadPublicKeys(publicKeys) flatMap { publicKeysUploaded =>
+
+        val expectedUploadResult = publicKeys.map(Some(_))
+        publicKeysUploaded shouldBe expectedUploadResult
+
+        val keyA = keyPairsAAndB.keyMaterialA
+        val keyB = keyPairsAAndB.keyMaterialB
+        val keyC = keyPairsCAndD.keyMaterialA
+        val keyD = keyPairsCAndD.keyMaterialB
+        val keyE = keyPairsEAndF.keyMaterialA
+        val keyF = keyPairsEAndF.keyMaterialB
+
+        val signedTrustRelationAToB = TestDataGeneratorRest.signedTrustRelation(keyA, keyB)
+        val signedTrustRelationAToC = TestDataGeneratorRest.signedTrustRelation(keyA, keyC)
+        val signedTrustRelationAToD = TestDataGeneratorRest.signedTrustRelation(keyA, keyD)
+        val signedTrustRelationBToE = TestDataGeneratorRest.signedTrustRelation(keyB, keyE)
+        val signedTrustRelationBToF = TestDataGeneratorRest.signedTrustRelation(keyB, keyF)
+        val signedTrustRelationCToE = TestDataGeneratorRest.signedTrustRelation(keyC, keyE)
+        val signedTrustRelationCToF = TestDataGeneratorRest.signedTrustRelation(keyC, keyF)
+        val signedTrustRelationDToE = TestDataGeneratorRest.signedTrustRelation(keyD, keyE)
+
+        val signedTrustRelations = Set(
+          signedTrustRelationAToB,
+          signedTrustRelationAToC,
+          signedTrustRelationAToD,
+          signedTrustRelationBToE,
+          signedTrustRelationBToF,
+          signedTrustRelationCToE,
+          signedTrustRelationCToF,
+          signedTrustRelationDToE
+        )
+        uploadTrust(signedTrustRelations) flatMap { persistedTrust =>
+
+          val expectedPersistedTrust = signedTrustRelations map (signedTrust => Right(signedTrust))
+          persistedTrust shouldBe expectedPersistedTrust
+
+          val findTrustedSigned = TestDataGeneratorRest.findTrustedSigned(
+            sourcePublicKey = keyA.publicKey.pubKeyInfo.pubKey,
+            sourcePrivateKey = keyA.privateKeyString,
+            minTrust = signedTrustRelationAToB.trustRelation.trustLevel - 1
+          )
+
+          // test
+          KeyServiceClientRest.pubKeyTrustedGET(findTrustedSigned) map { result =>
+
+            // verify
+            val expectedTrustedB = TrustedKeyResult(
+              depth = 1,
+              trustLevel = signedTrustRelationAToB.trustRelation.trustLevel,
+              publicKey = keyB.publicKey
+            )
+            val expectedTrustedC = TrustedKeyResult(
+              depth = 1,
+              trustLevel = signedTrustRelationAToC.trustRelation.trustLevel,
+              publicKey = keyC.publicKey
+            )
+            val expectedTrustedD = TrustedKeyResult(
+              depth = 1,
+              trustLevel = signedTrustRelationAToD.trustRelation.trustLevel,
+              publicKey = keyD.publicKey
+            )
+            result shouldBe Right(Set(expectedTrustedB, expectedTrustedC, expectedTrustedD))
+
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
   feature("currentlyValidPubKeys()") {
 
     scenario("has no keys") {
@@ -408,6 +528,12 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
   private def uploadPublicKeys(publicKeys: Set[rest.PublicKey]): Future[Set[Option[rest.PublicKey]]] = {
 
     Future.sequence(publicKeys map KeyServiceClientRest.pubKeyPOST)
+
+  }
+
+  private def uploadTrust(signedTrustSet: Set[SignedTrustRelation]): Future[Set[Either[JsonErrorResponse, SignedTrustRelation]]] = {
+
+    Future.sequence(signedTrustSet map KeyServiceClientRest.pubKeyTrustPOST)
 
   }
 
