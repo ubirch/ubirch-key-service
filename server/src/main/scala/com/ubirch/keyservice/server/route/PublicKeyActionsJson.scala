@@ -2,7 +2,7 @@ package com.ubirch.keyservice.server.route
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.{FindTrustedSigned, PublicKey, PublicKeyDelete, PublicKeys, SignedTrustRelation}
+import com.ubirch.key.model.rest.{FindTrustedSigned, PublicKey, PublicKeyDelete, PublicKeys, SignedRevoke, SignedTrustRelation}
 import com.ubirch.key.model.{db, rest}
 import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, QueryCurrentlyValid, TrustedKeyResultSet}
