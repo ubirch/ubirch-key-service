@@ -6,7 +6,9 @@ import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete}
 import com.ubirch.keyService.testTools.data.generator.TestDataGeneratorDb
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
+import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
+
 import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.concurrent.Future
@@ -236,6 +238,143 @@ class PublicKeyManagerSpec extends Neo4jSpec {
               fail("should returned Some(publicKey)")
 
           }
+
+      }
+
+    }
+
+  }
+
+  feature("update()") {
+
+    scenario("public key does not exist --> UpdateException") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+
+      // test
+      PublicKeyManager.update(pubKeyDb) map {
+
+        // verify
+        case Right(_) =>
+
+          fail("update should have failed")
+
+        case Left(updateException: UpdateException) =>
+
+          updateException.message shouldBe "failed to update public key as it does not exist"
+
+      }
+
+    }
+
+    scenario("public key exists; try to update to same --> updated public key") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+
+      PublicKeyManager.create(pubKeyDb) flatMap { createResult =>
+
+        createResult shouldBe Right(Some(pubKeyDb))
+
+        // test
+        PublicKeyManager.update(pubKeyDb) flatMap { updateResult =>
+
+          // verify
+          updateResult shouldBe Right(pubKeyDb)
+          PublicKeyManager.findByPubKey(pubKeyDb.pubKeyInfo.pubKey) map (_ shouldBe Some(pubKeyDb))
+
+        }
+
+      }
+
+    }
+
+    scenario("public key exists; update with changed version --> updated public key") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+
+      PublicKeyManager.create(pubKeyDb) flatMap { createResult =>
+
+        createResult shouldBe Right(Some(pubKeyDb))
+        pubKeyDb.raw shouldBe empty
+        val updatedPubKey = pubKeyDb.copy(raw = Some("raw"))
+
+        // test
+        PublicKeyManager.update(updatedPubKey) flatMap { updateResult =>
+
+          // verify
+          updateResult shouldBe Right(updatedPubKey)
+          PublicKeyManager.findByPubKey(pubKeyDb.pubKeyInfo.pubKey) map (_ shouldBe Some(updatedPubKey))
+
+        }
+
+      }
+
+    }
+
+    scenario("add revokation --> success") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+
+      PublicKeyManager.create(pubKeyDb) flatMap { createResult =>
+
+        createResult shouldBe Right(Some(pubKeyDb))
+
+        val signedRevoke = TestDataGeneratorDb.signedRevoke(
+          publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+          privateKey = keyPair.privateKeyString
+        )
+        val pubKeyDbRevoked = pubKeyDb.copy(signedRevoke = Some(signedRevoke))
+
+        // test
+        PublicKeyManager.update(pubKeyDbRevoked) flatMap { result =>
+
+          // verify
+          result shouldBe Right(pubKeyDbRevoked)
+
+        }
+
+      }
+
+    }
+
+    scenario("remove revokation --> error") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+
+      val signedRevoke = TestDataGeneratorDb.signedRevoke(
+        publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+        privateKey = keyPair.privateKeyString
+      )
+      val pubKeyDbRevoked = pubKeyDb.copy(signedRevoke = Some(signedRevoke))
+
+      PublicKeyManager.create(pubKeyDbRevoked) flatMap { createResult =>
+
+        createResult shouldBe Right(Some(pubKeyDbRevoked))
+
+        // test
+        PublicKeyManager.update(pubKeyDb) flatMap {
+
+          // verify
+          case Left(updateException: UpdateException) =>
+
+            updateException.message shouldBe "unable to remove revokation from public key"
+            PublicKeyManager.findByPubKey(pubKeyDb.pubKeyInfo.pubKey) map (_ shouldBe Some(pubKeyDbRevoked))
+
+          case Right(_) =>
+
+            fail("update should have failed")
+
+        }
 
       }
 

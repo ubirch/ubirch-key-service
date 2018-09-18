@@ -1,17 +1,18 @@
 package com.ubirch.keyservice.core.manager
 
-import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo, SignedTrustRelation, TrustRelation, TrustedKeyResult}
+import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo, Revokation, SignedRevoke, SignedTrustRelation, TrustRelation, TrustedKeyResult}
 import com.ubirch.util.neo4j.utils.Neo4jParseUtil
 
 import org.neo4j.driver.v1.{Record, Value}
 
 import scala.language.postfixOps
+import com.typesafe.scalalogging.slf4j.StrictLogging
 
 /**
   * author: cvandrei
   * since: 2018-09-14
   */
-object DbModelUtils {
+object DbModelUtils extends StrictLogging {
 
   def publicKeyToKeyValueMap(publicKey: PublicKey): Map[String, Any] = {
 
@@ -37,6 +38,13 @@ object DbModelUtils {
       keyValue += "raw" -> publicKey.raw.get
     }
 
+    if (publicKey.signedRevoke.isDefined) {
+      val signedRevoke = publicKey.signedRevoke.get
+      keyValue += "revokeSignature" -> signedRevoke.signature
+      keyValue += "revokePublicKey" -> signedRevoke.revokation.publicKey
+      keyValue += "revokeDateTime" -> signedRevoke.revokation.revokationDate
+    }
+
     keyValue
 
   }
@@ -44,6 +52,11 @@ object DbModelUtils {
   def publicKeyToString(publicKey: PublicKey): String = {
     val keyValue = publicKeyToKeyValueMap(publicKey)
     Neo4jParseUtil.keyValueToString(keyValue)
+  }
+
+  def publicKeyToStringSET(publicKey: PublicKey, keyPrefix: String): String = {
+    val keyValue = publicKeyToKeyValueMap(publicKey)
+    Neo4jParseUtil.keyValueToStringSET(keyValue, keyPrefix)
   }
 
   def recordsToPublicKeys(records: Seq[Record], recordLabel: String): Set[PublicKey] = {
@@ -58,21 +71,26 @@ object DbModelUtils {
   }
 
   private def parsePublicKeyFromRecord(pubKey: Value) = {
+
+    val pubKeyInfo = PublicKeyInfo(
+      hwDeviceId = Neo4jParseUtil.asType[String](pubKey, "infoHwDeviceId"),
+      pubKey = Neo4jParseUtil.asType[String](pubKey, "infoPubKey"),
+      pubKeyId = Neo4jParseUtil.asTypeOrDefault[String](pubKey, "infoPubKeyId", "--UNDEFINED--"),
+      algorithm = Neo4jParseUtil.asType[String](pubKey, "infoAlgorithm"),
+      previousPubKeyId = Neo4jParseUtil.asTypeOption[String](pubKey, "infoPreviousPubKeyId"),
+      created = Neo4jParseUtil.asDateTime(pubKey, "infoCreated"),
+      validNotBefore = Neo4jParseUtil.asDateTime(pubKey, "infoValidNotBefore"),
+      validNotAfter = Neo4jParseUtil.asDateTimeOption(pubKey, "infoValidNotAfter")
+    )
+
     PublicKey(
-      pubKeyInfo = PublicKeyInfo(
-        hwDeviceId = Neo4jParseUtil.asType[String](pubKey, "infoHwDeviceId"),
-        pubKey = Neo4jParseUtil.asType[String](pubKey, "infoPubKey"),
-        pubKeyId = Neo4jParseUtil.asTypeOrDefault[String](pubKey, "infoPubKeyId", "--UNDEFINED--"),
-        algorithm = Neo4jParseUtil.asType[String](pubKey, "infoAlgorithm"),
-        previousPubKeyId = Neo4jParseUtil.asTypeOption[String](pubKey, "infoPreviousPubKeyId"),
-        created = Neo4jParseUtil.asDateTime(pubKey, "infoCreated"),
-        validNotBefore = Neo4jParseUtil.asDateTime(pubKey, "infoValidNotBefore"),
-        validNotAfter = Neo4jParseUtil.asDateTimeOption(pubKey, "infoValidNotAfter")
-      ),
+      pubKeyInfo = pubKeyInfo,
       signature = Neo4jParseUtil.asType(pubKey, "signature"),
       previousPubKeySignature = Neo4jParseUtil.asTypeOption[String](pubKey, "previousPubKeySignature"),
-      raw = Neo4jParseUtil.asTypeOption[String](pubKey, "raw")
+      raw = Neo4jParseUtil.asTypeOption[String](pubKey, "raw"),
+      signedRevoke = signedRevokeFromPublicKey(pubKey)
     )
+
   }
 
   private def signedTrustRelationToKeyValueMap(signedTrustRelation: SignedTrustRelation): Map[String, Any] = {
@@ -141,6 +159,33 @@ object DbModelUtils {
       )
 
     } toSet
+
+  }
+
+  private def signedRevokeFromPublicKey(pubKey: Value): Option[SignedRevoke] = {
+
+    val revokeSignature = Neo4jParseUtil.asTypeOrDefault[String](pubKey, "revokeSignature", "--UNDEFINED--")
+    val revokePublicKey = Neo4jParseUtil.asTypeOrDefault[String](pubKey, "revokePublicKey", "--UNDEFINED--")
+    val revokeDate = Neo4jParseUtil.asDateTimeOption(pubKey, "revokeDateTime")
+    if (revokeSignature == "--UNDEFINED--" && revokePublicKey == "--UNDEFINED--" && revokeDate.isEmpty) {
+
+      None
+
+    } else if (revokeSignature != "--UNDEFINED--" && revokePublicKey != "--UNDEFINED--" && revokeDate.isDefined) {
+
+      Some(
+        SignedRevoke(
+          revokation = Revokation(publicKey = revokePublicKey, revokationDate = revokeDate.get),
+          signature = revokeSignature
+        )
+      )
+
+    } else {
+
+      logger.error(s"public key record in database seems to be invalid: signedRevoke.signature=$revokeSignature, signedRevoke.revokation.publicKey=$revokePublicKey, signedRevoke.revokation.revokationDate=$revokeDate")
+      None
+
+    }
 
   }
 

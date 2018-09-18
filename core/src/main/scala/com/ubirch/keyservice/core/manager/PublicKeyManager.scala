@@ -7,6 +7,7 @@ import com.typesafe.scalalogging.slf4j.StrictLogging
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete, SignedRevoke}
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
+import com.ubirch.util.json.Json4sUtil
 
 import org.joda.time.{DateTime, DateTimeZone}
 import org.neo4j.driver.v1.Values.parameters
@@ -47,6 +48,7 @@ object PublicKeyManager extends StrictLogging {
           logger.error(errMsg)
           Future(Left(new Exception(errMsg)))
         }
+
       case None =>
 
         if (PublicKeyUtil.validateSignature(pubKey)) {
@@ -101,6 +103,80 @@ object PublicKeyManager extends StrictLogging {
           val errMsg = s"unable to create public key if signature is invalid: ${pubKey.signature}"
           logger.error(errMsg)
           Future(Left(new Exception(errMsg)))
+
+        }
+
+    }
+
+  }
+
+  def update(pubKey: PublicKey)
+            (implicit neo4jDriver: Driver): Future[Either[UpdateException, PublicKey]] = {
+
+    findByPubKey(pubKey.pubKeyInfo.pubKey) map {
+
+      case None =>
+
+        Left(new UpdateException("failed to update public key as it does not exist"))
+
+      case Some(existingPublicKey: PublicKey) =>
+
+        if (existingPublicKey.signedRevoke.isDefined) {
+
+          Left(new UpdateException("unable to remove revokation from public key"))
+
+        } else {
+
+          val data = DbModelUtils.publicKeyToStringSET(pubKey, "pubKey.")
+          val query =
+            s"""MATCH (pubKey:PublicKey {infoPubKey: '${pubKey.pubKeyInfo.pubKey}'})
+               | SET $data
+               | RETURN pubKey""".stripMargin
+          logger.debug(s"update() -- query: $query")
+
+          try {
+
+            val session = neo4jDriver.session
+            try {
+
+              session.writeTransaction(new TransactionWork[Either[UpdateException, PublicKey]]() {
+                def execute(tx: Transaction): Either[UpdateException, PublicKey] = {
+
+                  val result = tx.run(query)
+                  val records = result.list().toSeq
+                  logger.info(s"update() -- found ${records.size} results for pubKey=$pubKey")
+
+                  val convertedResults = DbModelUtils.recordsToPublicKeys(records, "pubKey")
+                  if (convertedResults.size == 1) {
+                    Right(DbModelUtils.recordsToPublicKeys(records, "pubKey").head)
+                  } else {
+                    logger.error(s"update() -- failed to update public key (result.size=${convertedResults.size}): $pubKey")
+                    Left(new UpdateException(s"failed to update public key: $pubKey"))
+                  }
+
+                }
+              })
+
+            } finally if (session != null) session.close()
+
+          } catch {
+
+            case su: ServiceUnavailableException =>
+
+              logger.error(s"update() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+              Left(new UpdateException(s"failed to update public key: ${pubKey.pubKeyInfo.pubKey}"))
+
+            case e: Exception =>
+
+              logger.error(s"update() -- Exception: e.message=${e.getMessage}", e)
+              Left(new UpdateException(s"failed to update public key: ${pubKey.pubKeyInfo.pubKey}"))
+
+            case re: RuntimeException =>
+
+              logger.error(s"update() -- RuntimeException: re.message=${re.getMessage}", re)
+              Left(new UpdateException(s"failed to update public key: ${pubKey.pubKeyInfo.pubKey}"))
+
+          }
 
         }
 
@@ -296,14 +372,53 @@ object PublicKeyManager extends StrictLogging {
 
   }
 
-  def revoke(signedRevoke: SignedRevoke): Future[Either[KeyRevokeException, Boolean]] = {
+  def revoke(signedRevoke: SignedRevoke)
+            (implicit neo4jDriver: Driver): Future[Either[KeyRevokeException, Boolean]] = {
 
     // TODO (UP-178) automated tests
-    // TODO (UP-177) implement
-    Future(Right(true))
+    val payloadJson = Json4sUtil.any2String(signedRevoke.revokation).get
+    val signatureValid = EccUtil.validateSignature(
+      publicKey = signedRevoke.revokation.publicKey,
+      signature = signedRevoke.signature,
+      payload = payloadJson
+    )
+
+    if (signatureValid) {
+
+      findByPubKey(signedRevoke.revokation.publicKey) flatMap {
+
+        case None =>
+
+          Future(Right(true))
+
+        case Some(pubKeyDb) =>
+
+          val revokedKey = pubKeyDb.copy(signedRevoke = Some(signedRevoke))
+          update(revokedKey) map {
+
+            case Left(t) =>
+
+              Left(new KeyRevokeException("failed to revoke public key", t))
+
+            case Right(updatedPublicKey) =>
+
+              Right(true)
+
+          }
+
+      }
+
+    } else {
+
+      logger.error(s"revoke() -- failed to verify signature: signedRevoke=$signedRevoke")
+      Future(Left(new KeyRevokeException("signature verification failed")))
+
+    }
 
   }
 
 }
 
-class KeyRevokeException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)
+class UpdateException(val message: String = "", val cause: Throwable = None.orNull) extends Exception(message, cause)
+
+class KeyRevokeException(val message: String = "", val cause: Throwable = None.orNull) extends Exception(message, cause)
