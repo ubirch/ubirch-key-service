@@ -300,7 +300,7 @@ object PublicKeyManager extends StrictLogging {
 
     // TODO (UP-178) automated tests
     // TODO (UP-177) implement
-    ???
+    Future(Right(true))
 
   }
 

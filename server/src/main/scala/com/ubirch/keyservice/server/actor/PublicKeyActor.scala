@@ -9,7 +9,7 @@ import com.ubirch.util.model.JsonErrorResponse
 
 import org.neo4j.driver.v1.Driver
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.routing.RoundRobinPool
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -74,9 +74,7 @@ class PublicKeyActor(implicit neo4jDriver: Driver) extends Actor
     case signedRevoke: SignedRevoke =>
 
       val sender = context.sender()
-      val dbPubKeyRevoke = Json4sUtil.any2any[db.SignedRevoke](signedRevoke)
-      PublicKeyManager.revoke(dbPubKeyRevoke) map (sender ! _) // TODO (UP-177) handle Left/Right here and move this code into a private method?
-      // TODO (UP-177) implement --> return true/JsonErrorResponse?
+      executeRevoke(signedRevoke, sender)
 
   }
 
@@ -84,6 +82,37 @@ class PublicKeyActor(implicit neo4jDriver: Driver) extends Actor
 
     log.error(s"received unknown message: ${message.toString} (${message.getClass.toGenericString}) from: ${context.sender()}")
     context.sender ! JsonErrorResponse(errorType = "ServerError", errorMessage = s"sorry, we just had a problem")
+
+  }
+
+  private def executeRevoke(signedRevoke: rest.SignedRevoke, sender: ActorRef): Unit = {
+
+    try {
+
+      val signedRevokeDb = Json4sUtil.any2any[db.SignedRevoke](signedRevoke)
+      PublicKeyManager.revoke(signedRevokeDb) onComplete {
+
+        case Success(Right(revokeSuccessful)) =>
+
+          sender ! revokeSuccessful
+
+        case Success(Left(t)) =>
+
+          sender ! JsonErrorResponse(errorType = "RevokeError", errorMessage = t.getMessage)
+
+        case Failure(t) =>
+
+          sender ! JsonErrorResponse(errorType = "ServerError", errorMessage = t.getMessage)
+
+      }
+
+    } catch {
+
+      case e: Exception =>
+
+        sender ! JsonErrorResponse(errorType = "ServerError", errorMessage = e.getMessage)
+
+    }
 
   }
 
