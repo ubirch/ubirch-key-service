@@ -214,6 +214,13 @@ object TestDataGeneratorRest {
 
   }
 
+  def generateOneKeyPair(): KeyMaterial = {
+
+    val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded
+    KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA)
+
+  }
+
   def generateTwoKeyPairs(): KeyMaterialAAndBRest = {
 
     val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded

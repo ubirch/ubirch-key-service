@@ -267,7 +267,6 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
   def pubKeyRevokePOST(signedRevoke: SignedRevoke)
                      (implicit httpClient: HttpExt, materializer: Materializer): Future[Either[JsonErrorResponse, PublicKey]] = {
 
-    // TODO (UP-178) automated tests
     Json4sUtil.any2String(signedRevoke) match {
 
       case Some(revokeJsonString: String) =>
