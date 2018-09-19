@@ -2,7 +2,7 @@ package com.ubirch.keyService.testTools.data.generator
 
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.crypto.hash.HashUtil
-import com.ubirch.key.model.rest.{FindTrusted, FindTrustedSigned, PublicKey, PublicKeyInfo, SignedTrustRelation, TrustRelation}
+import com.ubirch.key.model.rest.{FindTrusted, FindTrustedSigned, PublicKey, PublicKeyInfo, Revokation, SignedRevoke, SignedTrustRelation, TrustRelation}
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
@@ -193,6 +193,31 @@ object TestDataGeneratorRest {
       findTrusted = findTrusted,
       signature = EccUtil.signPayload(sourcePrivateKey, payload)
     )
+
+  }
+
+  def signedRevoke(publicKey: String,
+                   privateKey: String,
+                   created: DateTime = DateUtil.nowUTC
+                  ): SignedRevoke = {
+
+    val revokation = Revokation(
+      publicKey = publicKey,
+      revokationDate = created
+    )
+    val payload = Json4sUtil.any2String(revokation).get
+
+    SignedRevoke(
+      revokation = revokation,
+      signature = EccUtil.signPayload(privateKey, payload)
+    )
+
+  }
+
+  def generateOneKeyPair(): KeyMaterial = {
+
+    val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded
+    KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA)
 
   }
 

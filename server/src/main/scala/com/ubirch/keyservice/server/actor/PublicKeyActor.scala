@@ -1,7 +1,7 @@
 package com.ubirch.keyservice.server.actor
 
 import com.ubirch.key.model._
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys}
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys, SignedRevoke}
 import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.core.manager.PublicKeyManager
 import com.ubirch.util.json.Json4sUtil
@@ -9,7 +9,7 @@ import com.ubirch.util.model.JsonErrorResponse
 
 import org.neo4j.driver.v1.Driver
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.routing.RoundRobinPool
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -71,10 +71,48 @@ class PublicKeyActor(implicit neo4jDriver: Driver) extends Actor
       val dbPubKeyDelete = Json4sUtil.any2any[db.PublicKeyDelete](pubKeyDelete)
       PublicKeyManager.deleteByPubKey(dbPubKeyDelete) map (sender ! _)
 
-    case _ =>
+    case signedRevoke: SignedRevoke =>
 
-      log.error("unknown message (PublicKeyActor)")
-      sender ! JsonErrorResponse(errorType = "UnknownMessage", errorMessage = "unable to handle message")
+      val sender = context.sender()
+      executeRevoke(signedRevoke, sender)
+
+  }
+
+  override def unhandled(message: Any): Unit = {
+
+    log.error(s"received unknown message: ${message.toString} (${message.getClass.toGenericString}) from: ${context.sender()}")
+    context.sender ! JsonErrorResponse(errorType = "ServerError", errorMessage = s"sorry, we just had a problem")
+
+  }
+
+  private def executeRevoke(signedRevoke: rest.SignedRevoke, sender: ActorRef): Unit = {
+
+    try {
+
+      val signedRevokeDb = Json4sUtil.any2any[db.SignedRevoke](signedRevoke)
+      PublicKeyManager.revoke(signedRevokeDb) onComplete {
+
+        case Success(Right(revokedKey)) =>
+
+          sender ! Json4sUtil.any2any[rest.PublicKey](revokedKey)
+
+        case Success(Left(t)) =>
+
+          sender ! JsonErrorResponse(errorType = "RevokeError", errorMessage = t.getMessage)
+
+        case Failure(t) =>
+
+          sender ! JsonErrorResponse(errorType = "ServerError", errorMessage = t.getMessage)
+
+      }
+
+    } catch {
+
+      case e: Exception =>
+
+        sender ! JsonErrorResponse(errorType = "ServerError", errorMessage = e.getMessage)
+
+    }
 
   }
 

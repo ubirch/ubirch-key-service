@@ -2,7 +2,7 @@ package com.ubirch.keyservice.server.route
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.{FindTrustedSigned, PublicKey, PublicKeyDelete, PublicKeys, SignedTrustRelation}
+import com.ubirch.key.model.rest.{FindTrustedSigned, PublicKey, PublicKeyDelete, PublicKeys, SignedRevoke, SignedTrustRelation}
 import com.ubirch.key.model.{db, rest}
 import com.ubirch.keyservice.config.KeyConfig
 import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, QueryCurrentlyValid, TrustedKeyResultSet}
@@ -223,6 +223,42 @@ trait PublicKeyActionsJson extends ResponseUtil {
       case Failure(t) =>
 
         logger.error("get-trust-public-keys call responded with an unhandled message (check PublicKeyRoute for bugs!!!)", t)
+        complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
+
+    }
+
+  }
+
+  def revoke(signedRevoke: SignedRevoke): Route = {
+
+    onComplete(pubKeyActor ? signedRevoke) {
+
+      case Success(resp) =>
+
+        resp match {
+
+          case revokedKey: PublicKey =>
+
+            complete(revokedKey)
+
+          case jsonError: JsonErrorResponse =>
+
+            if (jsonError.errorType == "ServerError") {
+              complete(serverErrorResponse(jsonError))
+            } else {
+              complete(requestErrorResponse(jsonError))
+            }
+
+          case _ =>
+
+            logger.error("failed to revoke public key due to unhandled response type in revoke()")
+            complete(serverErrorResponse(errorType = "ServerError", errorMessage = "failed to revoke public key"))
+
+        }
+
+      case Failure(t) =>
+
+        logger.error("revoke-public-key call responded with an unhandled message (check PublicKeyRoute for bugs!!!)", t)
         complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
 
     }

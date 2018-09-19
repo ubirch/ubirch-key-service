@@ -2,7 +2,7 @@ package com.ubirch.keyservice.server.route
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, SignedTrustRelation, FindTrustedSigned}
+import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, SignedTrustRelation, FindTrustedSigned, SignedRevoke}
 import com.ubirch.keyservice.server.actor.{PublicKeyActor, TrustActor}
 import com.ubirch.keyservice.server.actor.util.ActorNames
 import com.ubirch.keyservice.util.server.RouteConstants
@@ -81,6 +81,16 @@ class PublicKeyRoute(implicit neo4jDriver: Driver)
 
           get {
             queryCurrentlyValid(hardwareId)
+          }
+
+        }
+      } ~ path(RouteConstants.revoke) {
+        respondWithCORS {
+
+          post {
+            entity(as[SignedRevoke]) { signedRevoke =>
+              revoke(signedRevoke)
+            }
           }
 
         }

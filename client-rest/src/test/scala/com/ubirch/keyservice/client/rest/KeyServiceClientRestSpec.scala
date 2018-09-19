@@ -410,6 +410,128 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
 
   }
 
+  feature("pubKeyTrustedGET()") {
+
+    scenario("key does not exist --> error") {
+
+      // prepare
+      val keyPair = TestDataGeneratorRest.generateOneKeyPair()
+      val signedRevoke = TestDataGeneratorRest.signedRevoke(
+        publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+        privateKey = keyPair.privateKeyString
+      )
+
+      // test
+      KeyServiceClientRest.pubKeyRevokePOST(signedRevoke) map {
+
+        // verify
+        case Right(_) =>
+
+          fail("revokation should have failed")
+
+        case Left(error: JsonErrorResponse) =>
+
+          error.errorMessage shouldBe "unable to revoke public key if it does not exist"
+
+      }
+
+    }
+
+    scenario("invalid signature --> error") {
+
+      // prepare
+      val keyPair = TestDataGeneratorRest.generateOneKeyPair()
+
+      val now = DateUtil.nowUTC
+      val signedRevoke1 = TestDataGeneratorRest.signedRevoke(
+        publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+        privateKey = keyPair.privateKeyString,
+        created = now
+      )
+      val signedRevoke2 = TestDataGeneratorRest.signedRevoke(
+        publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+        privateKey = keyPair.privateKeyString,
+        created = now.plusMinutes(1)
+      )
+      val withInvalidSignature = signedRevoke1.copy(signature = signedRevoke2.signature)
+
+      // test
+      KeyServiceClientRest.pubKeyRevokePOST(withInvalidSignature) map {
+
+        // verify
+        case Right(_) =>
+
+          fail("revokation should have failed")
+
+        case Left(error: JsonErrorResponse) =>
+
+          error.errorMessage shouldBe "signature verification failed"
+
+      }
+
+    }
+
+    scenario("key exists --> revoked key") {
+
+      // prepare
+      val keyPair = TestDataGeneratorRest.generateOneKeyPair()
+      val signedRevoke = TestDataGeneratorRest.signedRevoke(
+        publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+        privateKey = keyPair.privateKeyString
+      )
+      val pubKey = keyPair.publicKey
+
+      KeyServiceClientRest.pubKeyPOST(pubKey) flatMap { createResult =>
+
+        createResult shouldBe Some(pubKey)
+
+        // test
+        KeyServiceClientRest.pubKeyRevokePOST(signedRevoke) map { revokeResult =>
+
+          // verify
+          val pubKeyRevoked = pubKey.copy(signedRevoke = Some(signedRevoke))
+          revokeResult shouldBe Right(pubKeyRevoked)
+
+        }
+
+      }
+
+    }
+
+    scenario("key has been revoked already --> error") {
+
+      // prepare
+      val keyPair = TestDataGeneratorRest.generateOneKeyPair()
+      val signedRevoke = TestDataGeneratorRest.signedRevoke(
+        publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+        privateKey = keyPair.privateKeyString
+      )
+      val pubKeyRevoked = keyPair.publicKey.copy(signedRevoke = Some(signedRevoke))
+
+      KeyServiceClientRest.pubKeyPOST(pubKeyRevoked) flatMap { createResult =>
+
+        createResult shouldBe Some(pubKeyRevoked)
+
+        // test
+        KeyServiceClientRest.pubKeyRevokePOST(signedRevoke) map {
+
+          // verify
+          case Right(_) =>
+
+            fail("revokation should have failed")
+
+          case Left(error: JsonErrorResponse) =>
+
+            error.errorMessage shouldBe "unable to revoke public key if it has been revoked already"
+
+        }
+
+      }
+
+    }
+
+  }
+
   feature("currentlyValidPubKeys()") {
 
     scenario("has no keys") {
@@ -452,6 +574,33 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
             actual shouldBe expected
 
           }
+
+      }
+
+    }
+
+    scenario("key would be valid if not having been revoked --> find nothing") {
+
+      // prepare
+      val keyPair = TestDataGeneratorRest.generateOneKeyPair()
+      val pubKey = keyPair.publicKey
+      val signedRevoke = TestDataGeneratorRest.signedRevoke(
+        publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+        privateKey = keyPair.privateKeyString
+      )
+      val pubKeyRevoked = pubKey.copy(signedRevoke = Some(signedRevoke))
+
+      KeyServiceClientRest.pubKeyPOST(pubKeyRevoked) flatMap { keyUploadResult =>
+
+        keyUploadResult shouldBe Some(pubKeyRevoked)
+
+        // test
+        KeyServiceClientRest.currentlyValidPubKeys(pubKeyRevoked.pubKeyInfo.hwDeviceId) map { result =>
+
+          // verify
+          result shouldBe Some(Set.empty)
+
+        }
 
       }
 
