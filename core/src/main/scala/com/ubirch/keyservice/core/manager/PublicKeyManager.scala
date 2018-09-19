@@ -373,9 +373,8 @@ object PublicKeyManager extends StrictLogging {
   }
 
   def revoke(signedRevoke: SignedRevoke)
-            (implicit neo4jDriver: Driver): Future[Either[KeyRevokeException, Boolean]] = {
+            (implicit neo4jDriver: Driver): Future[Either[KeyRevokeException, PublicKey]] = {
 
-    // TODO (UP-178) automated tests
     val payloadJson = Json4sUtil.any2String(signedRevoke.revokation).get
     val signatureValid = EccUtil.validateSignature(
       publicKey = signedRevoke.revokation.publicKey,
@@ -389,20 +388,26 @@ object PublicKeyManager extends StrictLogging {
 
         case None =>
 
-          Future(Right(true))
+          Future(Left(new KeyRevokeException("unable to revoke public key if it does not exist")))
 
         case Some(pubKeyDb) =>
 
-          val revokedKey = pubKeyDb.copy(signedRevoke = Some(signedRevoke))
-          update(revokedKey) map {
+          if (pubKeyDb.signedRevoke.isDefined) {
+            Future(Left(new KeyRevokeException("unable to revoke public key if it has been revoked already")))
+          } else {
 
-            case Left(t) =>
+            val revokedKey = pubKeyDb.copy(signedRevoke = Some(signedRevoke))
+            update(revokedKey) map {
 
-              Left(new KeyRevokeException("failed to revoke public key", t))
+              case Left(t) =>
 
-            case Right(updatedPublicKey) =>
+                Left(new KeyRevokeException("failed to revoke public key", t))
 
-              Right(true)
+              case Right(revokedPubKey) =>
+
+                Right(revokedKey)
+
+            }
 
           }
 
@@ -419,6 +424,6 @@ object PublicKeyManager extends StrictLogging {
 
 }
 
-class UpdateException(val message: String = "", val cause: Throwable = None.orNull) extends Exception(message, cause)
+class UpdateException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)
 
-class KeyRevokeException(val message: String = "", val cause: Throwable = None.orNull) extends Exception(message, cause)
+class KeyRevokeException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)

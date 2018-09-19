@@ -237,15 +237,9 @@ trait PublicKeyActionsJson extends ResponseUtil {
 
         resp match {
 
-          case result: Boolean =>
+          case revokedKey: PublicKey =>
 
-            if (result) {
-              complete(StatusCodes.OK)
-            } else {
-              // NOTE this should not happen since we're support to either get a true or otherwise a JsonErrorResponse
-              logger.error(s"revoke() -- failed to revoke public key and ended up in a code branch that we should not have reached: signedRevoke=$signedRevoke")
-              complete(requestErrorResponse(errorType = "RevokeError", errorMessage = "failed to revoke a public key"))
-            }
+            complete(revokedKey)
 
           case jsonError: JsonErrorResponse =>
 

@@ -92,9 +92,9 @@ class PublicKeyActor(implicit neo4jDriver: Driver) extends Actor
       val signedRevokeDb = Json4sUtil.any2any[db.SignedRevoke](signedRevoke)
       PublicKeyManager.revoke(signedRevokeDb) onComplete {
 
-        case Success(Right(revokeSuccessful)) =>
+        case Success(Right(revokedKey)) =>
 
-          sender ! revokeSuccessful
+          sender ! Json4sUtil.any2any[rest.PublicKey](revokedKey)
 
         case Success(Left(t)) =>
 
