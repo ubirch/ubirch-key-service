@@ -2,7 +2,7 @@ package com.ubirch.keyservice.client.rest
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.key.model.rest.{FindTrustedSigned, PublicKey, PublicKeyDelete, SignedTrustRelation, TrustedKeyResult}
+import com.ubirch.key.model.rest.{FindTrustedSigned, PublicKey, PublicKeyDelete, SignedRevoke, SignedTrustRelation, TrustedKeyResult}
 import com.ubirch.keyservice.client.rest.config.KeyClientRestConfig
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
 import com.ubirch.util.deepCheck.util.DeepCheckResponseUtil
@@ -189,7 +189,7 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
 
       case Some(trustJsonString: String) =>
 
-        logger.debug(s"trust public key (JSON): $signedTrustRelation")
+        logger.debug(s"trust public key (JSON): $trustJsonString")
         val url = KeyClientRestConfig.pubKeyTrust
         val req = HttpRequest(
           method = HttpMethods.POST,
@@ -230,7 +230,7 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
 
       case Some(trustJsonString: String) =>
 
-        logger.debug(s"find trusted public keys (JSON): $findTrustedSigned")
+        logger.debug(s"find trusted public keys (JSON): $trustJsonString")
         val url = KeyClientRestConfig.pubKeyTrusted
         val req = HttpRequest(
           method = HttpMethods.GET,
@@ -258,6 +258,48 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
       case None =>
 
         logger.error(s"failed to to convert input to JSON: findTrustedSigned=$findTrustedSigned")
+        Future(Left(JsonErrorResponse(errorType = "RestClientError", errorMessage = "error before sending the request: failed to convert input to JSON")))
+
+    }
+
+  }
+
+  def pubKeyRevokePOST(signedRevoke: SignedRevoke)
+                     (implicit httpClient: HttpExt, materializer: Materializer): Future[Either[JsonErrorResponse, PublicKey]] = {
+
+    // TODO (UP-178) automated tests
+    Json4sUtil.any2String(signedRevoke) match {
+
+      case Some(revokeJsonString: String) =>
+
+        logger.debug(s"revoke public key (JSON): $revokeJsonString")
+        val url = KeyClientRestConfig.pubKeyRevoke
+        val req = HttpRequest(
+          method = HttpMethods.POST,
+          uri = url,
+          entity = HttpEntity.Strict(ContentTypes.`application/json`, data = ByteString(revokeJsonString))
+        )
+        httpClient.singleRequest(req) flatMap {
+
+          case HttpResponse(StatusCodes.OK, _, entity, _) =>
+
+            entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
+              Right(read[PublicKey](body.utf8String))
+            }
+
+          case res@HttpResponse(code, _, entity, _) =>
+
+            res.discardEntityBytes()
+            logger.error(s"pubKeyRevokePOST() call to key-service failed: url=$url code=$code, status=${res.status}")
+            entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
+              Left(read[JsonErrorResponse](body.utf8String))
+            }
+
+        }
+
+      case None =>
+
+        logger.error(s"failed to to convert input to JSON: signedRevoke=$signedRevoke")
         Future(Left(JsonErrorResponse(errorType = "RestClientError", errorMessage = "error before sending the request: failed to convert input to JSON")))
 
     }
