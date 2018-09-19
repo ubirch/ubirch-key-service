@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model.db.{FindTrustedSigned, SignedTrustRelation, TrustedKeyResult}
+import com.ubirch.keyservice.core.manager.util.DbModelUtils
 import com.ubirch.util.json.Json4sUtil
 
 import org.neo4j.driver.v1.exceptions.ServiceUnavailableException

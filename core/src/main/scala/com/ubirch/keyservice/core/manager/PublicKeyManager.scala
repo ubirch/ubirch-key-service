@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete, SignedRevoke}
+import com.ubirch.keyservice.core.manager.util.DbModelUtils
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
 import com.ubirch.util.json.Json4sUtil
 
@@ -205,6 +206,7 @@ object PublicKeyManager extends StrictLogging {
         |    pubKey.infoValidNotAfter is null
         |     OR $now < pubKey.infoValidNotAfter
         |  )
+        |  AND NOT EXISTS(pubKey.revokeSignature)
         |RETURN pubKey
       """.stripMargin
     val parameterMap = parameters(

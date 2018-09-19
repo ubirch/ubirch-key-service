@@ -579,6 +579,33 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
 
     }
 
+    scenario("key would be valid if not having been revoked --> find nothing") {
+
+      // prepare
+      val keyPair = TestDataGeneratorRest.generateOneKeyPair()
+      val pubKey = keyPair.publicKey
+      val signedRevoke = TestDataGeneratorRest.signedRevoke(
+        publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+        privateKey = keyPair.privateKeyString
+      )
+      val pubKeyRevoked = pubKey.copy(signedRevoke = Some(signedRevoke))
+
+      KeyServiceClientRest.pubKeyPOST(pubKeyRevoked) flatMap { keyUploadResult =>
+
+        keyUploadResult shouldBe Some(pubKeyRevoked)
+
+        // test
+        KeyServiceClientRest.currentlyValidPubKeys(pubKeyRevoked.pubKeyInfo.hwDeviceId) map { result =>
+
+          // verify
+          result shouldBe Some(Set.empty)
+
+        }
+
+      }
+
+    }
+
   }
 
   feature("pubKeyTrustPOST()") {

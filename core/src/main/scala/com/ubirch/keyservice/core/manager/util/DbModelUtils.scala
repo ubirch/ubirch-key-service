@@ -1,4 +1,6 @@
-package com.ubirch.keyservice.core.manager
+package com.ubirch.keyservice.core.manager.util
+
+import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo, Revokation, SignedRevoke, SignedTrustRelation, TrustRelation, TrustedKeyResult}
 import com.ubirch.util.neo4j.utils.Neo4jParseUtil
@@ -6,7 +8,6 @@ import com.ubirch.util.neo4j.utils.Neo4jParseUtil
 import org.neo4j.driver.v1.{Record, Value}
 
 import scala.language.postfixOps
-import com.typesafe.scalalogging.slf4j.StrictLogging
 
 /**
   * author: cvandrei

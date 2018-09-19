@@ -494,6 +494,47 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
     }
 
+    scenario("one keys currently valid (except it's been revoked) --> find nothing") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val pubKey = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+
+      createKeys(pubKey) flatMap { createKeysResult =>
+
+        createKeysResult shouldBe true
+
+        val hardwareId = pubKey.pubKeyInfo.hwDeviceId
+        PublicKeyManager.currentlyValid(hardwareId) flatMap { result =>
+
+          result shouldBe Set(pubKey)
+
+          val signedRevoke = TestDataGeneratorDb.signedRevoke(
+            publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+            privateKey = keyPair.privateKeyString
+          )
+          val pubKeyRevoked = pubKey.copy(signedRevoke = Some(signedRevoke))
+
+          PublicKeyManager.revoke(signedRevoke) flatMap { revokeResult =>
+
+            revokeResult shouldBe Right(pubKeyRevoked)
+
+            // test
+            PublicKeyManager.currentlyValid(hardwareId) map { result =>
+
+              // verify
+              result shouldBe empty
+
+            }
+
+          }
+
+        }
+
+      }
+
+    }
+
   }
 
   feature("findByPubKey()") {
