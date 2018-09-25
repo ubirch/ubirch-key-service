@@ -8,10 +8,11 @@ import org.joda.time.DateTime
   * author: cvandrei
   * since: 2018-09-07
   */
+// fields should be ordered alphabetically as some client libs only produce JSON with alphabetically ordered fields!!!
 case class FindTrusted(depth: Int = 1,
                        minTrustLevel: Int = 50,
-                       sourcePublicKey: String,
-                       queryDate: DateTime = DateUtil.nowUTC
+                       queryDate: DateTime = DateUtil.nowUTC,
+                       sourcePublicKey: String
                       )
 
 case class FindTrustedSigned(findTrusted: FindTrusted,
