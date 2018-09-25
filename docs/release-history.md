@@ -1,5 +1,9 @@
 ## Release History
 
+### Version 0.10.1 (tbd)
+
+* tbd
+
 ### Version 0.10.0 (2018-09-25)
 
 * added endpoint to allow trusting public keys:`POST /pubkey/trust`
