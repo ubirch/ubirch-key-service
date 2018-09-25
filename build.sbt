@@ -14,7 +14,7 @@ val commonSettings = Seq(
     url("https://github.com/ubirch/ubirch-key-service"),
     "scm:git:git@github.com:ubirch/ubirch-key-service.git"
   )),
-  version := "0.9.0",
+  version := "0.10.0",
   test in assembly := {},
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases"),
@@ -83,7 +83,7 @@ lazy val config = project
 
 lazy val cmdtools = project
   .settings(commonSettings)
-  .dependsOn(config, util, utilsNeo4j)
+  .dependsOn(config, modelRest, util, utilsNeo4j, testTools)
   .settings(
     description := "command line tools",
     libraryDependencies ++= depCmdTools
@@ -199,14 +199,16 @@ lazy val depModelDb = Seq(
   ubirchDate,
   ubirchJson,
   ubirchUuid,
-  json4sNative
+  json4sNative,
+  scalatest % "test"
 )
 
 lazy val depModelRest = Seq(
   ubirchDate,
   ubirchJson,
   ubirchUuid,
-  json4sNative
+  json4sNative,
+  scalatest % "test"
 )
 
 lazy val depServer = Seq(
@@ -299,7 +301,7 @@ val ubirchCrypto = ubirchUtilG %% "crypto" % "0.4.11" excludeAll (excludedLogger
 val ubirchDate = ubirchUtilG %% "date" % "0.5.3" excludeAll (excludedLoggers: _*)
 val ubirchDeepCheckModel = ubirchUtilG %% "deep-check-model" % "0.3.0" excludeAll (excludedLoggers: _*)
 val ubirchJson = ubirchUtilG %% "json" % "0.5.1" excludeAll (excludedLoggers: _*)
-val ubirchNeo4jUtils = ubirchUtilG %% "neo4j-utils" % "0.1.0" excludeAll (excludedLoggers: _*)
+val ubirchNeo4jUtils = ubirchUtilG %% "neo4j-utils" % "0.2.1" excludeAll (excludedLoggers: _*)
 val ubirchUtilRedisTestUtil = ubirchUtilG %% "redis-test-util" % "0.5.1"
 val ubirchUtilRedisUtil = ubirchUtilG %% "redis-util" % "0.5.1"
 val ubirchResponse = ubirchUtilG %% "response-util" % "0.4.0" excludeAll (excludedLoggers: _*)

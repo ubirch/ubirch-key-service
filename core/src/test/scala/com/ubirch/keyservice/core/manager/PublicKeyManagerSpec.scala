@@ -6,7 +6,10 @@ import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete}
 import com.ubirch.keyService.testTools.data.generator.TestDataGeneratorDb
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
+import com.ubirch.util.date.DateUtil
+import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
+
 import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.concurrent.Future
@@ -30,11 +33,10 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       )
 
       // test
-      PublicKeyManager.create(publicKey) map {
+      PublicKeyManager.create(publicKey) map { result =>
 
-        case Right(None) => fail(s"failed to create key: $publicKey")
-        case Right(Some(result: PublicKey)) => result shouldBe publicKey
-        case Left(t) => fail(s"failed to create key", t)
+        // verify
+        result shouldBe Right(Some(publicKey))
 
       }
 
@@ -57,9 +59,8 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       PublicKeyManager.create(invalidPublicKey) map {
 
         // verify
-        case Left(e) =>
+        case Left(e: Exception) =>
 
-          e.isInstanceOf[Exception] shouldBe true
           e.getMessage should startWith("unable to create public key if signature is invalid")
 
         case Right(_) =>
@@ -87,20 +88,10 @@ class PublicKeyManagerSpec extends Neo4jSpec {
           result shouldBe publicKey
 
           // test
-          PublicKeyManager.create(publicKey) map {
+          PublicKeyManager.create(publicKey) map { result =>
 
             // verify
-            case Left(e) =>
-
-              fail("no exception should have been triggered")
-
-            case Right(Some(result: PublicKey)) =>
-
-              result shouldBe publicKey
-
-            case Right(None) =>
-
-              fail("should returned Some(publicKey)")
+            result shouldBe Right(Some(publicKey))
 
           }
 
@@ -115,33 +106,26 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       // prepare
       val publicKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1)
 
-      PublicKeyManager.create(publicKey1) flatMap {
+      PublicKeyManager.create(publicKey1) flatMap { createResult =>
 
-        case Left(t) => fail(s"failed to create key", t)
+        createResult shouldBe Right(Some(publicKey1))
 
-        case Right(None) => fail(s"failed to create key during preparation: $publicKey1")
+        val publicKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1)
+        publicKey2.pubKeyInfo.pubKey shouldBe publicKey1.pubKeyInfo.pubKey
 
-        case Right(Some(result: PublicKey)) =>
+        // test
+        PublicKeyManager.create(publicKey2) map {
 
-          result shouldBe publicKey1
+          // verify
+          case Left(e: Exception) =>
 
-          val publicKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1)
-          publicKey2.pubKeyInfo.pubKey shouldBe publicKey1.pubKeyInfo.pubKey
+            e.getMessage should startWith("unable to create publicKey if it already exists")
 
-          // test
-          PublicKeyManager.create(publicKey2) map {
+          case Right(_) =>
 
-            // verify
-            case Left(e) =>
+            fail("should have resulted in Exception")
 
-              e.isInstanceOf[Exception] shouldBe true
-              e.getMessage should startWith("unable to create publicKey if it already exists")
-
-            case Right(_) =>
-
-              fail("should have resulted in Exception")
-
-          }
+        }
 
       }
 
@@ -154,33 +138,26 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       val publicKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1)
 
-      PublicKeyManager.create(publicKey1) flatMap {
+      PublicKeyManager.create(publicKey1) flatMap { createResult =>
 
-        case Left(t) => fail(s"failed to create key", t)
+        createResult shouldBe Right(Some(publicKey1))
 
-        case Right(None) => fail(s"failed to create key during preparation: $publicKey1")
+        val publicKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1)
+        publicKey2.pubKeyInfo.pubKeyId shouldBe publicKey1.pubKeyInfo.pubKeyId
 
-        case Right(Some(result: PublicKey)) =>
+        // test
+        PublicKeyManager.create(publicKey2) map {
 
-          result shouldBe publicKey1
+          // verify
+          case Left(e: Exception) =>
 
-          val publicKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1)
-          publicKey2.pubKeyInfo.pubKeyId shouldBe publicKey1.pubKeyInfo.pubKeyId
+            e.getMessage should startWith("unable to create publicKey if it already exists")
 
-          // test
-          PublicKeyManager.create(publicKey2) map {
+          case Right(_) =>
 
-            // verify
-            case Left(e) =>
+            fail("should have resulted in Exception")
 
-              e.isInstanceOf[Exception] shouldBe true
-              e.getMessage should startWith("unable to create publicKey if it already exists")
-
-            case Right(_) =>
-
-              fail("should have resulted in Exception")
-
-          }
+        }
 
       }
 
@@ -194,11 +171,10 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       val publicKey = TestDataGeneratorDb.publicKeyMandatoryOnly(privateKey = privKey1, infoPubKey = pubKey1)
 
       // test
-      PublicKeyManager.create(publicKey) map {
+      PublicKeyManager.create(publicKey) map { result =>
 
-        case Left(t) => fail(s"failed to create key", t)
-        case Right(None) => fail(s"failed to create key: $publicKey")
-        case Right(Some(result: PublicKey)) => result shouldBe publicKey
+        // verify
+        result shouldBe Right(Some(publicKey))
 
       }
 
@@ -210,32 +186,153 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
 
       val publicKey = TestDataGeneratorDb.publicKeyMandatoryOnly(privateKey = privKey1, infoPubKey = pubKey1)
-      PublicKeyManager.create(publicKey) flatMap {
+      PublicKeyManager.create(publicKey) flatMap { createResult =>
 
-        case Left(t) => fail(s"failed to create key", t)
+        createResult shouldBe Right(Some(publicKey))
 
-        case Right(None) => fail(s"failed to create existing key: $publicKey")
+        // test
+        PublicKeyManager.create(publicKey) map { result =>
 
-        case Right(Some(result: PublicKey)) =>
+          result shouldBe Right(Some(publicKey))
 
-          result shouldBe publicKey
+        }
 
-          // test
-          PublicKeyManager.create(publicKey) map {
+      }
 
-            case Left(e) =>
+    }
 
-              fail("no exception should have been triggered")
+  }
 
-            case Right(Some(result: PublicKey)) =>
+  feature("update()") {
 
-              result shouldBe publicKey
+    scenario("public key does not exist --> UpdateException") {
 
-            case Right(None) =>
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
 
-              fail("should returned Some(publicKey)")
+      // test
+      PublicKeyManager.update(pubKeyDb) map {
 
-          }
+        // verify
+        case Right(_) =>
+
+          fail("update should have failed")
+
+        case Left(updateException: UpdateException) =>
+
+          updateException.getMessage shouldBe "failed to update public key as it does not exist"
+
+      }
+
+    }
+
+    scenario("public key exists; try to update to same --> updated public key") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+
+      PublicKeyManager.create(pubKeyDb) flatMap { createResult =>
+
+        createResult shouldBe Right(Some(pubKeyDb))
+
+        // test
+        PublicKeyManager.update(pubKeyDb) flatMap { updateResult =>
+
+          // verify
+          updateResult shouldBe Right(pubKeyDb)
+          PublicKeyManager.findByPubKey(pubKeyDb.pubKeyInfo.pubKey) map (_ shouldBe Some(pubKeyDb))
+
+        }
+
+      }
+
+    }
+
+    scenario("public key exists; update with changed version --> updated public key") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+
+      PublicKeyManager.create(pubKeyDb) flatMap { createResult =>
+
+        createResult shouldBe Right(Some(pubKeyDb))
+        pubKeyDb.raw shouldBe empty
+        val updatedPubKey = pubKeyDb.copy(raw = Some("raw"))
+
+        // test
+        PublicKeyManager.update(updatedPubKey) flatMap { updateResult =>
+
+          // verify
+          updateResult shouldBe Right(updatedPubKey)
+          PublicKeyManager.findByPubKey(pubKeyDb.pubKeyInfo.pubKey) map (_ shouldBe Some(updatedPubKey))
+
+        }
+
+      }
+
+    }
+
+    scenario("add revokation --> success") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+
+      PublicKeyManager.create(pubKeyDb) flatMap { createResult =>
+
+        createResult shouldBe Right(Some(pubKeyDb))
+
+        val signedRevoke = TestDataGeneratorDb.signedRevoke(
+          publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+          privateKey = keyPair.privateKeyString
+        )
+        val pubKeyDbRevoked = pubKeyDb.copy(signedRevoke = Some(signedRevoke))
+
+        // test
+        PublicKeyManager.update(pubKeyDbRevoked) flatMap { result =>
+
+          // verify
+          result shouldBe Right(pubKeyDbRevoked)
+
+        }
+
+      }
+
+    }
+
+    scenario("remove revokation --> error") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+
+      val signedRevoke = TestDataGeneratorDb.signedRevoke(
+        publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+        privateKey = keyPair.privateKeyString
+      )
+      val pubKeyDbRevoked = pubKeyDb.copy(signedRevoke = Some(signedRevoke))
+
+      PublicKeyManager.create(pubKeyDbRevoked) flatMap { createResult =>
+
+        createResult shouldBe Right(Some(pubKeyDbRevoked))
+
+        // test
+        PublicKeyManager.update(pubKeyDb) flatMap {
+
+          // verify
+          case Left(updateException: UpdateException) =>
+
+            updateException.getMessage shouldBe "unable to remove revokation from public key"
+            PublicKeyManager.findByPubKey(pubKeyDb.pubKeyInfo.pubKey) map (_ shouldBe Some(pubKeyDbRevoked))
+
+          case Right(_) =>
+
+            fail("update should have failed")
+
+        }
 
       }
 
@@ -259,19 +356,17 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId)
       pKey2.pubKeyInfo.validNotAfter should be('isDefined)
 
-      createKeys(pKey1, pKey2) flatMap {
+      createKeys(pKey1, pKey2) flatMap { createKeysResult =>
 
-        case false => fail("failed to create public keys during preparation")
+        createKeysResult shouldBe true
 
-        case true =>
+        // test
+        PublicKeyManager.currentlyValid(hardwareId) map { result =>
 
-          // test
-          PublicKeyManager.currentlyValid(hardwareId) map { result =>
+          // verify
+          result shouldBe Set(pKey1, pKey2)
 
-            // verify
-            result shouldBe Set(pKey1, pKey2)
-
-          }
+        }
 
       }
 
@@ -291,19 +386,17 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       val pKey2 = TestDataGeneratorDb.publicKeyMandatoryOnly(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId)
       pKey2.pubKeyInfo.validNotAfter should be('isEmpty)
 
-      createKeys(pKey1, pKey2) flatMap {
+      createKeys(pKey1, pKey2) flatMap { createKeysResult =>
 
-        case false => fail("failed to create public keys during preparation")
+        createKeysResult shouldBe true
 
-        case true =>
+        // test
+        PublicKeyManager.currentlyValid(hardwareId) map { result =>
 
-          // test
-          PublicKeyManager.currentlyValid(hardwareId) map { result =>
+          // verify
+          result shouldBe Set(pKey1, pKey2)
 
-            // verify
-            result shouldBe Set(pKey1, pKey2)
-
-          }
+        }
 
       }
 
@@ -325,19 +418,17 @@ class PublicKeyManagerSpec extends Neo4jSpec {
         infoValidNotBefore = DateTime.now.plusDays(1)
       )
 
-      createKeys(pKey1, pKey2) flatMap {
+      createKeys(pKey1, pKey2) flatMap { createKeysResult =>
 
-        case false => fail("failed to create public keys during preparation")
+        createKeysResult shouldBe true
 
-        case true =>
+        // test
+        PublicKeyManager.currentlyValid(hardwareId) map { result =>
 
-          // test
-          PublicKeyManager.currentlyValid(hardwareId) map { result =>
+          // verify
+          result shouldBe Set(pKey1)
 
-            // verify
-            result shouldBe Set(pKey1)
-
-          }
+        }
 
       }
 
@@ -359,19 +450,17 @@ class PublicKeyManagerSpec extends Neo4jSpec {
         infoValidNotAfter = Some(DateTime.now(DateTimeZone.UTC).minusMillis(100))
       )
 
-      createKeys(pKey1, pKey2) flatMap {
+      createKeys(pKey1, pKey2) flatMap { createKeysResult =>
 
-        case false => fail("failed to create public keys during preparation")
+        createKeysResult shouldBe true
 
-        case true =>
+        // test
+        PublicKeyManager.currentlyValid(hardwareId) map { result =>
 
-          // test
-          PublicKeyManager.currentlyValid(hardwareId) map { result =>
+          // verify
+          result shouldBe Set(pKey1)
 
-            // verify
-            result shouldBe Set(pKey1)
-
-          }
+        }
 
       }
 
@@ -389,19 +478,58 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
       val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId2)
 
-      createKeys(pKey1, pKey2) flatMap {
+      createKeys(pKey1, pKey2) flatMap { createKeysResult =>
 
-        case false => fail("failed to create public keys during preparation")
+        createKeysResult shouldBe true
 
-        case true =>
+        // test
+        PublicKeyManager.currentlyValid(hardwareId1) map { result =>
 
-          // test
-          PublicKeyManager.currentlyValid(hardwareId1) map { result =>
+          // verify
+          result shouldBe Set(pKey1)
 
-            // verify
-            result shouldBe Set(pKey1)
+        }
+
+      }
+
+    }
+
+    scenario("one keys currently valid (except it's been revoked) --> find nothing") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val pubKey = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+
+      createKeys(pubKey) flatMap { createKeysResult =>
+
+        createKeysResult shouldBe true
+
+        val hardwareId = pubKey.pubKeyInfo.hwDeviceId
+        PublicKeyManager.currentlyValid(hardwareId) flatMap { result =>
+
+          result shouldBe Set(pubKey)
+
+          val signedRevoke = TestDataGeneratorDb.signedRevoke(
+            publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+            privateKey = keyPair.privateKeyString
+          )
+          val pubKeyRevoked = pubKey.copy(signedRevoke = Some(signedRevoke))
+
+          PublicKeyManager.revoke(signedRevoke) flatMap { revokeResult =>
+
+            revokeResult shouldBe Right(pubKeyRevoked)
+
+            // test
+            PublicKeyManager.currentlyValid(hardwareId) map { result =>
+
+              // verify
+              result shouldBe empty
+
+            }
 
           }
+
+        }
 
       }
 
@@ -435,14 +563,12 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = hardwareId1)
       val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = hardwareId2)
 
-      createKeys(pKey2) flatMap {
+      createKeys(pKey2) flatMap { createKeysResult =>
 
-        case false => fail("failed to create public keys during preparation")
+        createKeysResult shouldBe true
 
-        case true =>
-
-          // test & verify
-          PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe empty)
+        // test & verify
+        PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe empty)
 
       }
 
@@ -461,16 +587,14 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       println(s"publicKey1=$pKey1")
       println(s"publicKey2=$pKey2")
 
-      createKeys(pKey1, pKey2) flatMap {
+      createKeys(pKey1, pKey2) flatMap { createKeysResult =>
 
-        case false => fail("failed to create public keys during preparation")
+        createKeysResult shouldBe true
 
-        case true =>
+        val pubKeyString = pKey1.pubKeyInfo.pubKey
 
-          val pubKeyString = pKey1.pubKeyInfo.pubKey
-
-          // test & verify
-          PublicKeyManager.findByPubKey(pubKeyString) map (_ shouldBe Some(pKey1))
+        // test & verify
+        PublicKeyManager.findByPubKey(pubKeyString) map (_ shouldBe Some(pKey1))
 
       }
 
@@ -530,31 +654,29 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
       val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = UUIDUtil.uuidStr)
 
-      createKeys(pKey2) flatMap {
+      createKeys(pKey2) flatMap { createKeysResult =>
 
-        case false => fail("failed to create public keys during preparation")
+        createKeysResult shouldBe true
 
-        case true =>
+        val pubKeyString = pKey1.pubKeyInfo.pubKey
+        val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
+        val signature = EccUtil.signPayload(privKey1, decodedPubKey)
+        val pubKeyDelete = PublicKeyDelete(
+          publicKey = pubKeyString,
+          signature = signature
+        )
+        EccUtil.validateSignature(pubKeyString, signature, decodedPubKey) shouldBe true
 
-          val pubKeyString = pKey1.pubKeyInfo.pubKey
-          val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
-          val signature = EccUtil.signPayload(privKey1, decodedPubKey)
-          val pubKeyDelete = PublicKeyDelete(
-            publicKey = pubKeyString,
-            signature = signature
-          )
-          EccUtil.validateSignature(pubKeyString, signature, decodedPubKey) shouldBe true
+        // test
+        PublicKeyManager.deleteByPubKey(pubKeyDelete) map { result =>
 
-          // test
-          PublicKeyManager.deleteByPubKey(pubKeyDelete) map { result =>
+          // verify
+          PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe empty)
+          PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map (_ shouldBe defined)
 
-            // verify
-            PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe empty)
-            PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map (_ shouldBe defined)
+          result shouldBe true
 
-            result shouldBe true
-
-          }
+        }
 
       }
 
@@ -569,30 +691,28 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
       val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = UUIDUtil.uuidStr)
 
-      createKeys(pKey2) flatMap {
+      createKeys(pKey2) flatMap { createKeysResult =>
 
-        case false => fail("failed to create public keys during preparation")
+        createKeysResult shouldBe true
 
-        case true =>
+        val pubKeyString = pKey1.pubKeyInfo.pubKey
+        val signature = EccUtil.signPayload(privKey2, pubKeyString)
+        val pubKeyDelete = PublicKeyDelete(
+          publicKey = pubKeyString,
+          signature = signature
+        )
+        EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe false
 
-          val pubKeyString = pKey1.pubKeyInfo.pubKey
-          val signature = EccUtil.signPayload(privKey2, pubKeyString)
-          val pubKeyDelete = PublicKeyDelete(
-            publicKey = pubKeyString,
-            signature = signature
-          )
-          EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe false
+        // test
+        PublicKeyManager.deleteByPubKey(pubKeyDelete) map { result =>
 
-          // test
-          PublicKeyManager.deleteByPubKey(pubKeyDelete) map { result =>
+          // verify
+          PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe defined)
+          PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map (_ shouldBe defined)
 
-            // verify
-            PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe defined)
-            PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map (_ shouldBe defined)
+          result shouldBe false
 
-            result shouldBe false
-
-          }
+        }
 
       }
 
@@ -607,31 +727,29 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
       val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = UUIDUtil.uuidStr)
 
-      createKeys(pKey1, pKey2) flatMap {
+      createKeys(pKey1, pKey2) flatMap { createKeysResult =>
 
-        case false => fail("failed to create public keys during preparation")
+        createKeysResult shouldBe true
 
-        case true =>
+        val pubKeyString = pKey1.pubKeyInfo.pubKey
+        val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
+        val signature = EccUtil.signPayload(privKey1, decodedPubKey)
+        val pubKeyDelete = PublicKeyDelete(
+          publicKey = pubKeyString,
+          signature = signature
+        )
+        EccUtil.validateSignature(pubKeyString, signature, decodedPubKey) shouldBe true
 
-          val pubKeyString = pKey1.pubKeyInfo.pubKey
-          val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
-          val signature = EccUtil.signPayload(privKey1, decodedPubKey)
-          val pubKeyDelete = PublicKeyDelete(
-            publicKey = pubKeyString,
-            signature = signature
-          )
-          EccUtil.validateSignature(pubKeyString, signature, decodedPubKey) shouldBe true
+        // test
+        PublicKeyManager.deleteByPubKey(pubKeyDelete) flatMap { result =>
 
-          // test
-          PublicKeyManager.deleteByPubKey(pubKeyDelete) flatMap { result =>
+          // verify
+          PublicKeyManager.findByPubKey(pubKeyDelete.publicKey) map (_ shouldBe empty)
+          PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map (_ shouldBe defined)
 
-            // verify
-            PublicKeyManager.findByPubKey(pubKeyDelete.publicKey) map (_ shouldBe empty)
-            PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map (_ shouldBe defined)
+          result shouldBe true
 
-            result shouldBe true
-
-          }
+        }
 
       }
 
@@ -646,36 +764,157 @@ class PublicKeyManagerSpec extends Neo4jSpec {
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
       val pKey2 = TestDataGeneratorDb.createPublicKey(privateKey = privKey2, infoPubKey = pubKey2, infoHwDeviceId = UUIDUtil.uuidStr)
 
-      createKeys(pKey1, pKey2) flatMap {
+      createKeys(pKey1, pKey2) flatMap { createKeysResult =>
 
-        case false => fail("failed to create public keys during preparation")
+        createKeysResult shouldBe true
 
-        case true =>
+        val pubKeyString = pKey1.pubKeyInfo.pubKey
+        val signature = EccUtil.signPayload(privKey2, pubKeyString)
+        val pubKeyDelete = PublicKeyDelete(
+          publicKey = pubKeyString,
+          signature = signature
+        )
+        EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe false
 
-          val pubKeyString = pKey1.pubKeyInfo.pubKey
-          val signature = EccUtil.signPayload(privKey2, pubKeyString)
-          val pubKeyDelete = PublicKeyDelete(
-            publicKey = pubKeyString,
-            signature = signature
-          )
-          EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe false
+        // test
+        PublicKeyManager.deleteByPubKey(pubKeyDelete) flatMap { result =>
 
-          // test
-          PublicKeyManager.deleteByPubKey(pubKeyDelete) flatMap { result =>
+          // verify
+          PublicKeyManager.findByPubKey(pubKeyDelete.publicKey) map (_ shouldBe defined)
+          PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map (_ shouldBe defined)
 
-            // verify
-            PublicKeyManager.findByPubKey(pubKeyDelete.publicKey) map (_ shouldBe defined)
-            PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map (_ shouldBe defined)
+          result shouldBe false
 
-            result shouldBe false
-
-          }
+        }
 
       }
 
     }
 
   }
+
+  feature("revoke()") {
+
+    scenario("key does not exist --> error") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val signedRevoke = TestDataGeneratorDb.signedRevoke(
+        publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+        privateKey = keyPair.privateKeyString
+      )
+
+      // test
+      PublicKeyManager.revoke(signedRevoke) map {
+
+        // verify
+        case Right(_) =>
+
+          fail("revokation should have failed")
+
+        case Left(error: KeyRevokeException) =>
+
+          error.getMessage shouldBe "unable to revoke public key if it does not exist"
+
+      }
+
+    }
+
+    scenario("invalid signature --> error") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+
+      val now = DateUtil.nowUTC
+      val signedRevoke1 = TestDataGeneratorDb.signedRevoke(
+        publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+        privateKey = keyPair.privateKeyString,
+        created = now
+      )
+      val signedRevoke2 = TestDataGeneratorDb.signedRevoke(
+        publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+        privateKey = keyPair.privateKeyString,
+        created = now.plusMinutes(1)
+      )
+      val withInvalidSignature = signedRevoke1.copy(signature = signedRevoke2.signature)
+
+      // test
+      PublicKeyManager.revoke(withInvalidSignature) map {
+
+        // verify
+        case Right(_) =>
+
+          fail("revokation should have failed")
+
+        case Left(error: KeyRevokeException) =>
+
+          error.getMessage shouldBe "signature verification failed"
+
+      }
+
+    }
+
+    scenario("key exists --> revoked key") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val signedRevoke = TestDataGeneratorDb.signedRevoke(
+        publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+        privateKey = keyPair.privateKeyString
+      )
+      val pubKey = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+
+      PublicKeyManager.create(pubKey) flatMap { createResult =>
+
+        createResult shouldBe Right(Some(pubKey))
+
+        // test
+        PublicKeyManager.revoke(signedRevoke) map { revokeResult =>
+
+          // verify
+          val pubKeyRevoked = pubKey.copy(signedRevoke = Some(signedRevoke))
+          revokeResult shouldBe Right(pubKeyRevoked)
+
+        }
+
+      }
+
+    }
+
+    scenario("key has been revoked already --> error") {
+
+      // prepare
+      val keyPair = TestDataGeneratorDb.generateOneKeyPair()
+      val signedRevoke = TestDataGeneratorDb.signedRevoke(
+        publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
+        privateKey = keyPair.privateKeyString
+      )
+      val pubKeyRevoked = Json4sUtil.any2any[PublicKey](keyPair.publicKey).copy(signedRevoke = Some(signedRevoke))
+
+      PublicKeyManager.create(pubKeyRevoked) flatMap { createResult =>
+
+        createResult shouldBe Right(Some(pubKeyRevoked))
+
+        // test
+        PublicKeyManager.revoke(signedRevoke) map {
+
+          // verify
+          case Right(_) =>
+
+            fail("revokation should have failed")
+
+          case Left(error: KeyRevokeException) =>
+
+            error.getMessage shouldBe "unable to revoke public key if it has been revoked already"
+
+        }
+
+      }
+
+    }
+
+  }
+
 
   private def createKeys(pubKeys: PublicKey*): Future[Boolean] = {
 

@@ -21,3 +21,4 @@ Dockerfile
 Dockerfile.input
 .ivy2
 /cache/
+/dump.rdb

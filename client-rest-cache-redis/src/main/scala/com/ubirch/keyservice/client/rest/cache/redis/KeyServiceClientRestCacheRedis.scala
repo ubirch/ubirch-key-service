@@ -1,7 +1,8 @@
 package com.ubirch.keyservice.client.rest.cache.redis
 
-import com.ubirch.key.model.rest.PublicKey
+import com.ubirch.key.model.rest.{FindTrustedSigned, PublicKey, TrustedKeyResult}
 import com.ubirch.keyservice.client.rest.KeyServiceClientRestBase
+import com.ubirch.util.model.JsonErrorResponse
 import com.ubirch.util.redis.RedisClientUtil
 
 import org.json4s.native.Serialization.read
@@ -18,8 +19,8 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
   */
 object KeyServiceClientRestCacheRedis extends KeyServiceClientRestBase {
 
-  def findPubKey(publicKey: String)
-                (implicit httpClient: HttpExt, materializer: Materializer, system: ActorSystem): Future[Option[PublicKey]] = {
+  def findPubKeyCached(publicKey: String)
+                      (implicit httpClient: HttpExt, materializer: Materializer, system: ActorSystem): Future[Option[PublicKey]] = {
 
     implicit val ec: ExecutionContextExecutor = system.dispatcher
     val redis = RedisClientUtil.getRedisClient
@@ -38,10 +39,10 @@ object KeyServiceClientRestCacheRedis extends KeyServiceClientRestBase {
 
   }
 
-  def currentlyValidPubKeys(hardwareId: String)
-                           (implicit httpClient: HttpExt, materializer: Materializer, system: ActorSystem): Future[Option[Set[PublicKey]]] = {
+  def currentlyValidPubKeysCached(hardwareId: String)
+                                 (implicit httpClient: HttpExt, materializer: Materializer, system: ActorSystem): Future[Option[Set[PublicKey]]] = {
 
-    logger.debug(s"currentlyValidPubKeys(): hardwareId=$hardwareId")
+    logger.debug(s"currentlyValidPubKeysCached(): hardwareId=$hardwareId")
     implicit val ec: ExecutionContextExecutor = system.dispatcher
     val redis = RedisClientUtil.getRedisClient
     val cacheKey = CacheHelperUtil.cacheKeyHardwareId(hardwareId)
@@ -54,6 +55,32 @@ object KeyServiceClientRestCacheRedis extends KeyServiceClientRestBase {
       case Some(json) =>
 
         Future(Some(read[Set[PublicKey]](json)))
+
+    }
+
+  }
+
+  def pubKeyTrustedGETCached(findTrustedSigned: FindTrustedSigned)
+                            (implicit httpClient: HttpExt, materializer: Materializer, system: ActorSystem): Future[Either[JsonErrorResponse, Set[TrustedKeyResult]]] = {
+
+    logger.debug(s"pubKeyTrustedGETCached(): findTrustedSigned=$findTrustedSigned")
+
+    val sourcePubKey = findTrustedSigned.findTrusted.sourcePublicKey
+    val depth = findTrustedSigned.findTrusted.depth
+    val minTrust = findTrustedSigned.findTrusted.minTrustLevel
+
+    implicit val ec: ExecutionContextExecutor = system.dispatcher
+    val redis = RedisClientUtil.getRedisClient
+    val cacheKey = CacheHelperUtil.cacheKeyFindTrusted(sourcePubKey, depth, minTrust)
+    redis.get[String](cacheKey) flatMap {
+
+      case None =>
+
+        super.pubKeyTrustedGET(findTrustedSigned) flatMap (KeyServiceClientRedisCacheUtil.cacheTrustedKeys(findTrustedSigned, _))
+
+      case Some(json) =>
+
+        Future(Right(read[Set[TrustedKeyResult]](json)))
 
     }
 

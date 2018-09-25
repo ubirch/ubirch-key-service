@@ -12,29 +12,31 @@ import com.ubirch.util.uuid.UUIDUtil
   */
 object KeyGen extends App {
 
-  // TODO migrate to encapsulate all executable logic within a method `run(): Unit`
-  val (publicKey, privateKey) = EccUtil.generateEccKeyPairEncoded
-  val publicKeySigned = EccUtil.signPayload(privateKey, publicKey)
+  override def main(args: Array[String]): Unit = {
 
-  val pubKeyInfo = PublicKeyInfo(
-    algorithm = "ECC_ED25519",
-    created = DateUtil.nowUTC,
-    hwDeviceId = UUIDUtil.uuidStr,
-    pubKey = publicKey,
-    pubKeyId = publicKey,
-    validNotBefore = DateUtil.nowUTC.minusMinutes(1)
-  )
-  val signature = EccUtil.signPayload(
-    privateKey = privateKey,
-    payload = Json4sUtil.any2String(pubKeyInfo).get
-  )
+    val (publicKey, privateKey) = EccUtil.generateEccKeyPairEncoded
 
-  val pubKey = PublicKey(
-    pubKeyInfo = pubKeyInfo,
-    signature = signature
-  )
-  println(s"publicKey: $publicKey")
-  println(s"privateKey: $privateKey")
-  println(s"PublicKey: ${Json4sUtil.any2String(pubKey).get}")
+    val pubKeyInfo = PublicKeyInfo(
+      algorithm = "ECC_ED25519",
+      created = DateUtil.nowUTC,
+      hwDeviceId = UUIDUtil.uuidStr,
+      pubKey = publicKey,
+      pubKeyId = publicKey,
+      validNotBefore = DateUtil.nowUTC.minusMinutes(1)
+    )
+    val signature = EccUtil.signPayload(
+      privateKey = privateKey,
+      payload = Json4sUtil.any2String(pubKeyInfo).get
+    )
+
+    val pubKey = PublicKey(
+      pubKeyInfo = pubKeyInfo,
+      signature = signature
+    )
+    println(s"publicKey : $publicKey")
+    println(s"privateKey: $privateKey")
+    println(s"PublicKey : ${Json4sUtil.any2String(pubKey).get}")
+
+  }
 
 }

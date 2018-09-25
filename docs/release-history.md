@@ -1,5 +1,11 @@
 ## Release History
 
+### Version 0.10.0 (2018-09-25)
+
+* added endpoint to allow trusting public keys:`POST /pubkey/trust`
+* added proposal for new endpoint:`/pubkey/getTrusted`
+* added proposal for new key revokation endpoint:`/pubkey/revoke`
+
 ### Version 0.9.0 (2018-09-05)
 
 * added new REST client module `com.ubirch.key:client-rest-cache-redis` (based on existing `client-rest` with additional Redis based caching)

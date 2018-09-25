@@ -3,14 +3,17 @@ package com.ubirch.keyservice.core.manager
 import java.util.Base64
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
+
 import com.ubirch.crypto.ecc.EccUtil
-import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete, PublicKeyInfo}
+import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete, SignedRevoke}
+import com.ubirch.keyservice.core.manager.util.DbModelUtils
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
-import com.ubirch.util.neo4j.utils.Neo4jParseUtil
+import com.ubirch.util.json.Json4sUtil
+
 import org.joda.time.{DateTime, DateTimeZone}
 import org.neo4j.driver.v1.Values.parameters
 import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
-import org.neo4j.driver.v1.{Driver, Record, Transaction, TransactionWork}
+import org.neo4j.driver.v1.{Driver, Transaction, TransactionWork}
 
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -46,11 +49,12 @@ object PublicKeyManager extends StrictLogging {
           logger.error(errMsg)
           Future(Left(new Exception(errMsg)))
         }
+
       case None =>
 
         if (PublicKeyUtil.validateSignature(pubKey)) {
 
-          val data = entityToString(pubKey)
+          val data = DbModelUtils.publicKeyToString(pubKey)
           val query =
             s"""CREATE (pubKey:PublicKey $data)
                |RETURN pubKey""".stripMargin
@@ -67,7 +71,7 @@ object PublicKeyManager extends StrictLogging {
                   val records = result.list().toSeq
                   logger.info(s"found ${records.size} results for pubKey=$pubKey")
 
-                  Right(recordsToPublicKeys(records, "pubKey").headOption)
+                  Right(DbModelUtils.recordsToPublicKeys(records, "pubKey").headOption)
 
                 }
               })
@@ -107,6 +111,80 @@ object PublicKeyManager extends StrictLogging {
 
   }
 
+  def update(pubKey: PublicKey)
+            (implicit neo4jDriver: Driver): Future[Either[UpdateException, PublicKey]] = {
+
+    findByPubKey(pubKey.pubKeyInfo.pubKey) map {
+
+      case None =>
+
+        Left(new UpdateException("failed to update public key as it does not exist"))
+
+      case Some(existingPublicKey: PublicKey) =>
+
+        if (existingPublicKey.signedRevoke.isDefined) {
+
+          Left(new UpdateException("unable to remove revokation from public key"))
+
+        } else {
+
+          val data = DbModelUtils.publicKeyToStringSET(pubKey, "pubKey.")
+          val query =
+            s"""MATCH (pubKey:PublicKey {infoPubKey: '${pubKey.pubKeyInfo.pubKey}'})
+               | SET $data
+               | RETURN pubKey""".stripMargin
+          logger.debug(s"update() -- query: $query")
+
+          try {
+
+            val session = neo4jDriver.session
+            try {
+
+              session.writeTransaction(new TransactionWork[Either[UpdateException, PublicKey]]() {
+                def execute(tx: Transaction): Either[UpdateException, PublicKey] = {
+
+                  val result = tx.run(query)
+                  val records = result.list().toSeq
+                  logger.info(s"update() -- found ${records.size} results for pubKey=$pubKey")
+
+                  val convertedResults = DbModelUtils.recordsToPublicKeys(records, "pubKey")
+                  if (convertedResults.size == 1) {
+                    Right(DbModelUtils.recordsToPublicKeys(records, "pubKey").head)
+                  } else {
+                    logger.error(s"update() -- failed to update public key (result.size=${convertedResults.size}): $pubKey")
+                    Left(new UpdateException(s"failed to update public key: $pubKey"))
+                  }
+
+                }
+              })
+
+            } finally if (session != null) session.close()
+
+          } catch {
+
+            case su: ServiceUnavailableException =>
+
+              logger.error(s"update() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+              Left(new UpdateException(s"failed to update public key: ${pubKey.pubKeyInfo.pubKey}"))
+
+            case e: Exception =>
+
+              logger.error(s"update() -- Exception: e.message=${e.getMessage}", e)
+              Left(new UpdateException(s"failed to update public key: ${pubKey.pubKeyInfo.pubKey}"))
+
+            case re: RuntimeException =>
+
+              logger.error(s"update() -- RuntimeException: re.message=${re.getMessage}", re)
+              Left(new UpdateException(s"failed to update public key: ${pubKey.pubKeyInfo.pubKey}"))
+
+          }
+
+        }
+
+    }
+
+  }
+
   /**
     * Gives us a Set of all currently valid public keys for a given hardware id.
     *
@@ -128,6 +206,7 @@ object PublicKeyManager extends StrictLogging {
         |    pubKey.infoValidNotAfter is null
         |     OR $now < pubKey.infoValidNotAfter
         |  )
+        |  AND NOT EXISTS(pubKey.revokeSignature)
         |RETURN pubKey
       """.stripMargin
     val parameterMap = parameters(
@@ -147,7 +226,7 @@ object PublicKeyManager extends StrictLogging {
             val records = result.list().toSeq
             logger.info(s"currentlyValid() -- found ${records.size} results for: hardwareId=$hardwareId; now=$now")
 
-            recordsToPublicKeys(records, "pubKey")
+            DbModelUtils.recordsToPublicKeys(records, "pubKey")
 
           }
         })
@@ -200,7 +279,7 @@ object PublicKeyManager extends StrictLogging {
             val records = result.list().toSeq
             logger.info(s"found ${records.size} results for pubKey=$pubKey")
 
-            recordsToPublicKeys(records, "pubKey").headOption
+            DbModelUtils.recordsToPublicKeys(records, "pubKey").headOption
 
           }
         })
@@ -295,78 +374,58 @@ object PublicKeyManager extends StrictLogging {
 
   }
 
-  private def toKeyValueMap(publicKey: PublicKey): Map[String, Any] = {
+  def revoke(signedRevoke: SignedRevoke)
+            (implicit neo4jDriver: Driver): Future[Either[KeyRevokeException, PublicKey]] = {
 
-    var keyValue: Map[String, Any] = Map(
-      "infoHwDeviceId" -> publicKey.pubKeyInfo.hwDeviceId,
-      "infoPubKeyId" -> publicKey.pubKeyInfo.pubKeyId,
-      "infoPubKey" -> publicKey.pubKeyInfo.pubKey,
-      "infoAlgorithm" -> publicKey.pubKeyInfo.algorithm,
-      "infoCreated" -> publicKey.pubKeyInfo.created,
-      "infoValidNotBefore" -> publicKey.pubKeyInfo.validNotBefore,
-      "signature" -> publicKey.signature
+    val payloadJson = Json4sUtil.any2String(signedRevoke.revokation).get
+    val signatureValid = EccUtil.validateSignature(
+      publicKey = signedRevoke.revokation.publicKey,
+      signature = signedRevoke.signature,
+      payload = payloadJson
     )
-    if (publicKey.pubKeyInfo.validNotAfter.isDefined) {
-      keyValue += "infoValidNotAfter" -> publicKey.pubKeyInfo.validNotAfter.get
+
+    if (signatureValid) {
+
+      findByPubKey(signedRevoke.revokation.publicKey) flatMap {
+
+        case None =>
+
+          Future(Left(new KeyRevokeException("unable to revoke public key if it does not exist")))
+
+        case Some(pubKeyDb) =>
+
+          if (pubKeyDb.signedRevoke.isDefined) {
+            Future(Left(new KeyRevokeException("unable to revoke public key if it has been revoked already")))
+          } else {
+
+            val revokedKey = pubKeyDb.copy(signedRevoke = Some(signedRevoke))
+            update(revokedKey) map {
+
+              case Left(t) =>
+
+                Left(new KeyRevokeException("failed to revoke public key", t))
+
+              case Right(revokedPubKey) =>
+
+                Right(revokedKey)
+
+            }
+
+          }
+
+      }
+
+    } else {
+
+      logger.error(s"revoke() -- failed to verify signature: signedRevoke=$signedRevoke")
+      Future(Left(new KeyRevokeException("signature verification failed")))
+
     }
-    if (publicKey.pubKeyInfo.previousPubKeyId.isDefined) {
-      keyValue += "infoPreviousPubKeyId" -> publicKey.pubKeyInfo.previousPubKeyId.get
-    }
-    if (publicKey.previousPubKeySignature.isDefined) {
-      keyValue += "previousPubKeySignature" -> publicKey.previousPubKeySignature.get
-    }
-    if (publicKey.raw.isDefined) {
-      keyValue += "raw" -> publicKey.raw.get
-    }
-
-    keyValue
-
-  }
-
-  private def keyValueToString(keyValue: Map[String, Any]): String = {
-
-    val data: String = keyValue map {
-      case (key, value: Int) => s"""$key: $value"""
-      case (key, value: Long) => s"""$key: $value"""
-      case (key, value: Boolean) => s"""$key: $value"""
-      case (key, value: String) => s"""$key: "$value""""
-      case (key, value) => s"""$key: "$value""""
-    } mkString("{", ", ", "}")
-    logger.debug(s"keyValues.string -- $data")
-
-    data
-
-  }
-
-  private def entityToString(publicKey: PublicKey): String = {
-    val keyValue = toKeyValueMap(publicKey)
-    keyValueToString(keyValue)
-  }
-
-  private def recordsToPublicKeys(records: Seq[Record], recordLabel: String): Set[PublicKey] = {
-
-    records map { record =>
-
-      val pubKey = record.get(recordLabel)
-
-      PublicKey(
-        pubKeyInfo = PublicKeyInfo(
-          hwDeviceId = Neo4jParseUtil.asType[String](pubKey, "infoHwDeviceId"),
-          pubKey = Neo4jParseUtil.asType[String](pubKey, "infoPubKey"),
-          pubKeyId = Neo4jParseUtil.asTypeOrDefault[String](pubKey, "infoPubKeyId", "--UNDEFINED--"),
-          algorithm = Neo4jParseUtil.asType[String](pubKey, "infoAlgorithm"),
-          previousPubKeyId = Neo4jParseUtil.asTypeOption[String](pubKey, "infoPreviousPubKeyId"),
-          created = Neo4jParseUtil.asDateTime(pubKey, "infoCreated"),
-          validNotBefore = Neo4jParseUtil.asDateTime(pubKey, "infoValidNotBefore"),
-          validNotAfter = Neo4jParseUtil.asDateTimeOption(pubKey, "infoValidNotAfter")
-        ),
-        signature = Neo4jParseUtil.asType(pubKey, "signature"),
-        previousPubKeySignature = Neo4jParseUtil.asTypeOption[String](pubKey, "previousPubKeySignature"),
-        raw = Neo4jParseUtil.asTypeOption[String](pubKey, "raw")
-      )
-
-    } toSet
 
   }
 
 }
+
+class UpdateException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)
+
+class KeyRevokeException(private val message: String = "", private val cause: Throwable = None.orNull) extends Exception(message, cause)

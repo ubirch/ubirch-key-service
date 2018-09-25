@@ -26,6 +26,12 @@ trait KeyClientRestConfigBase extends ConfigBase {
 
   val pubKey = s"$host${RouteConstants.pathPubKey}"
 
+  val pubKeyTrust = s"$host${RouteConstants.pathPubKeyTrust}"
+
+  val pubKeyTrusted = s"$host${RouteConstants.pathPubKeyTrusted}"
+
+  val pubKeyRevoke = s"$host${RouteConstants.pathPubKeyRevoke}"
+
   def findPubKey(pubKeyString: String): String = {
     s"$pubKey/${URLEncoder.encode(pubKeyString, "UTF-8")}"
   }

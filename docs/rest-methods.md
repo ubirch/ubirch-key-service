@@ -131,6 +131,55 @@ curl -XPOST localhost:8095/api/keyService/v1/pubkey/mpack --data-binary '9512b00
 curl -XPOST localhost:8095/api/keyService/v1/pubkey/mpack --data-binary '100101010001001010110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000110000111101010010110000101101100011001110110111101110010011010010111010001101000011011011010101101000101010000110100001101011111010001010100010000110010001101010011010100110001001110011010011101100011011100100110010101100001011101000110010101100100110011100101101101110100001001101010101110101010011010000111011101000100011001010111011001101001011000110110010101001001011001001011000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000101001100111000001110101011000100100101101100101011110011101101000000000001000001001110010011111100111111111110101010001101111010110111101110111101111101011110000101110001111100000101101110010010001010111111111111101101100100100101100100011111010111111100010001001101001001111100100011101011000000000100000000100000010101111000011001010101010000111000001110101011000100100101101100101011110010100100101100100110110100000000000100000100111001001111110011111111111010101000110111101011011110111011110111110101111000010111000111110000010110111001001000101011111111111110110110010010010110010001111101011111110001000100110100100111110010001110101100000000010000000010000001010111100001100101010101101011101100110000101101100011010010110010001001110011011110111010001000001011001100111010001100101011100101100111001011101010101010101101000101011101011100111011001100001011011000110100101100100010011100110111101110100010000100110010101100110011011110111001001100101110011100101101101110100001001101010101111011010000000000100000010011110110010100111110111010010000001110011100100000110001101110011010110101100101000010111101111010000111011010100110001001011100011000010110011111101000100100110001010001110011010000000111100101010011110110011111101101000111111011110110110100011001111010101111100100111011100111111011000101110100000011000001010010010010011000011101110001001101011000011100000100000001011100101110100000001100111011000101100000100111101011100110010000010110100100110001011111010000010100100000100000000110101000101111100000101'
 ```
 
+#### Trust Keys
+
+This method is idempotent. Hence trusting a key that already has the callers trust is successful.
+
+NOTE: Details about the semantics of the `trustLevel` field have yet to be finalized. So far we at least know that it's
+mandatory and will most likely have a range of 1 to 100 with higher values having more weight.
+
+##### Curl Example
+
+All examples are based on the following key pairs:
+
+###### Caller (Key A)
+
+* public key  = MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=
+* private key = MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==
+
+###### Key To Trust (Key B)
+
+* public key  = MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=
+* private key = MC8CAQAwCAYDK2VkCgEBBCCnZ7tKYA/dzNPqgRRe6yBb+q7cj0AvWA6FVf6nxOtGlg==
+
+```
+## upload public keys
+# Key A
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-12T11:02:17.280Z","hwDeviceId":"6d0157ae-f53e-43a9-ad0d-f3d0a9d56176","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-12T12:01:17.326Z"},"signature":"RXX0HzCvtuiD6xOQ3Sw/BKLnyfCwgJdDBH7JKkKe7yTXStTlVZOYSyNAPI6uh5IMuXhejxFL6uhU7SAQtcxxDQ=="}'
+# Key B
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-12T11:02:17.705Z","hwDeviceId":"f02a3429-684a-42e2-b3f7-dc6f546bfed5","pubKey":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","pubKeyId":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","validNotBefore":"2018-09-12T12:01:17.706Z"},"signature":"ouXiAXlFoA+6vCgB7uNWlFP0ilbb1r1t9par2f77g7APXjnCXGrh84aRY22ogz6+sdhu2IXLd0WxbnyQffEEBw=="}'
+
+## trusting public keys
+# trust(A --trustLevel:50--> B)
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '{
+  "trustRelation": {
+    "created":"2018-09-12T12:02:17.717Z",
+    "sourcePublicKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+    "targetPublicKey": "MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=",
+    "trustLevel": 50,
+    "validNotAfter": "2018-12-12T12:02:17.717Z"
+  },
+  "signature":"GfFLMrseDHoq7IcJu7dtNnUB4aHOfpKAQLLya1n7175Hk8uDG3JxEqKUKGWdpGnMc5pqQ+cDn0Horb8eI25iDA=="
+}'
+
+# trust(A --trustLevel:80--> B)
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '{"trustRelation":{"created":"2018-09-12T12:02:17.740Z","sourcePublicKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","targetPublicKey":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","trustLevel":80,"validNotAfter":"2018-12-12T12:02:17.740Z"},"signature":"MjiYzGDMR1zlShrjoTZa/DTx2GO3Og70Z6i+NBhyNZU8LQpqq5BsQKtjhjsI9SiuHGSRseIQkCDH4zYD7zErBQ=="}'
+
+# trust(B --> A)
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '{"trustRelation":{"created":"2018-09-12T12:02:17.744Z","sourcePublicKey":"MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=","targetPublicKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","trustLevel":50,"validNotAfter":"2018-12-12T12:02:17.744Z"},"signature":"HqR6L3jght47vQdCF2019wLC/rOgZ8BSt0j8garBSQ2SqaN0AKxkckTkPROO809bLg/CaGvwLu4MQFiJqkuYBg=="}'
+```
+
+
 #### Query Public Keys by HardwareId (currently active only)
 
     curl localhost:8095/api/keyService/v1/pubkey/current/hardwareId/$HARDWARE_ID
@@ -238,6 +287,49 @@ If the server has problems the response is:
       }
     }
 
+#### Find Trusted Keys
+
+This method allows us to query all keys we trust. To ensure the underlying web-of-trust's privacy we only allow queries
+on keys which the caller has full control over which is ensured by a mandatory request signature. As a simple protection
+from replay attacks we also check if the `queryDate` is recent from the last few minutes.
+
+The request includes a `depth` field which we'll ignore for now. We'll start to use it only once full control over whom
+can see which trust relations has been implemented.
+
+##### Curl Example
+
+The example is based on the Key A:
+
+* public key  = MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=
+* private key = MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==
+
+```
+###### upload public keys
+# Key A
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-14T14:36:08.536Z","hwDeviceId":"93054176-632f-4298-98d4-3436e7719011","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-14T15:35:08.588Z"},"signature":"C3mLLb2HBnfW/6mQFtsUmTYKGh7DmxR3WDmkl7xGbrUP2IVredARTWhguGy9lPeroo8Qd0La8+hLtj4YHmVIAQ=="}'
+# Key B
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-14T14:36:08.921Z","hwDeviceId":"32662320-67ec-4684-a58c-bfd7fc3cb2bc","pubKey":"MC0wCAYDK2VkCgEBAyEAZ68y5f3zwInZVWg2q4eBdfbSzM0UK5l1xroDQpQBF4Y=","pubKeyId":"MC0wCAYDK2VkCgEBAyEAZ68y5f3zwInZVWg2q4eBdfbSzM0UK5l1xroDQpQBF4Y=","validNotBefore":"2018-09-14T15:35:08.921Z"},"signature":"iH/qSxdu8NrnTgBxFYO4jfXvn7no4fNYUsk/5xvzsyvVd06kJxDj1yS1qQ8e+8UN8ec9776jlEO0LKRGP8y0Dw=="}'
+# Key C
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-14T14:36:08.925Z","hwDeviceId":"f2c467a6-ea37-4d2f-b0c4-132c75c34a69","pubKey":"MC0wCAYDK2VkCgEBAyEAZMPpszVmofwoREiZ07buzXGKx2rdHb4I4yCrO4/7sOI=","pubKeyId":"MC0wCAYDK2VkCgEBAyEAZMPpszVmofwoREiZ07buzXGKx2rdHb4I4yCrO4/7sOI=","validNotBefore":"2018-09-14T15:35:08.926Z"},"signature":"nEOlMc9STR+vmLAPknYdvGGc7gx17N39lMERkEF6EmgIlOojlMjxodloYv0AmZLvF+8JTpVROFSA8zM7BVf6AQ=="}'
+
+###### trust keys
+# trust(A --trustLevel:50--> B)
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '{"trustRelation":{"created":"2018-09-14T15:36:08.936Z","sourcePublicKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","targetPublicKey":"MC0wCAYDK2VkCgEBAyEAZ68y5f3zwInZVWg2q4eBdfbSzM0UK5l1xroDQpQBF4Y=","trustLevel":50,"validNotAfter":"2018-12-14T15:36:08.936Z"},"signature":"wvTg7KSWLuVG/tycst61EglA1W2KQmvMwH3J346V293H7T4MK6NGydKtijtR7LbftnopKetzL8ZdfWm2Oc/wCg=="}'
+# trust(A --trustLevel:70--> C)
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/trust -H "Content-Type: application/json" -d '{"trustRelation":{"created":"2018-09-14T15:36:08.952Z","sourcePublicKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","targetPublicKey":"MC0wCAYDK2VkCgEBAyEAZMPpszVmofwoREiZ07buzXGKx2rdHb4I4yCrO4/7sOI=","trustLevel":70,"validNotAfter":"2018-12-14T15:36:08.952Z"},"signature":"1N+54Ix/O6/967OHWz8Cgcx7b40B9gQhXS5qZqvA9KDYijEOtCibXyGpmImBY66FVbSAsdWNFuBgB4fJzdCBCA=="}'
+
+###### find keys trusted by A
+curl -i -XGET localhost:8095/api/keyService/v1/pubkey/trusted -H "Content-Type: application/json" -d '{
+  "findTrusted": {
+    "depth": 1,
+    "minTrustLevel": 50,
+    "sourcePublicKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+    "queryDate": "2018-09-14T12:39:41.329Z"
+  },
+  "signature": "0guasaWheykTXbhdBrPn7DmcTUFwb6Y1wZrYOakYUHgJbdirXcLHAk4OFLZG17f3yROnZefhY0ryYlyvJPyKAQ=="
+}'
+```
+
 #### Delete Public Key
 
 Key pair used for this example:
@@ -282,3 +374,28 @@ If the server has a problem:
         "errorMessage": "failed to delete public key"
       }
     }
+
+#### Revoke Key
+
+This method is idempotent. Hence revoking a key that already has been revoked is successful.
+
+##### Curl Example
+
+The example is based on the following key pair:
+
+* public key  = MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=
+* private key = MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==
+
+```
+# upload public key
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey -H "Content-Type: application/json" -d '{"pubKeyInfo":{"algorithm":"ECC_ED25519","created":"2018-09-10T11:10:28.286Z","hwDeviceId":"fcc0fca2-9dc5-4abe-9bc1-fa8221d1d7ef","pubKey":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","pubKeyId":"MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=","validNotBefore":"2018-09-10T12:09:28.365Z"},"signature":"XCSqmCSljuyOAfi2mVVfNj9nkWAs9oJdyFJccUFiYA/D0gxpnAYjJxJGY3Vds27O5KHm4WHOX96oa8LbF52VBw=="}'
+
+# revoke key
+curl -i -XPOST localhost:8095/api/keyService/v1/pubkey/revoke -H "Content-Type: application/json" -d '{
+  "revokation": {
+    "publicKey": "MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=",
+    "revokationDate": "2018-09-10T12:10:29.188Z"
+  },
+  "signature": "4Nlml972DyFdCrVwzrDYnkuY2vcBOHe4txpI4rpTBILeKvtyOnHSi8M1Q00dTdF6VKcyTeWOrsZ0aQeEqY+wDQ=="
+}'
+```
