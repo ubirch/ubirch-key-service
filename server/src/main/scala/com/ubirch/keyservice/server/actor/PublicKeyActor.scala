@@ -2,7 +2,7 @@ package com.ubirch.keyservice.server.actor
 
 import com.ubirch.key.model._
 import com.ubirch.key.model.rest.{PublicKey, PublicKeyDelete, PublicKeys, SignedRevoke}
-import com.ubirch.keyservice.config.KeyConfig
+import com.ubirch.keyservice.config.KeySvcConfig
 import com.ubirch.keyservice.core.manager.PublicKeyManager
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
@@ -121,7 +121,7 @@ class PublicKeyActor(implicit neo4jDriver: Driver) extends Actor
 object PublicKeyActor {
 
   def props()(implicit neo4jDriver: Driver): Props = {
-    new RoundRobinPool(KeyConfig.akkaNumberOfWorkers).props(Props(new PublicKeyActor))
+    new RoundRobinPool(KeySvcConfig.akkaNumberOfWorkers).props(Props(new PublicKeyActor))
   }
 
 }

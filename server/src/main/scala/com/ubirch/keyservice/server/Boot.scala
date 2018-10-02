@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.keyservice.config.{ConfigKeys, KeyConfig}
+import com.ubirch.keyservice.config.{KeySvcConfigKeys, KeySvcConfig}
 import com.ubirch.keyservice.server.route.MainRoute
 import com.ubirch.keyservice.utils.neo4j.Neo4jSchema
 import com.ubirch.util.neo4j.utils.{Neo4jDriverUtil, Neo4jUtils}
@@ -31,9 +31,9 @@ object Boot extends App with StrictLogging {
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
-  implicit val timeout: Timeout = Timeout(KeyConfig.timeout seconds)
+  implicit val timeout: Timeout = Timeout(KeySvcConfig.timeout seconds)
 
-  implicit val neo4jDriver: Driver = Neo4jDriverUtil.driver(ConfigKeys.neo4jConfigPrefix)
+  implicit val neo4jDriver: Driver = Neo4jDriverUtil.driver(KeySvcConfigKeys.neo4jConfigPrefix)
 
   Neo4jUtils.createConstraints(Neo4jSchema.constraints)
   Neo4jUtils.createIndices(Neo4jSchema.indices)
@@ -43,8 +43,8 @@ object Boot extends App with StrictLogging {
 
   private def start(): Future[ServerBinding] = {
 
-    val interface = KeyConfig.interface
-    val port = KeyConfig.port
+    val interface = KeySvcConfig.interface
+    val port = KeySvcConfig.port
     implicit val timeout: Timeout = Timeout(5, TimeUnit.SECONDS)
 
     logger.info(s"start http server on $interface:$port")

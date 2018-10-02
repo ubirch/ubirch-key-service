@@ -8,7 +8,7 @@ import com.ubirch.key.model.db.PublicKey
 import com.ubirch.key.model.rest.{PublicKeyDelete, SignedTrustRelation, TrustedKeyResult}
 import com.ubirch.keyService.testTools.data.generator.{TestDataGeneratorDb, TestDataGeneratorRest}
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
-import com.ubirch.keyservice.config.KeyConfig
+import com.ubirch.keyservice.config.KeySvcConfig
 import com.ubirch.keyservice.core.manager.{PublicKeyManager, TrustManager}
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
@@ -37,7 +37,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
         case None => fail("expected a result other than None")
 
         case Some(jsonResponse: JsonResponse) =>
-          val goInfo = s"${KeyConfig.goPipelineName} / ${KeyConfig.goPipelineLabel} / ${KeyConfig.goPipelineRevision}"
+          val goInfo = s"${KeySvcConfig.goPipelineName} / ${KeySvcConfig.goPipelineLabel} / ${KeySvcConfig.goPipelineRevision}"
           val expected = JsonResponse(message = s"Welcome to the ubirchKeyService ( $goInfo )")
           jsonResponse shouldBe expected
 

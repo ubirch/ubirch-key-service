@@ -2,7 +2,7 @@ package com.ubirch.keyService.testTools.db.neo4j
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 
-import com.ubirch.keyservice.config.ConfigKeys
+import com.ubirch.keyservice.config.KeySvcConfigKeys
 import com.ubirch.keyservice.utils.neo4j.Neo4jSchema
 import com.ubirch.util.neo4j.utils.{Neo4jDriverUtil, Neo4jUtils}
 
@@ -31,7 +31,7 @@ trait Neo4jSpec extends AsyncFeatureSpec
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val httpClient: HttpExt = Http()
 
-  protected implicit val neo4jDriver: Driver = Neo4jDriverUtil.driver(ConfigKeys.neo4jConfigPrefix)
+  protected implicit val neo4jDriver: Driver = Neo4jDriverUtil.driver(KeySvcConfigKeys.neo4jConfigPrefix)
 
   override protected def beforeEach(): Unit = {
 

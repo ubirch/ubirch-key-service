@@ -1,14 +1,14 @@
 ## Release History
 
-### Version 0.10.1 (tbd)
+### Version 0.11.0 (tbd)
 
-* tbd
+* increased maximum depth for web-of-trust searches to a configurable maximum (effects endpoint `/pubkey/trusted`)
 
 ### Version 0.10.0 (2018-09-25)
 
-* added endpoint to allow trusting public keys:`POST /pubkey/trust`
-* added proposal for new endpoint:`/pubkey/getTrusted`
-* added proposal for new key revokation endpoint:`/pubkey/revoke`
+* added endpoint to allow trusting public keys: `POST /pubkey/trust`
+* added proposal for new endpoint: `/pubkey/trusted`
+* added proposal for new key revokation endpoint: `/pubkey/revoke`
 
 ### Version 0.9.0 (2018-09-05)
 

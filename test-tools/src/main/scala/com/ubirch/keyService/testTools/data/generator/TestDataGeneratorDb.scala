@@ -2,7 +2,7 @@ package com.ubirch.keyService.testTools.data.generator
 
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.crypto.hash.HashUtil
-import com.ubirch.key.model.db.{FindTrusted, FindTrustedSigned, PublicKey, PublicKeyInfo, Revokation, SignedRevoke, SignedTrustRelation}
+import com.ubirch.key.model.db.{FindTrusted, FindTrustedSigned, PublicKey, PublicKeyInfo, Revokation, SignedRevoke, SignedTrustRelation, TrustRelation}
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
@@ -140,23 +140,34 @@ object TestDataGeneratorDb {
 
   }
 
-  def signedTrustRelation(from: KeyMaterial, to: KeyMaterial, trustLevel: Int = 50): SignedTrustRelation = {
+  def signedTrustRelation(from: KeyMaterialDb,
+                          to: KeyMaterialDb,
+                          trustLevel: Int = 50,
+                          validNotAfter: Option[DateTime] = Some(DateUtil.nowUTC.plusMonths(3))
+                         ): SignedTrustRelation = {
 
-    val trustKeyRest = TestDataGeneratorRest.signedTrustRelation(
-      from = from,
-      to = to,
-      trustLevel = trustLevel
+    val trustRelation = TrustRelation(
+      created = DateUtil.nowUTC,
+      sourcePublicKey = from.publicKey.pubKeyInfo.pubKey,
+      targetPublicKey = to.publicKey.pubKeyInfo.pubKey,
+      trustLevel = trustLevel,
+      validNotAfter = validNotAfter
     )
-    Json4sUtil.any2any[SignedTrustRelation](trustKeyRest)
+    val trustRelationJson = Json4sUtil.any2String(trustRelation).get
+    val signature = EccUtil.signPayload(from.privateKeyString, trustRelationJson)
+
+    SignedTrustRelation(trustRelation, signature)
 
   }
 
   def findTrustedSigned(sourcePublicKey: String,
                         sourcePrivateKey: String,
-                        minTrust: Int = 50
+                        minTrust: Int = 50,
+                        depth: Int = 1
                        ): FindTrustedSigned = {
 
     val findTrusted = FindTrusted(
+      depth = depth,
       minTrustLevel = minTrust,
       sourcePublicKey = sourcePublicKey
     )
@@ -187,23 +198,23 @@ object TestDataGeneratorDb {
 
   }
 
-  def generateOneKeyPair(): KeyMaterial = {
+  def generateOneKeyPair(): KeyMaterialDb = {
 
     val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded
-    KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA)
+    KeyGenUtil.keyMaterialDb(publicKey = publicKeyA, privateKey = privateKeyA)
 
   }
 
   def generateTwoKeyPairs(): KeyMaterialAAndBDb = {
 
     val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded
-    val keyMaterialA = KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA)
+    val keyMaterialA = KeyGenUtil.keyMaterialDb(publicKey = publicKeyA, privateKey = privateKeyA)
     val (publicKeyB, privateKeyB) = EccUtil.generateEccKeyPairEncoded
-    val keyMaterialB = KeyGenUtil.keyMaterial(publicKey = publicKeyB, privateKey = privateKeyB)
+    val keyMaterialB = KeyGenUtil.keyMaterialDb(publicKey = publicKeyB, privateKey = privateKeyB)
 
     val publicKeys = Set(
-      Json4sUtil.any2any[PublicKey](keyMaterialA.publicKey),
-      Json4sUtil.any2any[PublicKey](keyMaterialB.publicKey)
+      keyMaterialA.publicKey,
+      keyMaterialB.publicKey
     )
 
     KeyMaterialAAndBDb(
@@ -216,11 +227,13 @@ object TestDataGeneratorDb {
 
 }
 
-case class KeyMaterialAAndBDb(keyMaterialA: KeyMaterial,
-                              keyMaterialB: KeyMaterial,
+case class KeyMaterialAAndBDb(keyMaterialA: KeyMaterialDb,
+                              keyMaterialB: KeyMaterialDb,
                               publicKeys: Set[PublicKey]
                              ) {
 
   def privateKeyA(): String = keyMaterialA.privateKeyString
 
 }
+
+case class KeyMaterialDb(privateKeyString: String, publicKey: PublicKey)

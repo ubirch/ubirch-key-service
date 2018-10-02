@@ -8,7 +8,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.StrictLogging
 import com.ubirch.key.model.rest.PublicKey
-import com.ubirch.keyservice.config.KeyConfig
+import com.ubirch.keyservice.config.KeySvcConfig
 import com.ubirch.keyservice.server.actor.CreatePublicKey
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.model.JsonErrorResponse
@@ -17,8 +17,6 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
-
-// TODO duplicated code w/ PublicKeyActionsJson
 
 /**
   * Add description.
@@ -33,7 +31,7 @@ trait PublicKeyActionsString {
 
   protected val pubKeyActor: ActorRef
 
-  implicit val timeout: Timeout = Timeout(KeyConfig.actorTimeout seconds)
+  implicit val timeout: Timeout = Timeout(KeySvcConfig.actorTimeout seconds)
 
   def createPublicKey(publicKey: PublicKey): Route = {
 
