@@ -1,5 +1,9 @@
 ## Release History
 
+### Version 0.11.1 (tbd)
+
+* tbd
+
 ### Version 0.11.0 (2018-10-02)
 
 * increased maximum depth for web-of-trust searches to a configurable maximum (effects endpoint `/pubkey/trusted`)
