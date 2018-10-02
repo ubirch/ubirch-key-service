@@ -7,7 +7,6 @@ import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete}
 import com.ubirch.keyService.testTools.data.generator.TestDataGeneratorDb
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
 import com.ubirch.util.date.DateUtil
-import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
 
 import org.joda.time.{DateTime, DateTimeZone}
@@ -209,10 +208,9 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       // prepare
       val keyPair = TestDataGeneratorDb.generateOneKeyPair()
-      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
 
       // test
-      PublicKeyManager.update(pubKeyDb) map {
+      PublicKeyManager.update(keyPair.publicKey) map {
 
         // verify
         case Right(_) =>
@@ -231,7 +229,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       // prepare
       val keyPair = TestDataGeneratorDb.generateOneKeyPair()
-      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+      val pubKeyDb = keyPair.publicKey
 
       PublicKeyManager.create(pubKeyDb) flatMap { createResult =>
 
@@ -254,7 +252,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       // prepare
       val keyPair = TestDataGeneratorDb.generateOneKeyPair()
-      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+      val pubKeyDb = keyPair.publicKey
 
       PublicKeyManager.create(pubKeyDb) flatMap { createResult =>
 
@@ -279,7 +277,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       // prepare
       val keyPair = TestDataGeneratorDb.generateOneKeyPair()
-      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+      val pubKeyDb = keyPair.publicKey
 
       PublicKeyManager.create(pubKeyDb) flatMap { createResult =>
 
@@ -307,7 +305,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       // prepare
       val keyPair = TestDataGeneratorDb.generateOneKeyPair()
-      val pubKeyDb = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+      val pubKeyDb = keyPair.publicKey
 
       val signedRevoke = TestDataGeneratorDb.signedRevoke(
         publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
@@ -498,7 +496,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
 
       // prepare
       val keyPair = TestDataGeneratorDb.generateOneKeyPair()
-      val pubKey = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+      val pubKey = keyPair.publicKey
 
       createKeys(pubKey) flatMap { createKeysResult =>
 
@@ -862,7 +860,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
         publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
         privateKey = keyPair.privateKeyString
       )
-      val pubKey = Json4sUtil.any2any[PublicKey](keyPair.publicKey)
+      val pubKey = keyPair.publicKey
 
       PublicKeyManager.create(pubKey) flatMap { createResult =>
 
@@ -889,7 +887,7 @@ class PublicKeyManagerSpec extends Neo4jSpec {
         publicKey = keyPair.publicKey.pubKeyInfo.pubKey,
         privateKey = keyPair.privateKeyString
       )
-      val pubKeyRevoked = Json4sUtil.any2any[PublicKey](keyPair.publicKey).copy(signedRevoke = Some(signedRevoke))
+      val pubKeyRevoked = keyPair.publicKey.copy(signedRevoke = Some(signedRevoke))
 
       PublicKeyManager.create(pubKeyRevoked) flatMap { createResult =>
 

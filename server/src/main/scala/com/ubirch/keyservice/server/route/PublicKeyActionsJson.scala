@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.key.model.rest.{FindTrustedSigned, PublicKey, PublicKeyDelete, PublicKeys, SignedRevoke, SignedTrustRelation}
 import com.ubirch.key.model.{db, rest}
-import com.ubirch.keyservice.config.KeyConfig
+import com.ubirch.keyservice.config.KeySvcConfig
 import com.ubirch.keyservice.server.actor.{ByPublicKey, CreatePublicKey, QueryCurrentlyValid, TrustedKeyResultSet}
 import com.ubirch.util.http.response.ResponseUtil
 import com.ubirch.util.json.Json4sUtil
@@ -37,7 +37,7 @@ trait PublicKeyActionsJson extends ResponseUtil {
   protected val pubKeyActor: ActorRef
   protected val trustActor: ActorRef
 
-  implicit val timeout: Timeout = Timeout(KeyConfig.actorTimeout seconds)
+  implicit val timeout: Timeout = Timeout(KeySvcConfig.actorTimeout seconds)
 
   def createPublicKey(publicKey: PublicKey): Route = {
 

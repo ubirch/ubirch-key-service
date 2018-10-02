@@ -4,7 +4,8 @@ import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model.db.{FindTrustedSigned, SignedTrustRelation, TrustedKeyResult}
-import com.ubirch.keyservice.core.manager.util.DbModelUtils
+import com.ubirch.keyservice.core.manager.util.{DbModelUtils, TrustManagerUtil}
+import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
 
 import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
@@ -275,14 +276,17 @@ object TrustManager extends StrictLogging {
 
     if (signatureValid) {
 
-      val maxDepth = 1 // NOTE: currently we limit the maximum depth to one and ignore `findTrustedSigned.findTrusted.depth`
+      val maxDepth = TrustManagerUtil.maxWebOfTrustDepth(findTrustedSigned.findTrusted.depth)
       val sourcePubKey = findTrustedSigned.findTrusted.sourcePublicKey
       val minTrustLevel = findTrustedSigned.findTrusted.minTrustLevel
       val query =
-        s"""MATCH p=(source)-[trust:TRUST]->(trusted)
-           | WHERE source.infoPubKey = '$sourcePubKey' AND trust.trustLevel >= $minTrustLevel
-           | RETURN trusted, trust.trustLevel""".stripMargin
-      logger.debug(s"findTrusted() -- query=$query")
+        s"""MATCH (source:PublicKey {infoPubKey: '$sourcePubKey'})
+           | MATCH p=(source)-[:TRUST*1..$maxDepth]->(target:PublicKey)
+           | WHERE
+           |  all(trust IN relationships(p) WHERE trust.trustLevel >= $minTrustLevel AND trust.trustNotValidAfter >= "${DateUtil.nowUTC}")
+           |  AND source <> target
+           | RETURN p""".stripMargin
+      logger.debug(s"findTrusted() -- queryNew=$query")
 
       val pubKeyResults = try {
 
@@ -290,19 +294,15 @@ object TrustManager extends StrictLogging {
         try {
 
           session.readTransaction(new TransactionWork[Either[FindTrustedException, Set[TrustedKeyResult]]]() {
+
             def execute(tx: Transaction): Either[FindTrustedException, Set[TrustedKeyResult]] = {
 
               val result = tx.run(query)
               val records = result.list().toSeq
               logger.info(s"findTrusted() -- found ${records.size} results for: findTrustedSigned=$findTrustedSigned")
 
-              val convertedResults = DbModelUtils.recordsToTrustedKeyResult(
-                records = records,
-                depth = maxDepth,
-                publicKeyLabel = "trusted",
-                trustLevelLabel = "trust.trustLevel"
-              )
-              Right(convertedResults)
+              val trustPaths = DbModelUtils.recordsToTrustPaths(records, "p")
+              Right(TrustManagerUtil.extractTrustedKeys(trustPaths))
 
             }
           })

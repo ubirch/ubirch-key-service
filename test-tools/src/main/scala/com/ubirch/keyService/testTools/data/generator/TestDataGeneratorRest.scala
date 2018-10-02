@@ -159,14 +159,18 @@ object TestDataGeneratorRest {
 
   }
 
-  def signedTrustRelation(from: KeyMaterial, to: KeyMaterial, trustLevel: Int = 50): SignedTrustRelation = {
+  def signedTrustRelation(from: KeyMaterial,
+                          to: KeyMaterial,
+                          trustLevel: Int = 50,
+                          validNotAfter: Option[DateTime] = Some(DateUtil.nowUTC.plusMonths(3))
+                         ): SignedTrustRelation = {
 
     val trustRelation = TrustRelation(
       created = DateUtil.nowUTC,
       sourcePublicKey = from.publicKey.pubKeyInfo.pubKey,
       targetPublicKey = to.publicKey.pubKeyInfo.pubKey,
       trustLevel = trustLevel,
-      validNotAfter = Some(DateUtil.nowUTC.plusMonths(3))
+      validNotAfter = validNotAfter
     )
     val trustRelationJson = Json4sUtil.any2String(trustRelation).get
     val signature = EccUtil.signPayload(from.privateKeyString, trustRelationJson)

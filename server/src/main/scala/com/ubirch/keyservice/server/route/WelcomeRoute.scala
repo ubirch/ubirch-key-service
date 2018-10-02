@@ -1,6 +1,6 @@
 package com.ubirch.keyservice.server.route
 
-import com.ubirch.keyservice.config.KeyConfig
+import com.ubirch.keyservice.config.KeySvcConfig
 import com.ubirch.util.json.MyJsonProtocol
 import com.ubirch.util.model.JsonResponse
 
@@ -19,7 +19,7 @@ trait WelcomeRoute extends MyJsonProtocol {
     get {
       complete {
 
-        val goInfo = s"${KeyConfig.goPipelineName} / ${KeyConfig.goPipelineLabel} / ${KeyConfig.goPipelineRevision}"
+        val goInfo = s"${KeySvcConfig.goPipelineName} / ${KeySvcConfig.goPipelineLabel} / ${KeySvcConfig.goPipelineRevision}"
         JsonResponse(message = s"Welcome to the ubirchKeyService ( $goInfo )")
 
       }

@@ -2,8 +2,9 @@ package com.ubirch.keyservice.core.manager
 
 import com.ubirch.crypto.ecc.EccUtil
 import com.ubirch.key.model.db.{PublicKey, SignedTrustRelation, TrustedKeyResult}
-import com.ubirch.keyService.testTools.data.generator.{KeyGenUtil, TestDataGeneratorDb}
+import com.ubirch.keyService.testTools.data.generator.{KeyGenUtil, KeyMaterialDb, TestDataGeneratorDb}
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
+import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
 
 import org.scalatest.Assertion
@@ -91,7 +92,7 @@ class TrustManagerSpec extends Neo4jSpec {
 
       val signedTrustRelation = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
 
-      val pubKeyDbA = Json4sUtil.any2any[PublicKey](twoKeyPairs.keyMaterialA.publicKey)
+      val pubKeyDbA = twoKeyPairs.keyMaterialA.publicKey
       PublicKeyManager.create(pubKeyDbA) flatMap {
 
         case Right(None) => fail("failed during preparation")
@@ -125,7 +126,7 @@ class TrustManagerSpec extends Neo4jSpec {
 
       val signedTrustRelation = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
 
-      val pubKeyDbB = Json4sUtil.any2any[PublicKey](twoKeyPairs.keyMaterialB.publicKey)
+      val pubKeyDbB = twoKeyPairs.keyMaterialB.publicKey
       PublicKeyManager.create(pubKeyDbB) flatMap {
 
         case Right(None) => fail("failed during preparation")
@@ -189,9 +190,9 @@ class TrustManagerSpec extends Neo4jSpec {
       // prepare
       val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
       val (publicKeyC, privateKeyC) = EccUtil.generateEccKeyPairEncoded
-      val keyMaterialC = KeyGenUtil.keyMaterial(publicKey = publicKeyC, privateKey = privateKeyC)
+      val keyMaterialC = KeyGenUtil.keyMaterialDb(publicKey = publicKeyC, privateKey = privateKeyC)
 
-      val publicKeys = twoKeyPairs.publicKeys ++ Set(Json4sUtil.any2any[PublicKey](keyMaterialC.publicKey))
+      val publicKeys = twoKeyPairs.publicKeys ++ Set(keyMaterialC.publicKey)
       persistPublicKeys(publicKeys) flatMap { publicKeysPersisted =>
 
         val expectPublicKeysPersisted = publicKeys.map { pk => Right(Some(pk)) }
@@ -325,9 +326,9 @@ class TrustManagerSpec extends Neo4jSpec {
       // prepare
       val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
       val (publicKeyC, privateKeyC) = EccUtil.generateEccKeyPairEncoded
-      val keyMaterialC = KeyGenUtil.keyMaterial(publicKey = publicKeyC, privateKey = privateKeyC)
+      val keyMaterialC = KeyGenUtil.keyMaterialDb(publicKey = publicKeyC, privateKey = privateKeyC)
 
-      val publicKeys = twoKeyPairs.publicKeys ++ Set(Json4sUtil.any2any[PublicKey](keyMaterialC.publicKey))
+      val publicKeys = twoKeyPairs.publicKeys ++ Set(keyMaterialC.publicKey)
       persistPublicKeys(publicKeys) flatMap { publicKeysPersisted =>
 
         val expectPublicKeysPersisted = publicKeys.map { pk => Right(Some(pk)) }
@@ -364,9 +365,9 @@ class TrustManagerSpec extends Neo4jSpec {
       // prepare
       val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
       val (publicKeyC, privateKeyC) = EccUtil.generateEccKeyPairEncoded
-      val keyMaterialC = KeyGenUtil.keyMaterial(publicKey = publicKeyC, privateKey = privateKeyC)
+      val keyMaterialC = KeyGenUtil.keyMaterialDb(publicKey = publicKeyC, privateKey = privateKeyC)
 
-      val publicKeys = twoKeyPairs.publicKeys ++ Set(Json4sUtil.any2any[PublicKey](keyMaterialC.publicKey))
+      val publicKeys = twoKeyPairs.publicKeys ++ Set(keyMaterialC.publicKey)
       persistPublicKeys(publicKeys) flatMap { publicKeysPersisted =>
 
         val expectPublicKeysPersisted = publicKeys.map { pk => Right(Some(pk)) }
@@ -523,6 +524,51 @@ class TrustManagerSpec extends Neo4jSpec {
 
     }
 
+    scenario("key A trusts B trusts C; trust(A->B) has expired --> empty") {
+
+      // prepare
+      val keyA = TestDataGeneratorDb.generateOneKeyPair()
+      val keyB = TestDataGeneratorDb.generateOneKeyPair()
+      val keyC = TestDataGeneratorDb.generateOneKeyPair()
+
+      val publicKeys = Set(keyA.publicKey, keyB.publicKey, keyC.publicKey)
+      persistPublicKeys(publicKeys) flatMap { publicKeysPersisted =>
+
+        val expectedPublicKeysPersisted = publicKeys map (pk => Right(Some(pk)))
+        publicKeysPersisted shouldBe expectedPublicKeysPersisted
+
+        val signedTrustRelationAToB = TestDataGeneratorDb.signedTrustRelation(keyA, keyB, validNotAfter = Some(DateUtil.nowUTC.minus(1)))
+        val signedTrustRelationBToC = TestDataGeneratorDb.signedTrustRelation(keyB, keyC)
+        TrustManager.upsert(signedTrustRelationAToB) flatMap { signAToBResult =>
+
+          signAToBResult shouldBe Right(signedTrustRelationAToB)
+
+          TrustManager.upsert(signedTrustRelationBToC) flatMap { signBToCResult =>
+
+            signBToCResult shouldBe Right(signedTrustRelationBToC)
+
+            val findTrustedSigned = TestDataGeneratorDb.findTrustedSigned(
+              sourcePublicKey = keyA.publicKey.pubKeyInfo.pubKey,
+              sourcePrivateKey = keyA.privateKeyString,
+              minTrust = signedTrustRelationAToB.trustRelation.trustLevel + 1
+            )
+
+            // test
+            TrustManager.findTrusted(findTrustedSigned) map { result =>
+
+              // verify
+              result shouldBe Right(Set.empty)
+
+            }
+
+          }
+
+        }
+
+      }
+
+    }
+
     scenario("key A trusts B; minTrustLevel = trustLevel --> key B") {
 
       // prepare
@@ -552,7 +598,7 @@ class TrustManagerSpec extends Neo4jSpec {
             val expectedTrust = TrustedKeyResult(
               depth = 1,
               trustLevel = signedTrustRelationAToB.trustRelation.trustLevel,
-              publicKey = Json4sUtil.any2any[PublicKey](twoKeyPairs.keyMaterialB.publicKey)
+              publicKey = twoKeyPairs.keyMaterialB.publicKey
             )
             result shouldBe Right(Set(expectedTrust))
 
@@ -593,7 +639,7 @@ class TrustManagerSpec extends Neo4jSpec {
             val expectedTrust = TrustedKeyResult(
               depth = 1,
               trustLevel = signedTrustRelationAToB.trustRelation.trustLevel,
-              publicKey = Json4sUtil.any2any[PublicKey](twoKeyPairs.keyMaterialB.publicKey)
+              publicKey = twoKeyPairs.keyMaterialB.publicKey
             )
             result shouldBe Right(Set(expectedTrust))
 
@@ -677,21 +723,130 @@ class TrustManagerSpec extends Neo4jSpec {
             val expectedTrustedB = TrustedKeyResult(
               depth = 1,
               trustLevel = signedTrustRelationAToB.trustRelation.trustLevel,
-              publicKey = Json4sUtil.any2any[PublicKey](keyB.publicKey)
+              publicKey = keyB.publicKey
             )
             val expectedTrustedC = TrustedKeyResult(
               depth = 1,
               trustLevel = signedTrustRelationAToC.trustRelation.trustLevel,
-              publicKey = Json4sUtil.any2any[PublicKey](keyC.publicKey)
+              publicKey = keyC.publicKey
             )
             val expectedTrustedD = TrustedKeyResult(
               depth = 1,
               trustLevel = signedTrustRelationAToD.trustRelation.trustLevel,
-              publicKey = Json4sUtil.any2any[PublicKey](keyD.publicKey)
+              publicKey = keyD.publicKey
             )
             result shouldBe Right(Set(expectedTrustedB, expectedTrustedC, expectedTrustedD))
 
           }
+
+        }
+
+      }
+
+    }
+
+    scenario("web-of-trust with two users and each have a device; depth=3, minTrust=50 --> (user1, user2, deviceB)") {
+
+      prepareWebOfTrust() flatMap { webOfTrust =>
+
+        val keyDeviceA = webOfTrust.deviceA
+
+        val findTrustedSigned = TestDataGeneratorDb.findTrustedSigned(
+          sourcePublicKey = keyDeviceA.publicKey.pubKeyInfo.pubKey,
+          sourcePrivateKey = keyDeviceA.privateKeyString,
+          minTrust = 50,
+          depth = 3
+        )
+
+        // test
+        TrustManager.findTrusted(findTrustedSigned) map { result =>
+
+          // verify
+
+          val expectedTrustedUser1 = TrustedKeyResult(
+            depth = 1,
+            trustLevel = 100,
+            publicKey = webOfTrust.user1.publicKey
+          )
+          val expectedTrustedUser2 = TrustedKeyResult(
+            depth = 2,
+            trustLevel = 50,
+            publicKey = webOfTrust.user2.publicKey
+          )
+          val expectedTrustedDeviceB = TrustedKeyResult(
+            depth = 3,
+            trustLevel = 100,
+            publicKey = webOfTrust.deviceB.publicKey
+          )
+          result shouldBe Right(Set(expectedTrustedUser1, expectedTrustedUser2, expectedTrustedDeviceB))
+
+        }
+
+      }
+
+    }
+
+    scenario("web-of-trust with two users and each have a device; depth=3, minTrust=60 --> (user1)") {
+
+      prepareWebOfTrust() flatMap { webOfTrust =>
+
+        val keyDeviceA = webOfTrust.deviceA
+
+        val findTrustedSigned = TestDataGeneratorDb.findTrustedSigned(
+          sourcePublicKey = keyDeviceA.publicKey.pubKeyInfo.pubKey,
+          sourcePrivateKey = keyDeviceA.privateKeyString,
+          minTrust = 60,
+          depth = 3
+        )
+
+        // test
+        TrustManager.findTrusted(findTrustedSigned) map { result =>
+
+          // verify
+
+          val expectedTrustedUser1 = TrustedKeyResult(
+            depth = 1,
+            trustLevel = 100,
+            publicKey = webOfTrust.user1.publicKey
+          )
+          result shouldBe Right(Set(expectedTrustedUser1))
+
+        }
+
+      }
+
+    }
+
+    scenario("web-of-trust with two users and each have a device; depth=2, minTrust=50 --> (user1, user2)") {
+
+      prepareWebOfTrust() flatMap { webOfTrust =>
+
+        val keyDeviceA = webOfTrust.deviceA
+
+        val findTrustedSigned = TestDataGeneratorDb.findTrustedSigned(
+          sourcePublicKey = keyDeviceA.publicKey.pubKeyInfo.pubKey,
+          sourcePrivateKey = keyDeviceA.privateKeyString,
+          minTrust = 50,
+          depth = 2
+        )
+        logger.debug(s"findTrustedSigned.json=${Json4sUtil.any2String(findTrustedSigned)}")
+
+        // test
+        TrustManager.findTrusted(findTrustedSigned) map { result =>
+
+          // verify
+
+          val expectedTrustedUser1 = TrustedKeyResult(
+            depth = 1,
+            trustLevel = 100,
+            publicKey = webOfTrust.user1.publicKey
+          )
+          val expectedTrustedUser2 = TrustedKeyResult(
+            depth = 2,
+            trustLevel = 50,
+            publicKey = webOfTrust.user2.publicKey
+          )
+          result shouldBe Right(Set(expectedTrustedUser1, expectedTrustedUser2))
 
         }
 
@@ -775,4 +930,67 @@ class TrustManagerSpec extends Neo4jSpec {
 
   }
 
+  private def prepareWebOfTrust(): Future[WebOfTrustKeyPairs] = {
+
+    /* user1 <--trustLevel=100--> deviceA
+     * user1 <--trustLevel=50--> user2
+     * user2 <--trustLevel=100--> deviceB
+     */
+
+    // prepare
+    val keyPairsAAndB = TestDataGeneratorDb.generateTwoKeyPairs()
+    val keyPairsCAndD = TestDataGeneratorDb.generateTwoKeyPairs()
+
+    val publicKeys = keyPairsAAndB.publicKeys ++ keyPairsCAndD.publicKeys
+    persistPublicKeys(publicKeys) flatMap { publicKeysPersisted =>
+
+      val expectedPublicKeysPersisted = publicKeys map (pk => Right(Some(pk)))
+      publicKeysPersisted shouldBe expectedPublicKeysPersisted
+
+      val keyUser1 = keyPairsAAndB.keyMaterialA
+      val keyDeviceA = keyPairsAAndB.keyMaterialB
+      val keyUser2 = keyPairsCAndD.keyMaterialA
+      val keyDeviceB = keyPairsCAndD.keyMaterialB
+
+      val signedTrustRelationUser1ToDeviceA = TestDataGeneratorDb.signedTrustRelation(keyUser1, keyDeviceA, 100)
+      val signedTrustRelationDeviceAToUser1 = TestDataGeneratorDb.signedTrustRelation(keyDeviceA, keyUser1, 100)
+
+      val signedTrustRelationUser1ToUser2 = TestDataGeneratorDb.signedTrustRelation(keyUser1, keyUser2, 50)
+      val signedTrustRelationUser2ToUser1 = TestDataGeneratorDb.signedTrustRelation(keyUser2, keyUser1, 50)
+
+      val signedTrustRelationUser2ToDeviceB = TestDataGeneratorDb.signedTrustRelation(keyUser2, keyDeviceB, 100)
+      val signedTrustRelationDeviceBToUser2 = TestDataGeneratorDb.signedTrustRelation(keyDeviceB, keyUser2, 100)
+
+      val signedTrustRelations = Set(
+        signedTrustRelationUser1ToDeviceA,
+        signedTrustRelationDeviceAToUser1,
+        signedTrustRelationUser1ToUser2,
+        signedTrustRelationUser2ToUser1,
+        signedTrustRelationUser2ToDeviceB,
+        signedTrustRelationDeviceBToUser2
+      )
+      persistTrustSet(signedTrustRelations) map { persistedTrust =>
+
+        val expectedPersistedTrust = signedTrustRelations map (signedTrust => Right(signedTrust))
+        persistedTrust shouldBe expectedPersistedTrust
+
+        WebOfTrustKeyPairs(
+          user1 = keyUser1,
+          deviceA = keyDeviceA,
+          user2 = keyUser2,
+          deviceB = keyDeviceB
+        )
+
+      }
+
+    }
+
+  }
+
 }
+
+case class WebOfTrustKeyPairs(user1: KeyMaterialDb,
+                              deviceA: KeyMaterialDb,
+                              user2: KeyMaterialDb,
+                              deviceB: KeyMaterialDb
+                             )

@@ -5,9 +5,12 @@ import com.typesafe.scalalogging.slf4j.StrictLogging
 import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo, Revokation, SignedRevoke, SignedTrustRelation, TrustRelation, TrustedKeyResult}
 import com.ubirch.util.neo4j.utils.Neo4jParseUtil
 
+import org.joda.time.DateTime
+import org.neo4j.driver.v1.types.{Node, Relationship}
 import org.neo4j.driver.v1.{Record, Value}
 
 import scala.language.postfixOps
+import scala.collection.JavaConverters._
 
 /**
   * author: cvandrei
@@ -94,6 +97,37 @@ object DbModelUtils extends StrictLogging {
 
   }
 
+  private def nodeToPublicKey(node: Node): PublicKey = {
+
+    val pubKeyInfo = PublicKeyInfo(
+      hwDeviceId = node.get("infoHwDeviceId").asString(),
+      pubKey = node.get("infoPubKey").asString(),
+      pubKeyId = node.get("infoPubKeyId").asString("--UNDEFINED--"),
+      algorithm = node.get("infoAlgorithm").asString(),
+      previousPubKeyId = if (node.containsKey("infoPreviousPubKeyId")) {
+        Some(node.get("infoPreviousPubKeyId").asString)
+      } else None,
+      created = DateTime.parse(node.get("infoCreated").asString()),
+      validNotBefore = DateTime.parse(node.get("infoValidNotBefore").asString),
+      validNotAfter = if (node.containsKey("infoValidNotAfter")) {
+        Some(DateTime.parse(node.get("infoValidNotAfter").asString()))
+      } else None
+    )
+
+    PublicKey(
+      pubKeyInfo = pubKeyInfo,
+      signature = node.get("signature").asString(),
+      previousPubKeySignature = if (node.containsKey("previousPubKeySignature")) {
+        Some(node.get("previousPubKeySignature").asString())
+      } else None,
+      raw = if (node.containsKey("raw")) {
+        Some(node.get("raw").asString())
+      } else None,
+      signedRevoke = signedRevokeFromNode(node)
+    )
+
+  }
+
   private def signedTrustRelationToKeyValueMap(signedTrustRelation: SignedTrustRelation): Map[String, Any] = {
 
     var keyValue: Map[String, Any] = Map(
@@ -115,6 +149,28 @@ object DbModelUtils extends StrictLogging {
   def signedTrustRelationToString(signedTrustRelation: SignedTrustRelation): String = {
     val keyValue = signedTrustRelationToKeyValueMap(signedTrustRelation)
     Neo4jParseUtil.keyValueToString(keyValue)
+  }
+
+
+
+  private def relationshipToSignedTrust(relationship: Relationship): SignedTrustRelation = {
+
+    val trustRelation = TrustRelation(
+      created = DateTime.parse(relationship.get("trustCreated").asString()),
+      sourcePublicKey = relationship.get("trustSource").asString,
+      targetPublicKey = relationship.get("trustTarget").asString(),
+      trustLevel = relationship.get("trustLevel").asInt,
+      validNotAfter = if (relationship.containsKey("trustNotValidAfter")) {
+        Some(DateTime.parse(relationship.get("trustNotValidAfter").asString))
+      } else None
+    )
+
+    SignedTrustRelation(
+      trustRelation = trustRelation,
+      signature = relationship.get("signature").asString,
+      created = DateTime.parse(relationship.get("created").asString)
+    )
+
   }
 
   def recordsToSignedTrustRelationship(records: Seq[Record], recordLabel: String): Set[SignedTrustRelation] = {
@@ -163,6 +219,42 @@ object DbModelUtils extends StrictLogging {
 
   }
 
+  def recordsToTrustPaths(records: Seq[Record], pathKey: String): Seq[Seq[TrustPath]] = {
+
+    records map { record =>
+
+      val values = record.get(pathKey)
+      val path = values.asPath()
+      val start = path.start()
+      val relationships = path.relationships().asScala
+      val end = path.end()
+      val pathLength = path.length()
+      val nodes = path.nodes().asScala
+
+      val pubKeyNodes = nodes.toSeq map { node =>
+        nodeToPublicKey(node)
+      }
+      val trustRelationships = relationships.toSeq map { relationship =>
+        relationshipToSignedTrust(relationship)
+      }
+
+      require(pubKeyNodes.size == trustRelationships.size + 1, "there has to be one more node than there are relationships")
+      trustRelationships.zipWithIndex.map {
+
+        case (signedTrust, index) =>
+
+          TrustPath(
+            from = pubKeyNodes(index),
+            signedTrust = signedTrust,
+            to = pubKeyNodes(index + 1)
+          )
+
+      }
+
+    }
+
+  }
+
   private def signedRevokeFromPublicKey(pubKey: Value): Option[SignedRevoke] = {
 
     val revokeSignature = Neo4jParseUtil.asTypeOrDefault[String](pubKey, "revokeSignature", "--UNDEFINED--")
@@ -190,4 +282,37 @@ object DbModelUtils extends StrictLogging {
 
   }
 
+  private def signedRevokeFromNode(node: Node): Option[SignedRevoke] = {
+
+    val revokeSignature = node.get("revokeSignature").asString("--UNDEFINED--")
+    val revokePublicKey = node.get("revokePublicKey").asString("--UNDEFINED--")
+    val revokeDate = if (node.containsKey("revokeDateTime")) {
+      Some(DateTime.parse(node.get("revokeDateTime").asString()))
+    } else None
+    if (revokeSignature == "--UNDEFINED--" && revokePublicKey == "--UNDEFINED--" && revokeDate.isEmpty) {
+
+      None
+
+    } else if (revokeSignature != "--UNDEFINED--" && revokePublicKey != "--UNDEFINED--" && revokeDate.isDefined) {
+
+      Some(
+        SignedRevoke(
+          revokation = Revokation(publicKey = revokePublicKey, revokationDate = revokeDate.get),
+          signature = revokeSignature
+        )
+      )
+
+    } else {
+
+      logger.error(s"public key record in database seems to be invalid: signedRevoke.signature=$revokeSignature, signedRevoke.revokation.publicKey=$revokePublicKey, signedRevoke.revokation.revokationDate=$revokeDate")
+      None
+
+    }
+
+  }
+
 }
+
+case class TrustPath(from: PublicKey,
+                     signedTrust: SignedTrustRelation,
+                     to: PublicKey)

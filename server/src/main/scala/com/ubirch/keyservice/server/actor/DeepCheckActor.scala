@@ -1,6 +1,6 @@
 package com.ubirch.keyservice.server.actor
 
-import com.ubirch.keyservice.config.KeyConfig
+import com.ubirch.keyservice.config.KeySvcConfig
 import com.ubirch.keyservice.core.manager.DeepCheckManager
 import com.ubirch.util.deepCheck.model.{DeepCheckRequest, DeepCheckResponse}
 
@@ -32,7 +32,7 @@ class DeepCheckActor(implicit neo4jDriver: Driver)
 object DeepCheckActor {
 
   def props()(implicit neo4jDriver: Driver): Props = {
-    new RoundRobinPool(KeyConfig.akkaNumberOfWorkers).props(Props(new DeepCheckActor))
+    new RoundRobinPool(KeySvcConfig.akkaNumberOfWorkers).props(Props(new DeepCheckActor))
   }
 
 }

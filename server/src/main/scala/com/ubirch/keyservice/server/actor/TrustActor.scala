@@ -2,7 +2,7 @@ package com.ubirch.keyservice.server.actor
 
 import com.ubirch.key.model._
 import com.ubirch.key.model.rest.{FindTrustedSigned, SignedTrustRelation}
-import com.ubirch.keyservice.config.KeyConfig
+import com.ubirch.keyservice.config.KeySvcConfig
 import com.ubirch.keyservice.core.manager.TrustManager
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
@@ -118,7 +118,7 @@ class TrustActor(implicit neo4jDriver: Driver) extends Actor
 object TrustActor {
 
   def props()(implicit neo4jDriver: Driver): Props = {
-    new RoundRobinPool(KeyConfig.akkaNumberOfWorkers).props(Props(new TrustActor))
+    new RoundRobinPool(KeySvcConfig.akkaNumberOfWorkers).props(Props(new TrustActor))
   }
 
 }

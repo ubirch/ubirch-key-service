@@ -4,7 +4,7 @@ package com.ubirch.keyservice.config
   * author: cvandrei
   * since: 2017-01-19
   */
-object ConfigKeys {
+object KeySvcConfigKeys {
 
   final val CONFIG_PREFIX = "ubirchKeyService"
 
@@ -19,6 +19,8 @@ object ConfigKeys {
   final val GO_PIPELINE_NAME = s"$CONFIG_PREFIX.gopipelinename"
   final val GO_PIPELINE_LABEL = s"$CONFIG_PREFIX.gopipelinelabel"
   final val GO_PIPELINE_REVISION = s"$CONFIG_PREFIX.gopipelinerev"
+
+  final val SEARCH_TRUSTED_MAX_DEPTH = s"$CONFIG_PREFIX.searchTrusted.maxDepth"
 
   /*
    * Akka

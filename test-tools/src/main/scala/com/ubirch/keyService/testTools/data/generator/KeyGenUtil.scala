@@ -29,4 +29,21 @@ object KeyGenUtil {
 
   }
 
+  def keyMaterialDb(publicKey: String, privateKey: String): KeyMaterialDb = {
+
+    val info = com.ubirch.key.model.db.PublicKeyInfo(
+      algorithm = "ECC_ED25519",
+      created = DateUtil.nowUTC.minusHours(1),
+      hwDeviceId = UUIDUtil.uuidStr,
+      pubKey = publicKey,
+      pubKeyId = publicKey,
+      validNotBefore = DateUtil.nowUTC.minusMinutes(1)
+    )
+    val signature = EccUtil.signPayload(privateKey, Json4sUtil.any2String(info).get)
+    val publicKeyObject = com.ubirch.key.model.db.PublicKey(info, signature)
+
+    KeyMaterialDb(privateKey, publicKeyObject)
+
+  }
+
 }
