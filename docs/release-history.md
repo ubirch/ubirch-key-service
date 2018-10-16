@@ -2,7 +2,10 @@
 
 ### Version 0.11.1 (tbd)
 
-* tbd
+* update to `com.ubirch.util:deep-check-model:0.3.1`
+* update to `com.ubirch.util:redis-test-util:0.5.2`
+* update to `com.ubirch.util:redis-util:0.5.2`
+* update to `com.ubirch.util:response-util:0.4.1`
 
 ### Version 0.11.0 (2018-10-02)
 
