@@ -1,6 +1,6 @@
 ## Release History
 
-### Version 0.11.1 (tbd)
+### Version 0.11.1 (2018-10-16)
 
 * update to `com.ubirch.util:deep-check-model:0.3.1`
 * update to `com.ubirch.util:redis-test-util:0.5.2`
