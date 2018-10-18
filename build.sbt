@@ -14,7 +14,7 @@ val commonSettings = Seq(
     url("https://github.com/ubirch/ubirch-key-service"),
     "scm:git:git@github.com:ubirch/ubirch-key-service.git"
   )),
-  version := "0.11.1",
+  version := "0.11.2",
   test in assembly := {},
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases")//,
@@ -304,7 +304,7 @@ val ubirchJson = ubirchUtilG %% "json" % "0.5.1" excludeAll (excludedLoggers: _*
 val ubirchNeo4jUtils = ubirchUtilG %% "neo4j-utils" % "0.2.1" excludeAll (excludedLoggers: _*)
 val ubirchUtilRedisTestUtil = ubirchUtilG %% "redis-test-util" % "0.5.2"
 val ubirchUtilRedisUtil = ubirchUtilG %% "redis-util" % "0.5.2"
-val ubirchResponse = ubirchUtilG %% "response-util" % "0.4.1" excludeAll (excludedLoggers: _*)
+val ubirchResponse = ubirchUtilG %% "response-util" % "0.5.0" excludeAll (excludedLoggers: _*)
 val ubirchRestAkkaHttp = ubirchUtilG %% "rest-akka-http" % "0.4.0" excludeAll (excludedLoggers: _*)
 val ubirchRestAkkaHttpTest = ubirchUtilG %% "rest-akka-http-test" % "0.4.0" excludeAll (excludedLoggers: _*)
 val ubirchUuid = ubirchUtilG %% "uuid" % "0.1.3" excludeAll (excludedLoggers: _*)

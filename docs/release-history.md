@@ -1,5 +1,9 @@
 ## Release History
 
+### Version 0.11.2 (2018-10-18)
+
+* update to `com.ubirch.util:response-util:0.5.0`
+
 ### Version 0.11.1 (2018-10-16)
 
 * update to `com.ubirch.util:deep-check-model:0.3.1`
