@@ -3,7 +3,7 @@ package com.ubirch.keyservice.core.manager
 import com.typesafe.scalalogging.slf4j.StrictLogging
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
 import com.ubirch.util.deepCheck.util.DeepCheckResponseUtil
-import org.neo4j.driver.v1.{AccessMode, Driver, Transaction, TransactionWork}
+import org.neo4j.driver.v1.{AccessMode, Driver}
 
 /**
   * author: cvandrei
@@ -18,15 +18,17 @@ object DeepCheckManager extends StrictLogging {
       val session = neo4jDriver.session(AccessMode.READ)
       try {
 
-        // TODO refactor: readTransactionAsync()
-        session.readTransaction(new TransactionWork[DeepCheckResponse]() {
-          def execute(tx: Transaction): DeepCheckResponse = {
-
-            val result = tx.run(query)
-            DeepCheckResponse()
-
-          }
-        })
+//        // TODO refactor: readTransactionAsync()
+//        session.readTransaction(new TransactionWork[DeepCheckResponse]() {
+//          def execute(tx: Transaction): DeepCheckResponse = {
+//
+//            val result = tx.run(query)
+//            DeepCheckResponse()
+//
+//          }
+//        })
+//
+        DeepCheckResponse()
 
       } finally {
         if (session != null) session.close()
