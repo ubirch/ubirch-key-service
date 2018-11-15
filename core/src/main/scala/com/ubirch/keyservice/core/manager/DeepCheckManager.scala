@@ -1,11 +1,9 @@
 package com.ubirch.keyservice.core.manager
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
-
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
 import com.ubirch.util.deepCheck.util.DeepCheckResponseUtil
-
-import org.neo4j.driver.v1.{Driver, Transaction, TransactionWork}
+import org.neo4j.driver.v1.{AccessMode, Driver, Transaction, TransactionWork}
 
 /**
   * author: cvandrei
@@ -16,10 +14,8 @@ object DeepCheckManager extends StrictLogging {
   def connectivityCheck()(implicit neo4jDriver: Driver): DeepCheckResponse = {
 
     val res = try {
-
-      val query = "MATCH (n) RETURN n LIMIT 1"
-
-      val session = neo4jDriver.session
+      val query = "MATCH (n) RETURN count(n)"
+      val session = neo4jDriver.session(AccessMode.READ)
       try {
 
         // TODO refactor: readTransactionAsync()
@@ -32,20 +28,16 @@ object DeepCheckManager extends StrictLogging {
           }
         })
 
-      } finally if (session != null) session.close()
+      } finally {
+        if (session != null) session.close()
+      }
 
     } catch {
-
       case t: Throwable =>
-        DeepCheckResponse(
-          status = false,
-          messages = Seq(t.getMessage)
-        )
-
+        DeepCheckResponse(status = false, messages = Seq(t.getMessage))
     }
 
     DeepCheckResponseUtil.addServicePrefix("key-service", res)
-
   }
 
 }

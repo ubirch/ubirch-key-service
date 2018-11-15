@@ -1,5 +1,9 @@
 ## Release History
 
+### Version 0.11.3 (tbd)
+
+* tbd
+
 ### Version 0.11.2 (2018-10-18)
 
 * update to `com.ubirch.util:response-util:0.5.0`
