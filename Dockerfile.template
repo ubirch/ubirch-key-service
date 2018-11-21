@@ -20,4 +20,25 @@ ADD @@SOURCE@@ /opt/jar/@@TARGET@@
 ADD config/src/main/resources/application.docker.conf /opt/ubirch/etc/application.conf
 ADD config/src/main/resources/logback.docker.xml /opt/ubirch/etc/logback.xml
 EXPOSE 8080
-ENTRYPOINT ["java","-Dlogback.configurationFile=/opt/ubirch/etc/logback.xml", "-Dconfig.file=/opt/ubirch/etc/application.conf","-jar", "/opt/jar/@@TARGET@@","-Dfile.encoding=UTF-8", "-XX:+UseCMSInitiatingOccupancyOnly","-XX:+DisableExplicitGC","-XX:CMSInitiatingOccupancyFraction=75", "-XX:+UseParNewGC","-XX:+UseConcMarkSweepGC", "-Xms1g", "-Xmx2g", "-Djava.awt.headless=true"]
+ENTRYPOINT [ \
+  "java", \
+  "-Djava.rmi.server.hostname=localhost", \
+  "-Dcom.sun.management.jmxremote", \
+  "-Dcom.sun.management.jmxremote.port=9010", \
+  "-Dcom.sun.management.jmxremote.rmi.port=9010", \
+  "-Dcom.sun.management.jmxremote.local.only=false", \
+  "-Dcom.sun.management.jmxremote.authenticate=false", \
+  "-Dcom.sun.management.jmxremote.ssl=false", \
+  "-XX:+UseCMSInitiatingOccupancyOnly", \
+  "-XX:+DisableExplicitGC", \
+  "-XX:CMSInitiatingOccupancyFraction=75", \
+  "-XX:+UseParNewGC", \
+  "-XX:+UseConcMarkSweepGC", \
+  "-Xms1g", \
+  "-Xmx2g", \
+  "-Dlogback.configurationFile=/opt/ubirch/etc/logback.xml", \
+  "-Dconfig.file=/opt/ubirch/etc/application.conf", \
+  "-Dfile.encoding=UTF-8", \
+  "-Djava.awt.headless=true", \
+  "-jar", "/opt/jar/@@TARGET@@" \
+]
