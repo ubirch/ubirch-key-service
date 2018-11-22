@@ -1,13 +1,12 @@
 package com.ubirch.keyservice.server.actor
 
+import akka.actor.{Actor, ActorLogging, Props}
+import akka.routing.RoundRobinPool
 import com.ubirch.keyservice.config.KeySvcConfig
 import com.ubirch.keyservice.core.manager.DeepCheckManager
 import com.ubirch.util.deepCheck.model.{DeepCheckRequest, DeepCheckResponse}
-
+import com.ubirch.util.model.JsonErrorResponse
 import org.neo4j.driver.v1.Driver
-
-import akka.actor.{Actor, ActorLogging, Props}
-import akka.routing.RoundRobinPool
 
 /**
   * author: cvandrei
@@ -19,13 +18,17 @@ class DeepCheckActor(implicit neo4jDriver: Driver)
 
   override def receive: Receive = {
 
-    case _: DeepCheckRequest => context.sender() ! deepCheck()
-
-    case _ => log.error("unknown message")
+    case d: DeepCheckRequest => context.sender() ! deepCheck()
 
   }
 
+  override def unhandled(message: Any): Unit = {
+    log.error(s"received unknown message: ${message.toString} (${message.getClass.toGenericString}) from: ${context.sender()}")
+    context.sender ! JsonErrorResponse(errorType = "ServerError", errorMessage = s"sorry, we just had a problem")
+  }
+
   private def deepCheck(): DeepCheckResponse = DeepCheckManager.connectivityCheck()
+
 
 }
 

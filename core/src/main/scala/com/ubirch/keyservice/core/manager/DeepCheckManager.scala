@@ -24,7 +24,8 @@ object DeepCheckManager extends StrictLogging {
           }
         })
       } finally {
-        if (session != null) session.close()
+        if (session != null)
+          session.close()
       }
     } catch {
       case t: Throwable =>
