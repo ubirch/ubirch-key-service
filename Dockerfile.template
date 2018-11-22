@@ -29,16 +29,12 @@ ENTRYPOINT [ \
   "-Dcom.sun.management.jmxremote.local.only=false", \
   "-Dcom.sun.management.jmxremote.authenticate=false", \
   "-Dcom.sun.management.jmxremote.ssl=false", \
-  "-XX:+UseCMSInitiatingOccupancyOnly", \
-  "-XX:+DisableExplicitGC", \
-  "-XX:CMSInitiatingOccupancyFraction=75", \
-  "-XX:+UseParNewGC", \
-  "-XX:+UseConcMarkSweepGC", \
-  "-Xms1g", \
-  "-Xmx2g", \
   "-Dlogback.configurationFile=/opt/ubirch/etc/logback.xml", \
   "-Dconfig.file=/opt/ubirch/etc/application.conf", \
   "-Dfile.encoding=UTF-8", \
   "-Djava.awt.headless=true", \
+  "-Xms128m", \
+  "-Xmx500m", \
+  "-server", \
   "-jar", "/opt/jar/@@TARGET@@" \
 ]
