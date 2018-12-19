@@ -20,7 +20,11 @@ object DeepCheckManager extends StrictLogging {
         session.readTransaction(new TransactionWork[DeepCheckResponse]() {
           def execute(tx: Transaction): DeepCheckResponse = {
             val result = tx.run(query)
-            DeepCheckResponse()
+            val records = result.list()
+            if (!records.isEmpty && records.size() > 0)
+              DeepCheckResponse()
+            else
+              DeepCheckResponse(status = false, messages = Seq("Neo4J test query has no result"))
           }
         })
       } finally {
