@@ -14,19 +14,22 @@ object DeepCheckManager extends StrictLogging {
   def connectivityCheck()(implicit neo4jDriver: Driver): DeepCheckResponse = {
 
     val res = try {
-      val query = "MATCH (n) RETURN count(n)"
+      val query = "MATCH (p:PublicKey) RETURN p LIMIT 1"
       val session = neo4jDriver.session(AccessMode.READ)
       try {
+
         session.readTransaction(new TransactionWork[DeepCheckResponse]() {
           def execute(tx: Transaction): DeepCheckResponse = {
             val result = tx.run(query)
             val records = result.list()
-            if (!records.isEmpty && records.size() > 0)
+            val serverVersion = result.summary().server().version()
+            if (serverVersion.nonEmpty && serverVersion.contains("Neo4j"))
               DeepCheckResponse()
             else
               DeepCheckResponse(status = false, messages = Seq("Neo4J test query has no result"))
           }
         })
+
       } finally {
         if (session != null)
           session.close()
