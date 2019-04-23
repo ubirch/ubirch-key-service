@@ -31,6 +31,7 @@ import scala.util.{Failure, Success}
 class DeepCheckRoute(implicit neo4jDriver: Driver)
   extends CORSDirective
     with ResponseUtil
+    with WithRoutesHelpers
     with StrictLogging {
 
   implicit val system: ActorSystem = ActorSystem()
@@ -45,10 +46,10 @@ class DeepCheckRoute(implicit neo4jDriver: Driver)
       respondWithCORS {
         get {
 
-          onComplete(deepCheckActor ? DeepCheckRequest()) {
+          OnComplete(deepCheckActor ? DeepCheckRequest()).fold() {
 
             case Failure(t) =>
-              logger.error("failed to run deepCheck", t)
+              logger.error("failed to run deepCheck (1)", t)
               complete(serverErrorResponse(errorType = "ServerError", errorMessage = "sorry, something went wrong on our end"))
 
             case Success(resp) =>
@@ -56,7 +57,9 @@ class DeepCheckRoute(implicit neo4jDriver: Driver)
 
                 case res: DeepCheckResponse if res.status => complete(res)
                 case res: DeepCheckResponse if !res.status => complete(response(responseObject = res, status = StatusCodes.ServiceUnavailable))
-                case _ => complete(serverErrorResponse(errorType = "ServerError", errorMessage = "failed to run deep check"))
+                case _ =>
+                  logger.error("failed to run deepCheck (2)")
+                  complete(serverErrorResponse(errorType = "ServerError", errorMessage = "failed to run deep check"))
 
               }
 

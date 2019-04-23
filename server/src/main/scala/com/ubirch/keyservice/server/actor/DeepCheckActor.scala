@@ -18,7 +18,7 @@ class DeepCheckActor(implicit neo4jDriver: Driver)
 
   override def receive: Receive = {
 
-    case d: DeepCheckRequest =>
+    case _: DeepCheckRequest =>
       val sender = context.sender()
       sender ! DeepCheckManager.connectivityCheck()
   }

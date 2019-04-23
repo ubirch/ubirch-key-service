@@ -21,12 +21,14 @@ object DeepCheckManager extends StrictLogging {
         session.readTransaction(new TransactionWork[DeepCheckResponse]() {
           def execute(tx: Transaction): DeepCheckResponse = {
             val result = tx.run(query)
-            val records = result.list()
             val serverVersion = result.summary().server().version()
-            if (serverVersion.nonEmpty && serverVersion.contains("Neo4j"))
+            if (serverVersion.nonEmpty && serverVersion.contains("Neo4j")){
               DeepCheckResponse()
-            else
+            } else {
+              logger.error("Neo4J test query has no result")
               DeepCheckResponse(status = false, messages = Seq("Neo4J test query has no result"))
+            }
+
           }
         })
 
@@ -36,6 +38,7 @@ object DeepCheckManager extends StrictLogging {
       }
     } catch {
       case t: Throwable =>
+        logger.error("Something went wrong doing connectivityCheck {} ", t.getMessage)
         DeepCheckResponse(status = false, messages = Seq(t.getMessage))
     }
 
