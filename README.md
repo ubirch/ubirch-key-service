@@ -36,6 +36,12 @@ Most tests are in the following modules:
 * `core`
 * `client-rest`
 
+Note: To be able to run the tests you need to have a running server. You can start it by running
+    
+    ./sbt 
+    ./sbt project server
+    ./sbt run
+
 ### generate coverage report
 
     ./sbt coverageReport

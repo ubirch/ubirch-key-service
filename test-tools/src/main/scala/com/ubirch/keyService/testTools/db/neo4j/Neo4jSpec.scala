@@ -64,8 +64,6 @@ trait Neo4jSpec extends AsyncFeatureSpec
     system.terminate()
     httpClient.shutdownAllConnectionPools()
     neo4jDriver.close()
-    Thread.sleep(500)
-    System.exit(0)
   }
 
 }
