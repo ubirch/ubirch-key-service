@@ -14,18 +14,26 @@ import scala.reflect.ClassTag
 import scala.util.Try
 
 
-trait WithRoutesHelpers extends StrictLogging with FutureDirectives {
-
-  ru: ResponseUtil =>
+trait WithCircuitBreaker {
 
   def system: ActorSystem
 
-  lazy val defaultCircuitBreaker: CircuitBreaker = CircuitBreaker(
-    scheduler = system.scheduler,
-    maxFailures = 10,
-    callTimeout = 3 seconds,
-    resetTimeout = 6 seconds
-  )
+  def getCircuitBreaker(maxFailures: Int = 10, callTimeout: FiniteDuration = 5 seconds, resetTimeout: FiniteDuration = 6 seconds): CircuitBreaker = {
+    CircuitBreaker(
+      scheduler = system.scheduler,
+      maxFailures = maxFailures,
+      callTimeout = callTimeout,
+      resetTimeout = resetTimeout
+    )
+  }
+
+  lazy val defaultCircuitBreaker: CircuitBreaker = getCircuitBreaker()
+
+}
+
+trait WithRoutesHelpers extends WithCircuitBreaker with StrictLogging with FutureDirectives {
+
+  ru: ResponseUtil =>
 
   class OnComplete[T <: Any](future: => Future[T])(implicit ec: ExecutionContext, classTag: ClassTag[T]) {
 
