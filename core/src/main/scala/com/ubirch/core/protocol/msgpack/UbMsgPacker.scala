@@ -1,11 +1,11 @@
 package com.ubirch.core.protocol.msgpack
 
 import java.io.ByteArrayInputStream
-import java.util.{Base64, UUID}
+import java.util.Base64
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
 import com.ubirch.core.protocol.{UbMessage, UbPayloads}
-import com.ubirch.crypto.hash.HashUtil
+import com.ubirch.crypto.utils.{Hash, Utils}
 import com.ubirch.util.json.{Json4sUtil, MyJsonProtocol}
 import com.ubirch.util.uuid.UUIDUtil
 import org.apache.commons.codec.binary.Hex
@@ -63,7 +63,7 @@ object UbMsgPacker
           mainVersion = mainVersion,
           subVersion = subVersion,
           hwDeviceId = uuid,
-          hashedHwDeviceId = HashUtil.sha512Base64(uuid.toString),
+          hashedHwDeviceId = Hex.encodeHexString(Utils.hash(uuid.toString.getBytes, Hash.SHA512)), //HashUtil.sha512Base64(uuid.toString),
           firmwareVersion = (payloads.data \ "version").extractOpt[String],
           prevSignature = None,
           msgType = messageType,
@@ -92,7 +92,7 @@ object UbMsgPacker
           mainVersion = mainVersion,
           subVersion = subVersion,
           hwDeviceId = uuid,
-          hashedHwDeviceId = HashUtil.sha512Base64(uuid.toString),
+          hashedHwDeviceId = Utils.hashToHex(uuid.toString, Hash.SHA512),
           firmwareVersion = (payloadJson.data \ "version").extractOpt[String],
           prevSignature = None,
           msgType = messageType,
@@ -131,7 +131,7 @@ object UbMsgPacker
           mainVersion = mainVersion,
           subVersion = subVersion,
           hwDeviceId = uuid,
-          hashedHwDeviceId = HashUtil.sha512Base64(uuid.toString),
+          hashedHwDeviceId = Utils.hashToHex(uuid.toString, Hash.SHA512),
           firmwareVersion = fw,
           prevSignature = Some(prevSignature),
           msgType = messageType,

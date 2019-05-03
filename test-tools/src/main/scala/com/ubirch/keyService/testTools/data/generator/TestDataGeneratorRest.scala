@@ -1,12 +1,14 @@
 package com.ubirch.keyService.testTools.data.generator
 
-import com.ubirch.crypto.ecc.EccUtil
-import com.ubirch.crypto.hash.HashUtil
+import java.util.Base64
+
+import com.ubirch.crypto.GeneratorKeyFactory
+import com.ubirch.crypto.utils.{Curve, Hash, Utils}
 import com.ubirch.key.model.rest.{FindTrusted, FindTrustedSigned, PublicKey, PublicKeyInfo, Revokation, SignedRevoke, SignedTrustRelation, TrustRelation}
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
-
+import org.apache.commons.codec.binary.Hex
 import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.util.Random
@@ -36,7 +38,7 @@ object TestDataGeneratorRest {
     }
 
     val pubKeyIdToUse = pubKeyId match {
-      case None => HashUtil.sha256HexString(pubKeyToUse)
+      case None => Utils.hashToHex(pubKeyToUse, Hash.SHA256)
       case Some(s) => s
     }
 
@@ -46,7 +48,7 @@ object TestDataGeneratorRest {
     }
 
     val previousPubKeyIdToUse = pubKeyId match {
-      case None => Some(HashUtil.sha256HexString(previousPubKeyToUse))
+      case None => Some(Utils.hashToHex(previousPubKeyToUse, Hash.SHA256))
       case Some(s) => Some(s)
     }
 
@@ -173,7 +175,8 @@ object TestDataGeneratorRest {
       validNotAfter = validNotAfter
     )
     val trustRelationJson = Json4sUtil.any2String(trustRelation).get
-    val signature = EccUtil.signPayload(from.privateKeyString, trustRelationJson)
+    val privKey = GeneratorKeyFactory.getPrivKey(Base64.getDecoder.decode(from.privateKeyString), Curve.Ed25519)
+    val signature = Base64.getEncoder.encodeToString(privKey.sign(trustRelationJson.getBytes()))
 
     SignedTrustRelation(trustRelation, signature)
 
@@ -193,9 +196,11 @@ object TestDataGeneratorRest {
     )
     val payload = Json4sUtil.any2String(findTrusted).get
 
+    val privKey = GeneratorKeyFactory.getPrivKey(Base64.getDecoder.decode(sourcePrivateKey), Curve.Ed25519)
+    val sign = Base64.getEncoder.encodeToString(privKey.sign(payload.getBytes))
     FindTrustedSigned(
       findTrusted = findTrusted,
-      signature = EccUtil.signPayload(sourcePrivateKey, payload)
+      signature = sign
     )
 
   }
@@ -211,25 +216,34 @@ object TestDataGeneratorRest {
     )
     val payload = Json4sUtil.any2String(revokation).get
 
+    val privKey = GeneratorKeyFactory.getPrivKey(Base64.getDecoder.decode(privateKey), Curve.Ed25519)
+    val sign = Base64.getEncoder.encodeToString(privKey.sign(payload.getBytes))
     SignedRevoke(
       revokation = revokation,
-      signature = EccUtil.signPayload(privateKey, payload)
+      signature = sign
     )
 
   }
 
   def generateOneKeyPair(): KeyMaterial = {
 
-    val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded
+    val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+    val (publicKeyA, privateKeyA) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
+      Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
     KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA)
 
   }
 
   def generateTwoKeyPairs(): KeyMaterialAAndBRest = {
 
-    val (publicKeyA, privateKeyA) = EccUtil.generateEccKeyPairEncoded
+    val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+    val (publicKeyA, privateKeyA) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
+      Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
     val keyMaterialA = KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA)
-    val (publicKeyB, privateKeyB) = EccUtil.generateEccKeyPairEncoded
+
+    val privKeyB = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+    val (publicKeyB, privateKeyB) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKeyB.getRawPublicKey)),
+      Base64.getEncoder.encodeToString(Hex.decodeHex(privKeyB.getRawPrivateKey)))
     val keyMaterialB = KeyGenUtil.keyMaterial(publicKey = publicKeyB, privateKey = privateKeyB)
 
     val publicKeys = Set(

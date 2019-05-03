@@ -1,12 +1,15 @@
 package com.ubirch.keyservice.core.manager
 
-import com.ubirch.crypto.ecc.EccUtil
+import java.util.Base64
+
+import com.ubirch.crypto.{GeneratorKeyFactory, PrivKey}
+import com.ubirch.crypto.utils.Curve
 import com.ubirch.key.model.db.{PublicKey, SignedTrustRelation, TrustedKeyResult}
 import com.ubirch.keyService.testTools.data.generator.{KeyGenUtil, KeyMaterialDb, TestDataGeneratorDb}
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
-
+import org.apache.commons.codec.binary.Hex
 import org.scalatest.Assertion
 
 import scala.concurrent.Future
@@ -25,7 +28,6 @@ class TrustManagerSpec extends Neo4jSpec {
       val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
 
       val signedTrustRelation = TestDataGeneratorDb.signedTrustRelation(from = twoKeyPairs.keyMaterialA, to = twoKeyPairs.keyMaterialB)
-
       // test
       TrustManager.upsert(signedTrustRelation) map {
 
@@ -63,11 +65,10 @@ class TrustManagerSpec extends Neo4jSpec {
       )
 
       val trustRelationJson = Json4sUtil.any2String(signedTrustRelation.trustRelation).get
-      EccUtil.validateSignature(
-        publicKey = twoKeyPairs.keyMaterialA.publicKey.pubKeyInfo.pubKey,
-        signature = signedTrustRelation.signature,
-        payload = trustRelationJson
-      ) shouldBe false
+
+      val pubKeyB64: Array[Byte] = Base64.getDecoder.decode(twoKeyPairs.keyMaterialA.publicKey.pubKeyInfo.pubKey)
+      val pubKey = GeneratorKeyFactory.getPubKey(pubKeyB64, Curve.Ed25519)
+      pubKey.verify(trustRelationJson.getBytes, signedTrustRelation.signature.getBytes) shouldBe false
 
       // test
       TrustManager.upsert(signedTrustRelation) map {
@@ -189,7 +190,10 @@ class TrustManagerSpec extends Neo4jSpec {
 
       // prepare
       val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
-      val (publicKeyC, privateKeyC) = EccUtil.generateEccKeyPairEncoded
+      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val (privateKeyC, publicKeyC) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)),
+        Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)))
+
       val keyMaterialC = KeyGenUtil.keyMaterialDb(publicKey = publicKeyC, privateKey = privateKeyC)
 
       val publicKeys = twoKeyPairs.publicKeys ++ Set(keyMaterialC.publicKey)
@@ -243,9 +247,14 @@ class TrustManagerSpec extends Neo4jSpec {
       val trustRelation1 = signedTrustRelation1.trustRelation
 
       val trustRelation2 = trustRelation1.copy(trustLevel = trustRelation1.trustLevel + 10)
+      val privKeyB64: Array[Byte] = Base64.getDecoder.decode(twoKeyPairs.privateKeyA())
+      val privKey = GeneratorKeyFactory.getPrivKey(privKeyB64, Curve.Ed25519)
+      val sign = Base64.getEncoder.encodeToString(privKey.sign(Json4sUtil.any2String(trustRelation2).get.getBytes))
+
       val signedTrustRelation2 = SignedTrustRelation(
         trustRelation = trustRelation2,
-        signature = EccUtil.signPayload(privateKey = twoKeyPairs.privateKeyA(), payload = Json4sUtil.any2String(trustRelation2).get)
+        signature = sign
+        //signature = EccUtil.signPayload(privateKey = twoKeyPairs.privateKeyA(), payload = Json4sUtil.any2String(trustRelation2).get)
       )
 
       testUpsertWithModifiedField(twoKeyPairs.publicKeys, signedTrustRelation1, signedTrustRelation2)
@@ -261,9 +270,13 @@ class TrustManagerSpec extends Neo4jSpec {
       val trustRelation1 = signedTrustRelation1.trustRelation
 
       val trustRelation2 = trustRelation1.copy(created = trustRelation1.created.plusMinutes(2))
+      val privKeyB64: Array[Byte] = Base64.getDecoder.decode(twoKeyPairs.privateKeyA())
+      val privKey = GeneratorKeyFactory.getPrivKey(privKeyB64, Curve.Ed25519)
+      val sign = Base64.getEncoder.encodeToString(privKey.sign(Json4sUtil.any2String(trustRelation2).get.getBytes))
       val signedTrustRelation2 = SignedTrustRelation(
         trustRelation = trustRelation2,
-        signature = EccUtil.signPayload(privateKey = twoKeyPairs.privateKeyA(), payload = Json4sUtil.any2String(trustRelation2).get)
+        signature = sign
+        //signature = EccUtil.signPayload(privateKey = twoKeyPairs.privateKeyA(), payload = Json4sUtil.any2String(trustRelation2).get)
       )
 
       testUpsertWithModifiedField(twoKeyPairs.publicKeys, signedTrustRelation1, signedTrustRelation2)
@@ -279,9 +292,12 @@ class TrustManagerSpec extends Neo4jSpec {
       val trustRelation1 = signedTrustRelation1.trustRelation
 
       val trustRelation2 = trustRelation1.copy(validNotAfter = Some(trustRelation1.validNotAfter.get.plusMonths(6)))
+      val privKeyB64: Array[Byte] = Base64.getDecoder.decode(twoKeyPairs.privateKeyA())
+      val privKey = GeneratorKeyFactory.getPrivKey(privKeyB64, Curve.Ed25519)
+      val sign = Base64.getEncoder.encodeToString(privKey.sign(Json4sUtil.any2String(trustRelation2).get.getBytes))
       val signedTrustRelation2 = SignedTrustRelation(
         trustRelation = trustRelation2,
-        signature = EccUtil.signPayload(privateKey = twoKeyPairs.privateKeyA(), payload = Json4sUtil.any2String(trustRelation2).get)
+        signature = sign
       )
 
       testUpsertWithModifiedField(twoKeyPairs.publicKeys, signedTrustRelation1, signedTrustRelation2)
@@ -297,9 +313,13 @@ class TrustManagerSpec extends Neo4jSpec {
       val trustRelation1 = signedTrustRelation1.trustRelation
 
       val trustRelation2 = trustRelation1.copy(validNotAfter = None)
+      val privKeyB64: Array[Byte] = Base64.getDecoder.decode(twoKeyPairs.privateKeyA())
+      val privKey = GeneratorKeyFactory.getPrivKey(privKeyB64, Curve.Ed25519)
+      val sign = Base64.getEncoder.encodeToString(privKey.sign(Json4sUtil.any2String(trustRelation2).get.getBytes))
       val signedTrustRelation2 = SignedTrustRelation(
         trustRelation = trustRelation2,
-        signature = EccUtil.signPayload(privateKey = twoKeyPairs.privateKeyA(), payload = Json4sUtil.any2String(trustRelation2).get)
+        signature = sign
+        //signature = EccUtil.signPayload(privateKey = twoKeyPairs.privateKeyA(), payload = Json4sUtil.any2String(trustRelation2).get)
       )
 
       testUpsertWithModifiedField(twoKeyPairs.publicKeys, signedTrustRelation1, signedTrustRelation2)
@@ -325,7 +345,10 @@ class TrustManagerSpec extends Neo4jSpec {
 
       // prepare
       val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
-      val (publicKeyC, privateKeyC) = EccUtil.generateEccKeyPairEncoded
+      val privKey: PrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val (publicKeyC, privateKeyC) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
+        Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
+//      val (publicKeyC, privateKeyC) = EccUtil.generateEccKeyPairEncoded
       val keyMaterialC = KeyGenUtil.keyMaterialDb(publicKey = publicKeyC, privateKey = privateKeyC)
 
       val publicKeys = twoKeyPairs.publicKeys ++ Set(keyMaterialC.publicKey)
@@ -364,7 +387,9 @@ class TrustManagerSpec extends Neo4jSpec {
 
       // prepare
       val twoKeyPairs = TestDataGeneratorDb.generateTwoKeyPairs()
-      val (publicKeyC, privateKeyC) = EccUtil.generateEccKeyPairEncoded
+      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val (publicKeyC, privateKeyC) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
+        Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
       val keyMaterialC = KeyGenUtil.keyMaterialDb(publicKey = publicKeyC, privateKey = privateKeyC)
 
       val publicKeys = twoKeyPairs.publicKeys ++ Set(keyMaterialC.publicKey)
@@ -754,7 +779,6 @@ class TrustManagerSpec extends Neo4jSpec {
         val findTrustedSigned = TestDataGeneratorDb.findTrustedSigned(
           sourcePublicKey = keyDeviceA.publicKey.pubKeyInfo.pubKey,
           sourcePrivateKey = keyDeviceA.privateKeyString,
-          minTrust = 50,
           depth = 3
         )
 
@@ -826,7 +850,6 @@ class TrustManagerSpec extends Neo4jSpec {
         val findTrustedSigned = TestDataGeneratorDb.findTrustedSigned(
           sourcePublicKey = keyDeviceA.publicKey.pubKeyInfo.pubKey,
           sourcePrivateKey = keyDeviceA.privateKeyString,
-          minTrust = 50,
           depth = 2
         )
         logger.debug(s"findTrustedSigned.json=${Json4sUtil.any2String(findTrustedSigned)}")
@@ -887,7 +910,7 @@ class TrustManagerSpec extends Neo4jSpec {
 
   private def persistTrustSet(trustSet: Set[SignedTrustRelation]): Future[Set[Either[ExpressingTrustException, SignedTrustRelation]]] = {
 
-    Future.sequence(trustSet map TrustManager.upsert)
+    Future.sequence(trustSet map (TrustManager.upsert(_)))
 
   }
 
@@ -955,8 +978,8 @@ class TrustManagerSpec extends Neo4jSpec {
       val signedTrustRelationUser1ToDeviceA = TestDataGeneratorDb.signedTrustRelation(keyUser1, keyDeviceA, 100)
       val signedTrustRelationDeviceAToUser1 = TestDataGeneratorDb.signedTrustRelation(keyDeviceA, keyUser1, 100)
 
-      val signedTrustRelationUser1ToUser2 = TestDataGeneratorDb.signedTrustRelation(keyUser1, keyUser2, 50)
-      val signedTrustRelationUser2ToUser1 = TestDataGeneratorDb.signedTrustRelation(keyUser2, keyUser1, 50)
+      val signedTrustRelationUser1ToUser2 = TestDataGeneratorDb.signedTrustRelation(keyUser1, keyUser2)
+      val signedTrustRelationUser2ToUser1 = TestDataGeneratorDb.signedTrustRelation(keyUser2, keyUser1)
 
       val signedTrustRelationUser2ToDeviceB = TestDataGeneratorDb.signedTrustRelation(keyUser2, keyDeviceB, 100)
       val signedTrustRelationDeviceBToUser2 = TestDataGeneratorDb.signedTrustRelation(keyDeviceB, keyUser2, 100)

@@ -1,15 +1,15 @@
 package com.ubirch.keyservice.util.pubkey
 
+import java.security.NoSuchAlgorithmException
 import java.security.spec.InvalidKeySpecException
+import java.util.Base64
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
-import com.ubirch.crypto.ecc.EccUtil
-import com.ubirch.crypto.hash.HashUtil
+import org.apache.commons.codec.binary.Hex
 import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo}
 import com.ubirch.util.json.Json4sUtil
-import org.apache.commons.codec.binary.Hex
-import com.roundeights.hasher.Implicits._
-import com.roundeights.hasher.{Digest, Hash}
+import com.ubirch.crypto.GeneratorKeyFactory
+import com.ubirch.crypto.utils.Curve
 
 /**
   * Created by derMicha on 19/05/17.
@@ -34,7 +34,9 @@ object PublicKeyUtil extends StrictLogging {
         logger.debug("pubKey: '%s'".format(publicKey.pubKeyInfo.pubKey))
         logger.debug("signed part: '%s'".format(Hex.encodeHexString(part)))
         try {
-          EccUtil.validateSignatureSha512(publicKey.pubKeyInfo.pubKey, publicKey.signature, part)
+          val rawPubKeyHex = Hex.encodeHexString(Base64.getDecoder.decode(publicKey.pubKeyInfo.pubKey))
+          val pubKey = GeneratorKeyFactory.getPubKey(rawPubKeyHex, associateCurve(publicKey.pubKeyInfo.algorithm))
+          pubKey.verify(part, Base64.getDecoder.decode(publicKey.signature))
         } catch {
           case e: InvalidKeySpecException =>
             logger.error("failed to validate signature", e)
@@ -47,7 +49,9 @@ object PublicKeyUtil extends StrictLogging {
             //TODO added prevPubKey signature check!!!
             logger.debug(s"publicKeyInfoString: '$publicKeyInfoString'")
             try {
-              EccUtil.validateSignature(publicKey.pubKeyInfo.pubKey, publicKey.signature, publicKeyInfoString)
+              val rawPubKeyHex = Hex.encodeHexString(Base64.getDecoder.decode(publicKey.pubKeyInfo.pubKey))
+              val pubKey = GeneratorKeyFactory.getPubKey(rawPubKeyHex, associateCurve(publicKey.pubKeyInfo.algorithm))
+              pubKey.verify(publicKeyInfoString.getBytes, Base64.getDecoder.decode(publicKey.signature))
             } catch {
               case e: InvalidKeySpecException =>
                 logger.error("failed to validate signature", e)
@@ -59,4 +63,19 @@ object PublicKeyUtil extends StrictLogging {
         }
     }
   }
+
+  /**
+    * Associate a string to a curve used by the crypto lib
+    * @param curve the string representing the curve
+    * @return the associated curve
+    */
+  def associateCurve(curve: String): Curve = {
+    curve match {
+      case "ecdsa-p256v1" => Curve.PRIME256V1
+      case _ => Curve.Ed25519
+      //case _ => throw new NoSuchAlgorithmException
+    }
+  }
+
+
 }

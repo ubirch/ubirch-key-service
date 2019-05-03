@@ -10,5 +10,6 @@ package com.ubirch.key.model.db
   * @param signature base64 encoded signature of field _publicKey_
   */
 case class PublicKeyDelete(publicKey: String,
-                           signature: String
+                           signature: String,
+                           curveAlgorithm: String = "ECC_ED25519"
                           )

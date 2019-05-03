@@ -1,6 +1,9 @@
 package com.ubirch.keyservice.cmd
 
-import com.ubirch.crypto.ecc.EccUtil
+import java.util.Base64
+
+import com.ubirch.crypto.GeneratorKeyFactory
+import com.ubirch.crypto.utils.Curve
 import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo, Revokation, SignedRevoke}
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
@@ -41,7 +44,8 @@ object RevokeExampleGenerator extends App {
       pubKeyId = publicKey,
       validNotBefore = DateUtil.nowUTC.minusMinutes(1)
     )
-    val signature = EccUtil.signPayload(privateKey, Json4sUtil.any2String(info).get)
+    val privKey = GeneratorKeyFactory.getPrivKey(privateKey, Curve.Ed25519)
+    val signature = Base64.getEncoder.encodeToString(privKey.sign(Json4sUtil.any2String(info).get.getBytes()))
     val publicKeyObject = PublicKey(info, signature)
 
     KeyMaterial(privateKey, publicKeyObject)
@@ -55,7 +59,8 @@ object RevokeExampleGenerator extends App {
       publicKey = publicKey
     )
     val revokeJson = Json4sUtil.any2String(revoke).get
-    val signature = EccUtil.signPayload(privateKey, revokeJson)
+    val privKey = GeneratorKeyFactory.getPrivKey(privateKey, Curve.Ed25519)
+    val signature = Base64.getEncoder.encodeToString(privKey.sign(revokeJson.getBytes))
 
     SignedRevoke(revoke, signature)
 

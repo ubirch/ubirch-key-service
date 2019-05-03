@@ -3,13 +3,12 @@ package com.ubirch.keyservice.core.manager
 import java.util.Base64
 
 import com.typesafe.scalalogging.slf4j.StrictLogging
-
-import com.ubirch.crypto.ecc.EccUtil
+import com.ubirch.crypto.GeneratorKeyFactory
+import com.ubirch.crypto.utils.Curve
 import com.ubirch.key.model.db.{PublicKey, PublicKeyDelete, SignedRevoke}
 import com.ubirch.keyservice.core.manager.util.DbModelUtils
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
 import com.ubirch.util.json.Json4sUtil
-
 import org.joda.time.{DateTime, DateTimeZone}
 import org.neo4j.driver.v1.Values.parameters
 import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
@@ -316,9 +315,10 @@ object PublicKeyManager extends StrictLogging {
     */
   def deleteByPubKey(pubKeyDelete: PublicKeyDelete)
                     (implicit neo4jDriver: Driver): Future[Boolean] = {
-
-    val decodedPubKey = Base64.getDecoder.decode(pubKeyDelete.publicKey)
-    val validSignature = EccUtil.validateSignature(pubKeyDelete.publicKey, pubKeyDelete.signature, decodedPubKey)
+    val pubKeyB64 = Base64.getDecoder.decode(pubKeyDelete.publicKey)
+    val pubKey = GeneratorKeyFactory.getPubKey(pubKeyB64, PublicKeyUtil.associateCurve(pubKeyDelete.curveAlgorithm))
+    val validSignature = pubKey.verify(Base64.getDecoder.decode(pubKeyDelete.publicKey) ,
+      Base64.getDecoder.decode(pubKeyDelete.signature))
     if (validSignature) {
 
       val query =
@@ -378,11 +378,8 @@ object PublicKeyManager extends StrictLogging {
             (implicit neo4jDriver: Driver): Future[Either[KeyRevokeException, PublicKey]] = {
 
     val payloadJson = Json4sUtil.any2String(signedRevoke.revokation).get
-    val signatureValid = EccUtil.validateSignature(
-      publicKey = signedRevoke.revokation.publicKey,
-      signature = signedRevoke.signature,
-      payload = payloadJson
-    )
+    val pubKey = GeneratorKeyFactory.getPubKey(Base64.getDecoder.decode(signedRevoke.revokation.publicKey), Curve.Ed25519)
+    val signatureValid = pubKey.verify(payloadJson.getBytes, Base64.getDecoder.decode(signedRevoke.signature))
 
     if (signatureValid) {
 

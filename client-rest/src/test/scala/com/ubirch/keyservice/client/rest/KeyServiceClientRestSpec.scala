@@ -2,7 +2,8 @@ package com.ubirch.keyservice.client.rest
 
 import java.util.Base64
 
-import com.ubirch.crypto.ecc.EccUtil
+import com.ubirch.crypto.GeneratorKeyFactory
+import com.ubirch.crypto.utils.Curve
 import com.ubirch.key.model._
 import com.ubirch.key.model.db.PublicKey
 import com.ubirch.key.model.rest.{PublicKeyDelete, SignedTrustRelation, TrustedKeyResult}
@@ -15,7 +16,7 @@ import com.ubirch.util.deepCheck.model.DeepCheckResponse
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.{JsonErrorResponse, JsonResponse}
 import com.ubirch.util.uuid.UUIDUtil
-
+import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 
 import scala.concurrent.Future
@@ -68,7 +69,9 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
     scenario("new key") {
 
       // prepare
-      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
+        Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
       val publicKey = TestDataGeneratorDb.createPublicKey(
         privateKey = privKey1,
         infoPubKey = pubKey1,
@@ -91,7 +94,9 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
     scenario("key already exists -> Some") {
 
       // prepare
-      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
+        Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
       val publicKey = TestDataGeneratorDb.createPublicKey(
         privateKey = privKey1,
         infoPubKey = pubKey1,
@@ -126,18 +131,20 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
     scenario("key does not exist; valid signature --> true") {
 
       // prepare
-      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
+        Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
 
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
 
       val pubKeyString = pKey1.pubKeyInfo.pubKey
       val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
-      val signature = EccUtil.signPayload(privKey1, decodedPubKey)
+      val signature = Base64.getEncoder.encodeToString(privKey.sign(decodedPubKey))
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKey1,
         signature = signature
       )
-      EccUtil.validateSignature(pubKeyString, signature, decodedPubKey) shouldBe true
+      privKey.verify(decodedPubKey, Base64.getDecoder.decode(signature)) shouldBe true
 
       // test & verify
       KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) map (_ shouldBe true)
@@ -147,19 +154,21 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
     scenario("key does not exist; invalid signature --> false") {
 
       // prepare
-      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
-      val (_, privKey2) = EccUtil.generateEccKeyPairEncoded
+      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
+        Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
+      val privKeyB = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
 
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
 
       val pubKeyString = pKey1.pubKeyInfo.pubKey
       val pubKeyDecoded = Base64.getDecoder.decode(pubKeyString)
-      val signature = EccUtil.signPayload(privKey2, pubKeyString)
+      val signature = Base64.getEncoder.encodeToString(privKeyB.sign(pubKeyString.getBytes()))
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKeyString,
         signature = signature
       )
-      EccUtil.validateSignature(pubKeyString, signature, pubKeyDecoded) shouldBe false
+      privKey.verify(pubKeyDecoded, Base64.getDecoder.decode(signature)) shouldBe false
 
       // test & verify
       KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) map (_ shouldBe false)
@@ -169,17 +178,19 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
     scenario("key exists; invalid signature --> true and delete key") {
 
       // prepare
-      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
+        Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
 
       val pubKeyString = pKey1.pubKeyInfo.pubKey
-      val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
-      val signature = EccUtil.signPayload(privKey1, decodedPubKey)
+      val decodedPubKey: Array[Byte] = Base64.getDecoder.decode(pubKeyString)
+      val signature = Base64.getEncoder.encodeToString(privKey.sign(decodedPubKey))
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKey1,
         signature = signature
       )
-      EccUtil.validateSignature(pubKeyString, signature, decodedPubKey) shouldBe true
+      privKey.verify(decodedPubKey, Base64.getDecoder.decode(signature)) shouldBe true
 
       PublicKeyManager.create(pKey1) flatMap {
 
@@ -205,17 +216,19 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
     scenario("key exists; invalid signature --> false and don't delete key") {
 
       // prepare
-      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
-      val (_, privKey2) = EccUtil.generateEccKeyPairEncoded
+      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
+        Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
+      val privKeyB = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
       val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
 
       val pubKeyString = pKey1.pubKeyInfo.pubKey
-      val signature = EccUtil.signPayload(privKey2, pubKeyString)
+      val signature = Base64.getEncoder.encodeToString(privKeyB.sign(pubKeyString.getBytes()))
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKeyString,
         signature = signature
       )
-      EccUtil.validateSignature(pubKeyString, signature, pubKeyString) shouldBe false
+      privKey.verify(pubKeyString.getBytes, Base64.getDecoder.decode(signature)) shouldBe false
 
       PublicKeyManager.create(pKey1) flatMap {
 
@@ -245,8 +258,8 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
     scenario("key does not exist --> find nothing") {
 
       // prepare
-      val (pubKey1, _) = EccUtil.generateEccKeyPairEncoded
-
+      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val pubKey1 = Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey))
       // test
       KeyServiceClientRest.findPubKey(pubKey1) map { result =>
 
@@ -260,7 +273,9 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
     scenario("key exists --> find it") {
 
       // prepare
-      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
+        Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
       val publicKey = TestDataGeneratorDb.createPublicKey(
         privateKey = privKey1,
         infoPubKey = pubKey1,
@@ -550,7 +565,9 @@ class KeyServiceClientRestSpec extends Neo4jSpec {
     scenario("has valid key(s)") {
 
       // prepare
-      val (pubKey1, privKey1) = EccUtil.generateEccKeyPairEncoded
+      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
+        Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
       val publicKey = TestDataGeneratorDb.createPublicKey(
         privateKey = privKey1,
         infoPubKey = pubKey1,

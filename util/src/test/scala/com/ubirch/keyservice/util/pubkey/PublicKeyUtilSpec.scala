@@ -1,11 +1,15 @@
 package com.ubirch.keyservice.util.pubkey
 
-import com.ubirch.crypto.ecc.EccUtil
+import java.util.Base64
+
+import com.ubirch.crypto.GeneratorKeyFactory
+import com.ubirch.crypto.utils.Curve
 import com.ubirch.key.model._
 import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo}
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.{Json4sUtil, JsonFormats}
 import com.ubirch.util.uuid.UUIDUtil
+import org.apache.commons.codec.binary.Hex
 import org.joda.time.format.ISODateTimeFormat
 import org.json4s.Formats
 import org.json4s.native.Serialization.write
@@ -27,8 +31,10 @@ class PublicKeyUtilSpec extends FeatureSpec
     scenario("db.PublicKeyInfo with all fields set --> ensure alphabetical order of fields in JSON") {
 
       // prepare
-      val (oldPublicKey, _) = EccUtil.generateEccKeyPairEncoded
-      val (newPublicKey, _) = EccUtil.generateEccKeyPairEncoded
+      val oldPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val newPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val oldPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(oldPrivKey.getRawPublicKey))
+      val newPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(newPrivKey.getRawPublicKey))
       val hardwareDeviceId = UUIDUtil.uuid
 
       val now = DateUtil.nowUTC
@@ -56,7 +62,8 @@ class PublicKeyUtilSpec extends FeatureSpec
     scenario("db.PublicKeyInfo with only mandatory fields set --> ensure alphabetical order of fields in JSON") {
 
       // prepare
-      val (newPublicKey, _) = EccUtil.generateEccKeyPairEncoded
+      val newPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val newPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(newPrivKey.getRawPublicKey))
       val hardwareDeviceId = UUIDUtil.uuid
 
       val now = DateUtil.nowUTC
@@ -87,8 +94,11 @@ class PublicKeyUtilSpec extends FeatureSpec
     scenario("db.PublicKeyInfo with all fields set; db.PublicKey with _previousPubKeySignature_; valid signature --> true") {
 
       // prepare
-      val (oldPublicKey, oldPrivateKey) = EccUtil.generateEccKeyPairEncoded
-      val (newPublicKey, newPrivateKey) = EccUtil.generateEccKeyPairEncoded
+      val oldPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val newPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val oldPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(oldPrivKey.getRawPublicKey))
+      val newPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(newPrivKey.getRawPublicKey))
+
       val hardwareDeviceId = UUIDUtil.uuid
       val newPublicKeyId = UUIDUtil.uuidStr
 
@@ -105,8 +115,8 @@ class PublicKeyUtilSpec extends FeatureSpec
         validNotBefore = now
       )
       val pubKeyInfoString = PublicKeyUtil.publicKeyInfo2String(pubKeyInfo).get
-      val signature = EccUtil.signPayload(newPrivateKey, pubKeyInfoString)
-      val previousPubKeySignature = EccUtil.signPayload(oldPrivateKey, pubKeyInfoString)
+      val signature = Base64.getEncoder.encodeToString(newPrivKey.sign(pubKeyInfoString.getBytes))
+      val previousPubKeySignature = Base64.getEncoder.encodeToString(oldPrivKey.sign(pubKeyInfoString.getBytes))
       val publicKey = PublicKey(
         pubKeyInfo = pubKeyInfo,
         signature = signature,
@@ -121,8 +131,11 @@ class PublicKeyUtilSpec extends FeatureSpec
     scenario("db.PublicKeyInfo with all fields set; db.PublicKey without _previousPubKeySignature_; valid signature --> true") {
 
       // prepare
-      val (oldPublicKey, _) = EccUtil.generateEccKeyPairEncoded
-      val (newPublicKey, newPrivateKey) = EccUtil.generateEccKeyPairEncoded
+      val oldPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val newPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val oldPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(oldPrivKey.getRawPublicKey))
+      val newPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(newPrivKey.getRawPublicKey))
+
       val hardwareDeviceId = UUIDUtil.uuid
       val newPublicKeyId = UUIDUtil.uuidStr
 
@@ -139,7 +152,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         validNotBefore = now
       )
       val pubKeyInfoString = PublicKeyUtil.publicKeyInfo2String(pubKeyInfo).get
-      val signature = EccUtil.signPayload(newPrivateKey, pubKeyInfoString)
+      val signature = Base64.getEncoder.encodeToString(newPrivKey.sign(pubKeyInfoString.getBytes))
       val publicKey = PublicKey(
         pubKeyInfo = pubKeyInfo,
         signature = signature,
@@ -154,8 +167,10 @@ class PublicKeyUtilSpec extends FeatureSpec
     scenario("db.PublicKeyInfo with only mandatory fields set; db.PublicKey with _previousPubKeySignature_; valid signature --> true") {
 
       // prepare
-      val (_, oldPrivateKey) = EccUtil.generateEccKeyPairEncoded
-      val (newPublicKey, newPrivateKey) = EccUtil.generateEccKeyPairEncoded
+      val oldPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val newPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val newPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(newPrivKey.getRawPublicKey))
+
       val hardwareDeviceId = UUIDUtil.uuid
       val newPublicKeyId = UUIDUtil.uuidStr
 
@@ -171,8 +186,8 @@ class PublicKeyUtilSpec extends FeatureSpec
         validNotBefore = now
       )
       val pubKeyInfoString = PublicKeyUtil.publicKeyInfo2String(pubKeyInfo).get
-      val signature = EccUtil.signPayload(newPrivateKey, pubKeyInfoString)
-      val previousPubKeySignature = EccUtil.signPayload(oldPrivateKey, pubKeyInfoString)
+      val signature = Base64.getEncoder.encodeToString(newPrivKey.sign(pubKeyInfoString.getBytes))// EccUtil.signPayload(newPrivateKey, pubKeyInfoString)
+      val previousPubKeySignature = Base64.getEncoder.encodeToString(oldPrivKey.sign(pubKeyInfoString.getBytes)) //EccUtil.signPayload(oldPrivateKey, pubKeyInfoString)
       val publicKey = PublicKey(
         pubKeyInfo = pubKeyInfo,
         signature = signature,
@@ -187,7 +202,8 @@ class PublicKeyUtilSpec extends FeatureSpec
     scenario("db.PublicKeyInfo with only mandatory fields set; db.PublicKey without _previousPubKeySignature_; valid signature --> true") {
 
       // prepare
-      val (newPublicKey, newPrivateKey) = EccUtil.generateEccKeyPairEncoded
+      val newPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val newPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(newPrivKey.getRawPublicKey))
       val hardwareDeviceId = UUIDUtil.uuid
       val newPublicKeyId = UUIDUtil.uuidStr
 
@@ -203,7 +219,7 @@ class PublicKeyUtilSpec extends FeatureSpec
         validNotBefore = now
       )
       val pubKeyInfoString = PublicKeyUtil.publicKeyInfo2String(pubKeyInfo).get
-      val signature = EccUtil.signPayload(newPrivateKey, pubKeyInfoString)
+      val signature = Base64.getEncoder.encodeToString(newPrivKey.sign(pubKeyInfoString.getBytes))
       val publicKey = PublicKey(
         pubKeyInfo = pubKeyInfo,
         signature = signature,
@@ -217,7 +233,8 @@ class PublicKeyUtilSpec extends FeatureSpec
 
     scenario("rest.PublicKey converted to db.PublicKey; valid signature based on rest.PublicKey --> true") {
 
-      val (newPublicKey, newPrivateKey) = EccUtil.generateEccKeyPairEncoded
+      val newPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val newPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(newPrivKey.getRawPublicKey))
       val hardwareDeviceId = UUIDUtil.uuid
 
       val now = DateUtil.nowUTC
@@ -235,7 +252,7 @@ class PublicKeyUtilSpec extends FeatureSpec
 
       val publicKey = PublicKey(
         pubKeyInfo = Json4sUtil.any2any[db.PublicKeyInfo](pubKeyInfoRest),
-        signature = EccUtil.signPayload(newPrivateKey, pubKeyInfoString)
+        signature = Base64.getEncoder.encodeToString(newPrivKey.sign(pubKeyInfoString.getBytes))
       )
 
       // test & verify

@@ -1,13 +1,15 @@
 package com.ubirch.keyservice.core.manager
 
-import com.typesafe.scalalogging.slf4j.StrictLogging
+import java.util.Base64
 
-import com.ubirch.crypto.ecc.EccUtil
+import com.typesafe.scalalogging.slf4j.StrictLogging
+import com.ubirch.crypto.GeneratorKeyFactory
 import com.ubirch.key.model.db.{FindTrustedSigned, SignedTrustRelation, TrustedKeyResult}
 import com.ubirch.keyservice.core.manager.util.{DbModelUtils, TrustManagerUtil}
+import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
-
+import org.apache.commons.codec.binary.Hex
 import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
 import org.neo4j.driver.v1.{Driver, Transaction, TransactionWork}
 
@@ -33,15 +35,14 @@ object TrustManager extends StrictLogging {
     * @param neo4jDriver database connection
     * @return the created trust relationship; `ExpressingTrustException` with an error message describing the problem if there's an error
     */
-  def upsert(signedTrust: SignedTrustRelation)
+  def upsert(signedTrust: SignedTrustRelation, algorithmCurve: String = "ECC_ED25519")
             (implicit neo4jDriver: Driver): Future[Either[ExpressingTrustException, SignedTrustRelation]] = {
-
     val payloadJson = Json4sUtil.any2String(signedTrust.trustRelation).get
-    val signatureValid = EccUtil.validateSignature(
-      publicKey = signedTrust.trustRelation.sourcePublicKey,
-      signature = signedTrust.signature,
-      payload = payloadJson
-    )
+    val pubKeyB64 = Base64.getDecoder.decode(signedTrust.trustRelation.sourcePublicKey)
+    val pubKey = GeneratorKeyFactory.getPubKey(pubKeyB64, PublicKeyUtil.associateCurve(algorithmCurve))
+    val signatureValid = pubKey.verify(payloadJson.getBytes, Base64.getDecoder.decode(signedTrust.signature))
+    println("payloadJson: " + payloadJson)
+    println("signedTrust.signature: " + signedTrust.signature)
 
     if (signatureValid) {
 
@@ -264,15 +265,13 @@ object TrustManager extends StrictLogging {
 
   }
 
-  def findTrusted(findTrustedSigned: FindTrustedSigned)
+  def findTrusted(findTrustedSigned: FindTrustedSigned, algorithmCurve: String = "ECC_ED25519")
                  (implicit neo4jDriver: Driver): Future[Either[FindTrustedException, Set[TrustedKeyResult]]] = {
 
     val payloadJson = Json4sUtil.any2String(findTrustedSigned.findTrusted).get
-    val signatureValid = EccUtil.validateSignature(
-      publicKey = findTrustedSigned.findTrusted.sourcePublicKey,
-      signature = findTrustedSigned.signature,
-      payload = payloadJson
-    )
+    val pubKeyB64: Array[Byte] = Base64.getDecoder.decode(findTrustedSigned.findTrusted.sourcePublicKey)
+    val pubKey = GeneratorKeyFactory.getPubKey(pubKeyB64, PublicKeyUtil.associateCurve(algorithmCurve))
+    val signatureValid = pubKey.verify(payloadJson.getBytes, Base64.getDecoder.decode(findTrustedSigned.signature))
 
     if (signatureValid) {
 

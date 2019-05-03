@@ -1,10 +1,12 @@
 package com.ubirch.keyservice.cmd
 
-import com.ubirch.crypto.ecc.EccUtil
+import com.ubirch.crypto.GeneratorKeyFactory
+import com.ubirch.crypto.utils.Curve
 import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo}
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
+import org.apache.commons.codec.binary.Hex
 
 /**
   * author: cvandrei
@@ -14,7 +16,8 @@ object KeyGen extends App {
 
   override def main(args: Array[String]): Unit = {
 
-    val (publicKey, privateKey) = EccUtil.generateEccKeyPairEncoded
+    val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+    val (publicKey, privateKey) = (privKey.getRawPublicKey, privKey.getRawPrivateKey)
 
     val pubKeyInfo = PublicKeyInfo(
       algorithm = "ECC_ED25519",
@@ -24,10 +27,7 @@ object KeyGen extends App {
       pubKeyId = publicKey,
       validNotBefore = DateUtil.nowUTC.minusMinutes(1)
     )
-    val signature = EccUtil.signPayload(
-      privateKey = privateKey,
-      payload = Json4sUtil.any2String(pubKeyInfo).get
-    )
+    val signature = Hex.encodeHexString(privKey.sign(Json4sUtil.any2String(pubKeyInfo).get.getBytes))
 
     val pubKey = PublicKey(
       pubKeyInfo = pubKeyInfo,
