@@ -28,11 +28,9 @@ object KeyServiceClientRestCacheRedis extends KeyServiceClientRestBase {
     redis.get[String](cacheKey) flatMap {
 
       case None =>
-
         super.findPubKey(publicKey) flatMap KeyServiceClientRedisCacheUtil.cachePublicKey
 
       case Some(json) =>
-
         Future(Some(read[PublicKey](json)))
 
     }

@@ -77,7 +77,7 @@ class TrustActor(implicit neo4jDriver: Driver) extends Actor
     try {
 
       val findTrustedSignedDb = Json4sUtil.any2any[db.FindTrustedSigned](findTrustedSigned)
-      TrustManager.findTrusted(findTrustedSignedDb) onComplete {
+      TrustManager.findTrusted(findTrustedSignedDb, findTrustedSigned.findTrusted.curveAlgorithm) onComplete {
 
         case Success(Right(trustedKeys)) =>
 

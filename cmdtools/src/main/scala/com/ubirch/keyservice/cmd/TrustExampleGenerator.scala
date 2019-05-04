@@ -1,8 +1,8 @@
 package com.ubirch.keyservice.cmd
 
 import com.ubirch.crypto.GeneratorKeyFactory
-import com.ubirch.crypto.utils.Curve
 import com.ubirch.keyService.testTools.data.generator.{KeyGenUtil, TestDataGeneratorRest}
+import com.ubirch.keyservice.util.pubkey.PublicKeyUtil.associateCurve
 import com.ubirch.util.json.Json4sUtil
 
 /**
@@ -11,17 +11,20 @@ import com.ubirch.util.json.Json4sUtil
   */
 object TrustExampleGenerator extends App {
 
+  val ECDSA: String = "ecdsa-p256v1"
+  val EDDSA: String = "ed25519-sha-512"
+
   override def main(args: Array[String]): Unit = {
-    val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+    val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(EDDSA))
     val (publicKeyA, privateKeyA) = (privKey.getRawPublicKey, privKey.getRawPrivateKey)
     //val (publicKeyA, privateKeyA) = ("MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=", "MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==")
-    val keyMaterialA = KeyGenUtil.keyMaterial(publicKeyA, privateKeyA)
+    val keyMaterialA = KeyGenUtil.keyMaterial(publicKeyA, privateKeyA, EDDSA)
     val keyJsonA = Json4sUtil.any2String(keyMaterialA.publicKey).get
 
-    val privKeyB = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+    val privKeyB = GeneratorKeyFactory.getPrivKey(associateCurve(EDDSA))
     val (publicKeyB, privateKeyB) = (privKeyB.getRawPublicKey, privKeyB.getRawPrivateKey)
     //val (publicKeyB, privateKeyB) = ("MC0wCAYDK2VkCgEBAyEAV4aTMZNuV2bLEy/VwZQTpxbPEVZ127gs88TChgjuq4s=", "MC8CAQAwCAYDK2VkCgEBBCCnZ7tKYA/dzNPqgRRe6yBb+q7cj0AvWA6FVf6nxOtGlg==")
-    val keyMaterialB = KeyGenUtil.keyMaterial(publicKeyB, privateKeyB)
+    val keyMaterialB = KeyGenUtil.keyMaterial(publicKeyB, privateKeyB, EDDSA)
     val keyJsonB = Json4sUtil.any2String(keyMaterialB.publicKey).get
 
     println(s"## upload public keys")

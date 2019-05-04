@@ -9,7 +9,8 @@ import org.joda.time.DateTime
   * since: 2018-09-14
   */
 // fields should be ordered alphabetically as some client libs only produce JSON with alphabetically ordered fields!!!
-case class FindTrusted(depth: Int = 1,
+case class FindTrusted(curveAlgorithm: String,
+                       depth: Int = 1,
                        minTrustLevel: Int = 50,
                        queryDate: DateTime = DateUtil.nowUTC,
                        sourcePublicKey: String

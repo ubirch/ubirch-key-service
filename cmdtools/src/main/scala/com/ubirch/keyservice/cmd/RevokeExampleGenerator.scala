@@ -3,8 +3,8 @@ package com.ubirch.keyservice.cmd
 import java.util.Base64
 
 import com.ubirch.crypto.GeneratorKeyFactory
-import com.ubirch.crypto.utils.Curve
 import com.ubirch.key.model.rest.{PublicKey, PublicKeyInfo, Revokation, SignedRevoke}
+import com.ubirch.keyservice.util.pubkey.PublicKeyUtil.associateCurve
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
@@ -14,6 +14,9 @@ import com.ubirch.util.uuid.UUIDUtil
   * since: 2018-09-07
   */
 object RevokeExampleGenerator extends App {
+
+  val ECDSA: String = "ecdsa-p256v1"
+  val EDDSA: String = "ed25519-sha-512"
 
   override def main(args: Array[String]): Unit = {
 
@@ -37,14 +40,14 @@ object RevokeExampleGenerator extends App {
   private def keyMaterial(publicKey: String, privateKey: String): KeyMaterial = {
 
     val info = PublicKeyInfo(
-      algorithm = "ECC_ED25519",
+      algorithm = EDDSA,
       created = DateUtil.nowUTC.minusHours(1),
       hwDeviceId = UUIDUtil.uuidStr,
       pubKey = publicKey,
       pubKeyId = publicKey,
       validNotBefore = DateUtil.nowUTC.minusMinutes(1)
     )
-    val privKey = GeneratorKeyFactory.getPrivKey(privateKey, Curve.Ed25519)
+    val privKey = GeneratorKeyFactory.getPrivKey(privateKey, associateCurve(EDDSA))
     val signature = Base64.getEncoder.encodeToString(privKey.sign(Json4sUtil.any2String(info).get.getBytes()))
     val publicKeyObject = PublicKey(info, signature)
 
@@ -56,10 +59,11 @@ object RevokeExampleGenerator extends App {
 
     val revoke = Revokation(
       revokationDate = DateUtil.nowUTC,
-      publicKey = publicKey
+      publicKey = publicKey,
+      curveAlgorithm = EDDSA
     )
     val revokeJson = Json4sUtil.any2String(revoke).get
-    val privKey = GeneratorKeyFactory.getPrivKey(privateKey, Curve.Ed25519)
+    val privKey = GeneratorKeyFactory.getPrivKey(privateKey, associateCurve(EDDSA))
     val signature = Base64.getEncoder.encodeToString(privKey.sign(revokeJson.getBytes))
 
     SignedRevoke(revoke, signature)

@@ -47,6 +47,7 @@ object DbModelUtils extends StrictLogging {
       keyValue += "revokeSignature" -> signedRevoke.signature
       keyValue += "revokePublicKey" -> signedRevoke.revokation.publicKey
       keyValue += "revokeDateTime" -> signedRevoke.revokation.revokationDate
+      keyValue += "revokeCurveAlgorithm" -> signedRevoke.revokation.curveAlgorithm
     }
 
     keyValue
@@ -80,7 +81,7 @@ object DbModelUtils extends StrictLogging {
       hwDeviceId = Neo4jParseUtil.asType[String](pubKey, "infoHwDeviceId"),
       pubKey = Neo4jParseUtil.asType[String](pubKey, "infoPubKey"),
       pubKeyId = Neo4jParseUtil.asTypeOrDefault[String](pubKey, "infoPubKeyId", "--UNDEFINED--"),
-      algorithm = Neo4jParseUtil.asType[String](pubKey, "infoAlgorithm"),
+      algorithm = Neo4jParseUtil.asTypeOrDefault[String](pubKey, "infoAlgorithm", "ed25519-sha-512"),
       previousPubKeyId = Neo4jParseUtil.asTypeOption[String](pubKey, "infoPreviousPubKeyId"),
       created = Neo4jParseUtil.asDateTime(pubKey, "infoCreated"),
       validNotBefore = Neo4jParseUtil.asDateTime(pubKey, "infoValidNotBefore"),
@@ -134,6 +135,7 @@ object DbModelUtils extends StrictLogging {
       "signature" -> signedTrustRelation.signature,
       "created" -> signedTrustRelation.created,
       "trustCreated" -> signedTrustRelation.trustRelation.created,
+      "trustAlgorithm" -> signedTrustRelation.trustRelation.curveAlgorithm,
       "trustSource" -> signedTrustRelation.trustRelation.sourcePublicKey,
       "trustTarget" -> signedTrustRelation.trustRelation.targetPublicKey,
       "trustLevel" -> signedTrustRelation.trustRelation.trustLevel
@@ -157,7 +159,8 @@ object DbModelUtils extends StrictLogging {
 
     val trustRelation = TrustRelation(
       created = DateTime.parse(relationship.get("trustCreated").asString()),
-      sourcePublicKey = relationship.get("trustSource").asString,
+      curveAlgorithm = relationship.get("trustAlgorithm").asString(),
+      sourcePublicKey = relationship.get("trustSource").asString(),
       targetPublicKey = relationship.get("trustTarget").asString(),
       trustLevel = relationship.get("trustLevel").asInt,
       validNotAfter = if (relationship.containsKey("trustNotValidAfter")) {
@@ -182,6 +185,7 @@ object DbModelUtils extends StrictLogging {
       SignedTrustRelation(
         trustRelation = TrustRelation(
           created = Neo4jParseUtil.asDateTime(trustRelation, "trustCreated"),
+          curveAlgorithm = Neo4jParseUtil.asType[String](trustRelation, "trustAlgorithm"),
           sourcePublicKey = Neo4jParseUtil.asType[String](trustRelation, "trustSource"),
           targetPublicKey = Neo4jParseUtil.asType[String](trustRelation, "trustTarget"),
           trustLevel = Neo4jParseUtil.asType[Long](trustRelation, "trustLevel").toInt,
@@ -260,6 +264,7 @@ object DbModelUtils extends StrictLogging {
     val revokeSignature = Neo4jParseUtil.asTypeOrDefault[String](pubKey, "revokeSignature", "--UNDEFINED--")
     val revokePublicKey = Neo4jParseUtil.asTypeOrDefault[String](pubKey, "revokePublicKey", "--UNDEFINED--")
     val revokeDate = Neo4jParseUtil.asDateTimeOption(pubKey, "revokeDateTime")
+    val revokeAlgorithm = Neo4jParseUtil.asTypeOrDefault[String](pubKey, "revokeCurveAlgorithm", "ed25519-sha-512")
     if (revokeSignature == "--UNDEFINED--" && revokePublicKey == "--UNDEFINED--" && revokeDate.isEmpty) {
 
       None
@@ -268,7 +273,7 @@ object DbModelUtils extends StrictLogging {
 
       Some(
         SignedRevoke(
-          revokation = Revokation(publicKey = revokePublicKey, revokationDate = revokeDate.get),
+          revokation = Revokation(publicKey = revokePublicKey, revokationDate = revokeDate.get, curveAlgorithm = revokeAlgorithm),
           signature = revokeSignature
         )
       )
@@ -286,6 +291,7 @@ object DbModelUtils extends StrictLogging {
 
     val revokeSignature = node.get("revokeSignature").asString("--UNDEFINED--")
     val revokePublicKey = node.get("revokePublicKey").asString("--UNDEFINED--")
+    val revokeAlgorithm = node.get("revokeCurveAlgorithm").asString("ed25519-sha-512")
     val revokeDate = if (node.containsKey("revokeDateTime")) {
       Some(DateTime.parse(node.get("revokeDateTime").asString()))
     } else None
@@ -297,7 +303,7 @@ object DbModelUtils extends StrictLogging {
 
       Some(
         SignedRevoke(
-          revokation = Revokation(publicKey = revokePublicKey, revokationDate = revokeDate.get),
+          revokation = Revokation(publicKey = revokePublicKey, revokationDate = revokeDate.get, curveAlgorithm = revokeAlgorithm),
           signature = revokeSignature
         )
       )

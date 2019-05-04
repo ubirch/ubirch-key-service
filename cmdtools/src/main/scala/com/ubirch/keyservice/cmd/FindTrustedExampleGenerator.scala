@@ -1,7 +1,7 @@
 package com.ubirch.keyservice.cmd
 
 import com.ubirch.crypto.GeneratorKeyFactory
-import com.ubirch.crypto.utils.Curve
+import com.ubirch.keyservice.util.pubkey.PublicKeyUtil.associateCurve
 import com.ubirch.keyService.testTools.data.generator.{KeyGenUtil, TestDataGeneratorRest}
 import com.ubirch.util.json.Json4sUtil
 
@@ -11,22 +11,25 @@ import com.ubirch.util.json.Json4sUtil
   */
 object FindTrustedExampleGenerator extends App {
 
+  val ECDSA: String = "ecdsa-p256v1"
+  val EDDSA: String = "ed25519-sha-512"
+
   override def main(args: Array[String]): Unit = {
 
     // ****** UPLOADING KEYS ******/
 
     val (publicKeyA, privateKeyA) = ("MC0wCAYDK2VkCgEBAyEA+alWF5nfiw7RYbRqH5lAcFLjc13zv63FpG7G2OF33O4=", "MC8CAQAwCAYDK2VkCgEBBCBaVXkOGCrGJrrQcfFSOVXTDKJRN5EvFs+UwHVSBIrK6Q==")
-    val keyMaterialA = KeyGenUtil.keyMaterial(publicKeyA, privateKeyA)
+    val keyMaterialA = KeyGenUtil.keyMaterial(publicKeyA, privateKeyA, EDDSA)
     val keyAJson = Json4sUtil.any2String(keyMaterialA.publicKey).get
 
-    val privKeyB = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+    val privKeyB = GeneratorKeyFactory.getPrivKey(associateCurve(EDDSA))
     val (publicKeyB, privateKeyB) = (privKeyB.getRawPublicKey, privKeyB.getRawPrivateKey)
-    val keyMaterialB = KeyGenUtil.keyMaterial(publicKeyB, privateKeyB)
+    val keyMaterialB = KeyGenUtil.keyMaterial(publicKeyB, privateKeyB, EDDSA)
     val keyBJson = Json4sUtil.any2String(keyMaterialB.publicKey).get
 
-    val privKeyC = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+    val privKeyC = GeneratorKeyFactory.getPrivKey(associateCurve(EDDSA))
     val (publicKeyC, privateKeyC) = (privKeyC.getRawPublicKey, privKeyC.getRawPrivateKey)
-    val keyMaterialC = KeyGenUtil.keyMaterial(publicKeyC, privateKeyC)
+    val keyMaterialC = KeyGenUtil.keyMaterial(publicKeyC, privateKeyC, EDDSA)
     val keyCJson = Json4sUtil.any2String(keyMaterialC.publicKey).get
 
     println(s"###### upload public keys")
@@ -53,7 +56,9 @@ object FindTrustedExampleGenerator extends App {
 
     // ****** FIND TRUSTED KEYS ******/
 
-    val signedGetTrusted = TestDataGeneratorRest.findTrustedSigned(sourcePublicKey = publicKeyA, sourcePrivateKey = privateKeyA)
+    val signedGetTrusted = TestDataGeneratorRest.findTrustedSigned(sourcePublicKey = publicKeyA,
+      sourcePrivateKey = privateKeyA,
+      infoAlgorithm = EDDSA)
     val signedGetTrustedJson = Json4sUtil.any2String(signedGetTrusted).get
 
     println()

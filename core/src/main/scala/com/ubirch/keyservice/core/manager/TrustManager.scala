@@ -9,7 +9,6 @@ import com.ubirch.keyservice.core.manager.util.{DbModelUtils, TrustManagerUtil}
 import com.ubirch.keyservice.util.pubkey.PublicKeyUtil
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
-import org.apache.commons.codec.binary.Hex
 import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
 import org.neo4j.driver.v1.{Driver, Transaction, TransactionWork}
 
@@ -17,7 +16,6 @@ import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.postfixOps
-
 
 /**
   * author: cvandrei
@@ -35,14 +33,13 @@ object TrustManager extends StrictLogging {
     * @param neo4jDriver database connection
     * @return the created trust relationship; `ExpressingTrustException` with an error message describing the problem if there's an error
     */
-  def upsert(signedTrust: SignedTrustRelation, algorithmCurve: String = "ECC_ED25519")
+  def upsert(signedTrust: SignedTrustRelation)
             (implicit neo4jDriver: Driver): Future[Either[ExpressingTrustException, SignedTrustRelation]] = {
+    val algorithmCurve = signedTrust.trustRelation.curveAlgorithm
     val payloadJson = Json4sUtil.any2String(signedTrust.trustRelation).get
     val pubKeyB64 = Base64.getDecoder.decode(signedTrust.trustRelation.sourcePublicKey)
     val pubKey = GeneratorKeyFactory.getPubKey(pubKeyB64, PublicKeyUtil.associateCurve(algorithmCurve))
     val signatureValid = pubKey.verify(payloadJson.getBytes, Base64.getDecoder.decode(signedTrust.signature))
-    println("payloadJson: " + payloadJson)
-    println("signedTrust.signature: " + signedTrust.signature)
 
     if (signatureValid) {
 
@@ -265,14 +262,13 @@ object TrustManager extends StrictLogging {
 
   }
 
-  def findTrusted(findTrustedSigned: FindTrustedSigned, algorithmCurve: String = "ECC_ED25519")
+  def findTrusted(findTrustedSigned: FindTrustedSigned, algorithmCurve: String)
                  (implicit neo4jDriver: Driver): Future[Either[FindTrustedException, Set[TrustedKeyResult]]] = {
 
     val payloadJson = Json4sUtil.any2String(findTrustedSigned.findTrusted).get
     val pubKeyB64: Array[Byte] = Base64.getDecoder.decode(findTrustedSigned.findTrusted.sourcePublicKey)
     val pubKey = GeneratorKeyFactory.getPubKey(pubKeyB64, PublicKeyUtil.associateCurve(algorithmCurve))
     val signatureValid = pubKey.verify(payloadJson.getBytes, Base64.getDecoder.decode(findTrustedSigned.signature))
-
     if (signatureValid) {
 
       val maxDepth = TrustManagerUtil.maxWebOfTrustDepth(findTrustedSigned.findTrusted.depth)

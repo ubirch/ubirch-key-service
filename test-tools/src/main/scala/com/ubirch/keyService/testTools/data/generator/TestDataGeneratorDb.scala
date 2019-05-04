@@ -84,7 +84,7 @@ object TestDataGeneratorDb extends StrictLogging{
                       infoPubKey: String,
                       infoHwDeviceId: String = UUIDUtil.uuidStr,
                       infoPubKeyId: String = UUIDUtil.uuidStr,
-                      infoAlgorithm: String = "ed25519-sha-512",
+                      infoAlgorithm: String,
                       infoPreviousPubKeyId: Option[String] = None,
                       infoCreated: DateTime = DateTime.now(DateTimeZone.UTC),
                       infoValidNotBefore: DateTime = DateTime.now(DateTimeZone.UTC),
@@ -102,11 +102,9 @@ object TestDataGeneratorDb extends StrictLogging{
     )
 
     val pubKeyInfoString = PublicKeyUtil.publicKeyInfo2String(pubKeyInfo).get
-    logger.info("privateKey: " + privateKey)
     val privKey = GeneratorKeyFactory.getPrivKey(Hex.encodeHexString(Base64.getDecoder.decode(privateKey)),
       associateCurve(infoAlgorithm))
     val signature = Base64.getEncoder.encodeToString(privKey.sign(pubKeyInfoString.getBytes))
-    logger.info(s"signature: '$signature'")
     PublicKey(
       pubKeyInfo = pubKeyInfo,
       signature = signature
@@ -150,20 +148,21 @@ object TestDataGeneratorDb extends StrictLogging{
   def signedTrustRelation(from: KeyMaterialDb,
                           to: KeyMaterialDb,
                           trustLevel: Int = 50,
-                          validNotAfter: Option[DateTime] = Some(DateUtil.nowUTC.plusMonths(3)),
-                          algorithmCurve: String = "ECC_ED25519"
+                          validNotAfter: Option[DateTime] = Some(DateUtil.nowUTC.plusMonths(3))
                          ): SignedTrustRelation = {
+
+    val algorithmCurve = associateCurve(from.publicKey.pubKeyInfo.algorithm)
 
     val trustRelation = TrustRelation(
       created = DateUtil.nowUTC,
+      curveAlgorithm = from.publicKey.pubKeyInfo.algorithm,
       sourcePublicKey = from.publicKey.pubKeyInfo.pubKey,
       targetPublicKey = to.publicKey.pubKeyInfo.pubKey,
       trustLevel = trustLevel,
       validNotAfter = validNotAfter
     )
     val trustRelationJson = Json4sUtil.any2String(trustRelation).get
-    val privKey = GeneratorKeyFactory.getPrivKey(Base64.getDecoder.decode(from.privateKeyString),
-      associateCurve(algorithmCurve))
+    val privKey = GeneratorKeyFactory.getPrivKey(Base64.getDecoder.decode(from.privateKeyString), algorithmCurve)
     val signature = Base64.getEncoder.encodeToString(privKey.sign(trustRelationJson.getBytes))
 
     SignedTrustRelation(trustRelation, signature)
@@ -174,10 +173,11 @@ object TestDataGeneratorDb extends StrictLogging{
                         sourcePrivateKey: String,
                         minTrust: Int = 50,
                         depth: Int = 1,
-                        algortihmCurve: String = "ECC_ED25519"
+                        algortihmCurve: String
                        ): FindTrustedSigned = {
 
     val findTrusted = FindTrusted(
+      curveAlgorithm = algortihmCurve,
       depth = depth,
       minTrustLevel = minTrust,
       sourcePublicKey = sourcePublicKey
@@ -196,12 +196,13 @@ object TestDataGeneratorDb extends StrictLogging{
   def signedRevoke(publicKey: String,
                    privateKey: String,
                    created: DateTime = DateUtil.nowUTC,
-                   algorithmCurve: String = "ECC_ED25519"
+                   algorithmCurve: String
                   ): SignedRevoke = {
 
     val revokation = Revokation(
       publicKey = publicKey,
-      revokationDate = created
+      revokationDate = created,
+      curveAlgorithm = algorithmCurve
     )
     val payload = Json4sUtil.any2String(revokation).get
     val privKey = GeneratorKeyFactory.getPrivKey(Base64.getDecoder.decode(privateKey), associateCurve(algorithmCurve))
@@ -212,22 +213,19 @@ object TestDataGeneratorDb extends StrictLogging{
 
   }
 
-  def generateOneKeyPair(algortihmCurve: String = "ECC_ED25519"): KeyMaterialDb = {
-    val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(algortihmCurve))
+  def generateOneKeyPair(algorithmCurve: String): KeyMaterialDb = {
+    val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(algorithmCurve))
 
     val (privateKeyA, publicKeyA) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)),
       Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)))
 
-    logger.info(s"privKey: $privateKeyA")
-    logger.info(s"pubKey: $publicKeyA")
-
     KeyGenUtil.keyMaterialDb(publicKey = publicKeyA,
       privateKey = privateKeyA,
-      algortihmCurve)
+      algorithmCurve)
 
   }
 
-  def generateTwoKeyPairs(algortihmCurve: String = "ECC_ED25519"): KeyMaterialAAndBDb = {
+  def generateTwoKeyPairs(algortihmCurve: String): KeyMaterialAAndBDb = {
 
     val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(algortihmCurve))
     val (privateKeyA, publicKeyA) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)),

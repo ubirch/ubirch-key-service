@@ -18,6 +18,7 @@ class TrustRelationSpec extends FeatureSpec
       // test
       val trustRelation = TrustRelation(
         created = DateUtil.nowUTC,
+        curveAlgorithm = "ed25519-sha-512",
         sourcePublicKey = "sourcePublicKey",
         targetPublicKey = "targetPublicKey"
       )

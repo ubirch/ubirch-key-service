@@ -73,7 +73,6 @@ object PublicKeyUtil extends StrictLogging {
     curve match {
       case "ecdsa-p256v1" => Curve.PRIME256V1
       case _ => Curve.Ed25519
-      //case _ => throw new NoSuchAlgorithmException
     }
   }
 

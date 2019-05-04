@@ -3,15 +3,16 @@ package com.ubirch.keyservice.core.manager.util
 import com.ubirch.key.model.db.TrustedKeyResult
 import com.ubirch.keyService.testTools.data.generator.TestDataGeneratorDb
 import com.ubirch.keyservice.config.KeySvcConfig
-
-import org.scalatest.{FeatureSpec, Matchers}
+import org.scalatest.{FeatureSpec, GivenWhenThen, Matchers}
 
 /**
   * author: cvandrei
   * since: 2018-10-02
   */
-class TrustManagerUtilSpec extends FeatureSpec
-  with Matchers {
+class TrustManagerUtilSpec extends FeatureSpec with Matchers with GivenWhenThen {
+
+  val ECDSA: String = "ecdsa-p256v1"
+  val EDDSA: String = "ed25519-sha-512"
 
   feature("maxWebOfTrustDepth()") {
 
@@ -48,19 +49,17 @@ class TrustManagerUtilSpec extends FeatureSpec
 
   }
 
-  feature("extractTrustedKeys()") {
+  def extractTrustedKeys(curveAlgorithm: String): Unit = {
 
     scenario("[] --> empty") {
-
       TrustManagerUtil.extractTrustedKeys(Seq.empty) shouldBe empty
-
     }
 
     scenario("[ [trust(A-100->B)], [trust(A-100->B), trust(B-100->C)], [trust(A-100->B), trust(B-100->C), trust(C-60->B)] --> Set(B:100, C:100)") {
 
-      val keyA = TestDataGeneratorDb.generateOneKeyPair()
-      val keyB = TestDataGeneratorDb.generateOneKeyPair()
-      val keyC = TestDataGeneratorDb.generateOneKeyPair()
+      val keyA = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
+      val keyB = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
+      val keyC = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
       val signedTrustRelationAToB = TestDataGeneratorDb.signedTrustRelation(keyA, keyB, 100)
       val signedTrustRelationBToC = TestDataGeneratorDb.signedTrustRelation(keyB, keyC, 100)
       val signedTrustRelationCToB = TestDataGeneratorDb.signedTrustRelation(keyC, keyB, 60)
@@ -103,13 +102,18 @@ class TrustManagerUtilSpec extends FeatureSpec
       )
 
       result shouldBe Set(trustedKeyB, trustedKeyC)
-
     }
-
   }
 
-  feature("extractTrustedKeysFromSinglePath()") {
+  feature("extractTrustedKeys() - ECDSA") {
+    scenariosFor(extractTrustedKeys(ECDSA))
+  }
 
+  feature("extractTrustedKeys() - EDDSA") {
+    scenariosFor(extractTrustedKeys(EDDSA))
+  }
+
+  def extractTrustedKeysFromSinglePath(curveAlgorithm: String): Unit = {
     scenario("[] --> empty") {
 
       TrustManagerUtil.extractTrustedKeysFromSinglePath(Seq.empty, Set.empty) shouldBe empty
@@ -119,9 +123,9 @@ class TrustManagerUtilSpec extends FeatureSpec
     scenario("[trust(A-100->B), trust(B-100->C), trust(C-60->B)]; knownTrustedKeys is empty --> Set(B:100, C:100)") {
 
       // prepare
-      val keyA = TestDataGeneratorDb.generateOneKeyPair()
-      val keyB = TestDataGeneratorDb.generateOneKeyPair()
-      val keyC = TestDataGeneratorDb.generateOneKeyPair()
+      val keyA = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
+      val keyB = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
+      val keyC = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
       val signedTrustRelationAToB = TestDataGeneratorDb.signedTrustRelation(keyA, keyB, 100)
       val signedTrustRelationBToC = TestDataGeneratorDb.signedTrustRelation(keyB, keyC, 100)
       val signedTrustRelationCToB = TestDataGeneratorDb.signedTrustRelation(keyC, keyB, 60)
@@ -166,9 +170,9 @@ class TrustManagerUtilSpec extends FeatureSpec
     scenario("[trust(A-100->B), trust(B-100->C), trust(C-60->B), trust(B-60->A]; knownTrustedKeys is empty --> Set(B:100, C:100, A:60)") {
 
       // prepare
-      val keyA = TestDataGeneratorDb.generateOneKeyPair()
-      val keyB = TestDataGeneratorDb.generateOneKeyPair()
-      val keyC = TestDataGeneratorDb.generateOneKeyPair()
+      val keyA = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
+      val keyB = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
+      val keyC = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
       val signedTrustRelationAToB = TestDataGeneratorDb.signedTrustRelation(keyA, keyB, 100)
       val signedTrustRelationBToC = TestDataGeneratorDb.signedTrustRelation(keyB, keyC, 100)
       val signedTrustRelationCToB = TestDataGeneratorDb.signedTrustRelation(keyC, keyB, 60)
@@ -229,9 +233,9 @@ class TrustManagerUtilSpec extends FeatureSpec
     scenario("[trust(A-100->B), trust(B-100->C)]; knownTrustedKeys non-empty --> Set(B:80, C:100)") {
 
       // prepare
-      val keyA = TestDataGeneratorDb.generateOneKeyPair()
-      val keyB = TestDataGeneratorDb.generateOneKeyPair()
-      val keyC = TestDataGeneratorDb.generateOneKeyPair()
+      val keyA = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
+      val keyB = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
+      val keyC = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
       val signedTrustRelationAToB = TestDataGeneratorDb.signedTrustRelation(keyA, keyB, 100)
       val signedTrustRelationBToC = TestDataGeneratorDb.signedTrustRelation(keyB, keyC, 100)
       val signedTrustRelationCToB = TestDataGeneratorDb.signedTrustRelation(keyC, keyB, 60)
@@ -274,15 +278,20 @@ class TrustManagerUtilSpec extends FeatureSpec
       result shouldBe knownTrustedKeys + trustedKeyC
 
     }
-
   }
 
-  feature("containsUnknownTrustedKey()") {
+  feature("extractTrustedKeysFromSinglePath() - ECDSA") {
+    scenariosFor(extractTrustedKeysFromSinglePath(ECDSA))
+  }
+  feature("extractTrustedKeysFromSinglePath() - EDDSA") {
+    scenariosFor(extractTrustedKeysFromSinglePath(EDDSA))
+  }
 
+  def containsUnknownTrustedKey(curveAlgorithm: String): Unit = {
     scenario("knownTrustedKeys is empty --> true")  {
 
       // prepare
-      val keyPairsAAndB = TestDataGeneratorDb.generateTwoKeyPairs()
+      val keyPairsAAndB = TestDataGeneratorDb.generateTwoKeyPairs(curveAlgorithm)
       val key1 = keyPairsAAndB.keyMaterialA
       val key2 = keyPairsAAndB.keyMaterialB
       val signedTrustRelation1To2 = TestDataGeneratorDb.signedTrustRelation(key1, key2, 100)
@@ -295,17 +304,16 @@ class TrustManagerUtilSpec extends FeatureSpec
 
       // test && verify
       TrustManagerUtil.containsUnknownTrustedKey(trustPath, Set.empty) shouldBe true
-
     }
 
     scenario("knownTrustedKeys not empty; already contains key (with same trustLevel) --> false")  {
 
       // prepare
-      val key1 = TestDataGeneratorDb.generateOneKeyPair()
-      val key2 = TestDataGeneratorDb.generateOneKeyPair()
+      val key1 = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
+      val key2 = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
       val signedTrustRelation1To2 = TestDataGeneratorDb.signedTrustRelation(key1, key2)
 
-      val key3 = TestDataGeneratorDb.generateOneKeyPair()
+      val key3 = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
       val signedTrustRelation1To3 = TestDataGeneratorDb.signedTrustRelation(key1, key3)
 
       val trustedKey2 = TrustedKeyResult(
@@ -328,18 +336,17 @@ class TrustManagerUtilSpec extends FeatureSpec
 
       // test && verify
       TrustManagerUtil.containsUnknownTrustedKey(trustPath, knownTrustedKeys) shouldBe false
-
     }
 
     scenario("knownTrustedKeys not empty; already contains key (with different trustLevel) --> false")  {
 
       // prepare
-      val key1 = TestDataGeneratorDb.generateOneKeyPair()
-      val key2 = TestDataGeneratorDb.generateOneKeyPair()
+      val key1 = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
+      val key2 = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
       val signedTrustRelation1To2a = TestDataGeneratorDb.signedTrustRelation(key1, key2, 80)
       val signedTrustRelation1To2b = TestDataGeneratorDb.signedTrustRelation(key1, key2, 100)
 
-      val key3 = TestDataGeneratorDb.generateOneKeyPair()
+      val key3 = TestDataGeneratorDb.generateOneKeyPair(curveAlgorithm)
       val signedTrustRelation1To3 = TestDataGeneratorDb.signedTrustRelation(key1, key3)
 
       val trustedKey2 = TrustedKeyResult(
@@ -362,18 +369,17 @@ class TrustManagerUtilSpec extends FeatureSpec
 
       // test && verify
       TrustManagerUtil.containsUnknownTrustedKey(trustPath, knownTrustedKeys) shouldBe false
-
     }
 
     scenario("knownTrustedKeys not empty; does not contain key --> true")  {
 
       // prepare
-      val keyPairs1And2 = TestDataGeneratorDb.generateTwoKeyPairs()
+      val keyPairs1And2 = TestDataGeneratorDb.generateTwoKeyPairs(curveAlgorithm)
       val key1 = keyPairs1And2.keyMaterialA
       val key2 = keyPairs1And2.keyMaterialB
       val signedTrustRelation1To2 = TestDataGeneratorDb.signedTrustRelation(key1, key2)
 
-      val keyPairs3And4 = TestDataGeneratorDb.generateTwoKeyPairs()
+      val keyPairs3And4 = TestDataGeneratorDb.generateTwoKeyPairs(curveAlgorithm)
       val key3 = keyPairs3And4.keyMaterialA
       val key4 = keyPairs3And4.keyMaterialB
       val signedTrustRelation1To3 = TestDataGeneratorDb.signedTrustRelation(key1, key3)
@@ -399,9 +405,15 @@ class TrustManagerUtilSpec extends FeatureSpec
 
       // test && verify
       TrustManagerUtil.containsUnknownTrustedKey(trustPath, knownTrustedKeys) shouldBe true
-
     }
+  }
 
+  feature("containsUnknownTrustedKey() - ECDSA") {
+    scenariosFor(containsUnknownTrustedKey(ECDSA))
+  }
+
+  feature("containsUnknownTrustedKey() - EDDSA") {
+    scenariosFor(containsUnknownTrustedKey(EDDSA))
   }
 
 }

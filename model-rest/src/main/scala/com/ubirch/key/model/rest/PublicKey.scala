@@ -21,7 +21,7 @@ case class PublicKey(pubKeyInfo: PublicKeyInfo,
                     )
 
 /**
-  * @param algorithm        algorithm used to generate public key (defaults to "ed25519-sha-512")
+  * @param algorithm        algorithm used to generate public key
   * @param created          UTC timestamp
   * @param hwDeviceId       hardware device id this public key belongs to
   * @param previousPubKeyId (optional) public key id of previous key

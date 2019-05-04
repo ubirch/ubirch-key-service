@@ -14,6 +14,7 @@ case class SignedTrustRelation(trustRelation: TrustRelation,
 
 // fields should be ordered alphabetically as some client libs only produce JSON with alphabetically ordered fields!!!
 case class TrustRelation(created: DateTime = DateUtil.nowUTC,
+                         curveAlgorithm: String,
                          sourcePublicKey: String,
                          targetPublicKey: String,
                          trustLevel: Int = 50, // value range: 1, ..., 100 (higher values have more weight)

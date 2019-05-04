@@ -3,36 +3,37 @@ package com.ubirch.keyservice.util.pubkey
 import java.util.Base64
 
 import com.ubirch.crypto.GeneratorKeyFactory
-import com.ubirch.crypto.utils.Curve
 import com.ubirch.key.model._
 import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo}
 import com.ubirch.util.date.DateUtil
+import com.ubirch.keyservice.util.pubkey.PublicKeyUtil.associateCurve
 import com.ubirch.util.json.{Json4sUtil, JsonFormats}
 import com.ubirch.util.uuid.UUIDUtil
 import org.apache.commons.codec.binary.Hex
 import org.joda.time.format.ISODateTimeFormat
 import org.json4s.Formats
 import org.json4s.native.Serialization.write
-import org.scalatest.{FeatureSpec, Matchers}
+import org.scalatest.{FeatureSpec, GivenWhenThen, Matchers}
 
 /**
   * author: cvandrei
   * since: 2018-03-15
   */
-class PublicKeyUtilSpec extends FeatureSpec
-  with Matchers {
+class PublicKeyUtilSpec extends FeatureSpec with Matchers with GivenWhenThen {
+
+  val ECDSA: String = "ecdsa-p256v1"
+  val EDDSA: String = "ed25519-sha-512"
 
   implicit val formats: Formats = JsonFormats.default
 
   private val dateTimeFormat = ISODateTimeFormat.dateTime()
 
-  feature("publicKeyInfo2String()") {
-
+  def publicKeyInfo2String(curveName: String): Unit = {
     scenario("db.PublicKeyInfo with all fields set --> ensure alphabetical order of fields in JSON") {
 
       // prepare
-      val oldPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
-      val newPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val oldPrivKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveName))
+      val newPrivKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveName))
       val oldPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(oldPrivKey.getRawPublicKey))
       val newPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(newPrivKey.getRawPublicKey))
       val hardwareDeviceId = UUIDUtil.uuid
@@ -40,7 +41,7 @@ class PublicKeyUtilSpec extends FeatureSpec
       val now = DateUtil.nowUTC
       val inSixMonths = now.plusMonths(6)
       val pubKeyInfo = PublicKeyInfo(
-        algorithm = "ECC_ED25519",
+        algorithm = curveName,
         created = now,
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = Some(oldPublicKey),
@@ -62,14 +63,14 @@ class PublicKeyUtilSpec extends FeatureSpec
     scenario("db.PublicKeyInfo with only mandatory fields set --> ensure alphabetical order of fields in JSON") {
 
       // prepare
-      val newPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val newPrivKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveName))
       val newPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(newPrivKey.getRawPublicKey))
       val hardwareDeviceId = UUIDUtil.uuid
 
       val now = DateUtil.nowUTC
       val pubKeyUUID = UUIDUtil.uuidStr
       val pubKeyInfo = PublicKeyInfo(
-        algorithm = "ECC_ED25519",
+        algorithm = curveName,
         created = now,
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = None,
@@ -89,13 +90,20 @@ class PublicKeyUtilSpec extends FeatureSpec
 
   }
 
-  feature("validateSignature()") {
+  feature("publicKeyInfo2String() - ECDSA") {
+    scenariosFor(publicKeyInfo2String(ECDSA))
+  }
 
+  feature("publicKeyInfo2String() - EDDSA") {
+    scenariosFor(publicKeyInfo2String(EDDSA))
+  }
+
+  def validateSignature(curveName: String): Unit = {
     scenario("db.PublicKeyInfo with all fields set; db.PublicKey with _previousPubKeySignature_; valid signature --> true") {
 
       // prepare
-      val oldPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
-      val newPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val oldPrivKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveName))
+      val newPrivKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveName))
       val oldPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(oldPrivKey.getRawPublicKey))
       val newPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(newPrivKey.getRawPublicKey))
 
@@ -105,7 +113,7 @@ class PublicKeyUtilSpec extends FeatureSpec
       val now = DateUtil.nowUTC
       val inSixMonths = now.plusMonths(6)
       val pubKeyInfo = PublicKeyInfo(
-        algorithm = "ECC_ED25519",
+        algorithm = curveName,
         created = now,
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = Some(oldPublicKey),
@@ -131,8 +139,8 @@ class PublicKeyUtilSpec extends FeatureSpec
     scenario("db.PublicKeyInfo with all fields set; db.PublicKey without _previousPubKeySignature_; valid signature --> true") {
 
       // prepare
-      val oldPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
-      val newPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val oldPrivKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveName))
+      val newPrivKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveName))
       val oldPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(oldPrivKey.getRawPublicKey))
       val newPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(newPrivKey.getRawPublicKey))
 
@@ -142,7 +150,7 @@ class PublicKeyUtilSpec extends FeatureSpec
       val now = DateUtil.nowUTC
       val inSixMonths = now.plusMonths(6)
       val pubKeyInfo = PublicKeyInfo(
-        algorithm = "ECC_ED25519",
+        algorithm = curveName,
         created = now,
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = Some(oldPublicKey),
@@ -167,8 +175,8 @@ class PublicKeyUtilSpec extends FeatureSpec
     scenario("db.PublicKeyInfo with only mandatory fields set; db.PublicKey with _previousPubKeySignature_; valid signature --> true") {
 
       // prepare
-      val oldPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
-      val newPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val oldPrivKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveName))
+      val newPrivKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveName))
       val newPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(newPrivKey.getRawPublicKey))
 
       val hardwareDeviceId = UUIDUtil.uuid
@@ -176,7 +184,7 @@ class PublicKeyUtilSpec extends FeatureSpec
 
       val now = DateUtil.nowUTC
       val pubKeyInfo = PublicKeyInfo(
-        algorithm = "ECC_ED25519",
+        algorithm = curveName,
         created = now,
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = None,
@@ -202,14 +210,14 @@ class PublicKeyUtilSpec extends FeatureSpec
     scenario("db.PublicKeyInfo with only mandatory fields set; db.PublicKey without _previousPubKeySignature_; valid signature --> true") {
 
       // prepare
-      val newPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val newPrivKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveName))
       val newPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(newPrivKey.getRawPublicKey))
       val hardwareDeviceId = UUIDUtil.uuid
       val newPublicKeyId = UUIDUtil.uuidStr
 
       val now = DateUtil.nowUTC
       val pubKeyInfo = PublicKeyInfo(
-        algorithm = "ECC_ED25519",
+        algorithm = curveName,
         created = now,
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = None,
@@ -233,13 +241,13 @@ class PublicKeyUtilSpec extends FeatureSpec
 
     scenario("rest.PublicKey converted to db.PublicKey; valid signature based on rest.PublicKey --> true") {
 
-      val newPrivKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val newPrivKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveName))
       val newPublicKey = Base64.getEncoder.encodeToString(Hex.decodeHex(newPrivKey.getRawPublicKey))
       val hardwareDeviceId = UUIDUtil.uuid
 
       val now = DateUtil.nowUTC
       val pubKeyInfoRest = rest.PublicKeyInfo(
-        algorithm = "ECC_ED25519",
+        algorithm = curveName,
         created = now,
         hwDeviceId = hardwareDeviceId.toString,
         previousPubKeyId = None,
@@ -259,7 +267,14 @@ class PublicKeyUtilSpec extends FeatureSpec
       PublicKeyUtil.validateSignature(publicKey) shouldBe true
 
     }
+  }
 
+  feature("validateSignature() - ECDSA") {
+    scenariosFor(validateSignature(ECDSA))
+  }
+
+  feature("validateSignature() - EDDSA") {
+    scenariosFor(validateSignature(EDDSA))
   }
 
 }

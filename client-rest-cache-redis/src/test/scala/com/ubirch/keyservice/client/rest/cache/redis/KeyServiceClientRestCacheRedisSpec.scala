@@ -3,12 +3,12 @@ package com.ubirch.keyservice.client.rest.cache.redis
 import java.util.Base64
 
 import com.ubirch.crypto.GeneratorKeyFactory
-import com.ubirch.crypto.utils.Curve
 import com.ubirch.key.model._
 import com.ubirch.key.model.db.PublicKey
 import com.ubirch.key.model.rest.{PublicKeyDelete, SignedTrustRelation, TrustedKeyResult}
 import com.ubirch.keyService.testTools.data.generator.{TestDataGeneratorDb, TestDataGeneratorRest}
 import com.ubirch.keyService.testTools.db.neo4j.Neo4jSpec
+import com.ubirch.keyservice.util.pubkey.PublicKeyUtil.associateCurve
 import com.ubirch.keyservice.config.KeySvcConfig
 import com.ubirch.keyservice.core.manager.PublicKeyManager
 import com.ubirch.util.date.DateUtil
@@ -21,7 +21,7 @@ import com.ubirch.util.uuid.UUIDUtil
 import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import org.json4s.native.Serialization.read
-import org.scalatest.Assertion
+import org.scalatest.{Assertion, GivenWhenThen}
 import redis.RedisClient
 
 import scala.concurrent.Future
@@ -32,9 +32,13 @@ import scala.concurrent.Future
   */
 class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
   with RedisCleanup
-  with MyJsonProtocol {
+  with MyJsonProtocol
+  with GivenWhenThen {
 
   implicit val redisClient: RedisClient = RedisClientUtil.getRedisClient
+
+  val ECDSA: String = "ecdsa-p256v1"
+  val EDDSA: String = "ed25519-sha-512"
 
   override protected def beforeEach(): Unit = {
 
@@ -80,19 +84,20 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
 
   }
 
-  feature("pubKeyPOST()") {
+  def pubKeyPOST(curveAlgorithm: String): Unit = {
 
     scenario("new key") {
 
       // prepare
-      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
       val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
         Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
       val publicKey = TestDataGeneratorDb.createPublicKey(
         privateKey = privKey1,
         infoPubKey = pubKey1,
         infoValidNotBefore = DateUtil.nowUTC.minusDays(1),
-        infoValidNotAfter = Some(DateTime.now.plusDays(1))
+        infoValidNotAfter = Some(DateTime.now.plusDays(1)),
+        infoAlgorithm = curveAlgorithm
       )
       val restPubKey = Json4sUtil.any2any[rest.PublicKey](publicKey)
 
@@ -110,14 +115,15 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
     scenario("key already exists -> Some") {
 
       // prepare
-      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
       val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
         Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
       val publicKey = TestDataGeneratorDb.createPublicKey(
         privateKey = privKey1,
         infoPubKey = pubKey1,
         infoValidNotBefore = DateUtil.nowUTC.minusDays(1),
-        infoValidNotAfter = Some(DateUtil.nowUTC.plusDays(1))
+        infoValidNotAfter = Some(DateUtil.nowUTC.plusDays(1)),
+        infoAlgorithm = curveAlgorithm
       )
       val restPubKey = Json4sUtil.any2any[rest.PublicKey](publicKey)
       PublicKeyManager.create(publicKey) flatMap {
@@ -142,23 +148,34 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
 
   }
 
-  feature("pubKeyDELETE()") {
+  feature("pubKeyPOST() - ECDSA") {
+    scenariosFor(pubKeyPOST(ECDSA))
+  }
 
+  feature("pubKeyPOST() - EDDSA") {
+    scenariosFor(pubKeyPOST(EDDSA))
+  }
+
+  def pubKeyDELETE(curveAlgorithm: String): Unit = {
     scenario("key does not exist; valid signature --> true") {
 
       // prepare
-      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
       val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
         Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
 
-      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1,
+        infoPubKey = pubKey1,
+        infoHwDeviceId = UUIDUtil.uuidStr,
+        infoAlgorithm = curveAlgorithm)
 
       val pubKeyString = pKey1.pubKeyInfo.pubKey
       val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
       val signature = Base64.getEncoder.encodeToString(privKey.sign(decodedPubKey))
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKey1,
-        signature = signature
+        signature = signature,
+        curveAlgorithm = curveAlgorithm
       )
       privKey.verify(decodedPubKey, Base64.getDecoder.decode(signature)) shouldBe true
 
@@ -170,41 +187,49 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
     scenario("key does not exist; invalid signature --> false") {
 
       // prepare
-      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
       val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
         Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
-      val privKeyB = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val privKeyB = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
 
-      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1,
+        infoPubKey = pubKey1,
+        infoHwDeviceId = UUIDUtil.uuidStr,
+        infoAlgorithm = curveAlgorithm
+      )
 
       val pubKeyString = pKey1.pubKeyInfo.pubKey
       val pubKeyDecoded = Base64.getDecoder.decode(pubKeyString)
       val signature: Array[Byte] = privKeyB.sign(pubKeyString.getBytes())
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKeyString,
-        signature = Base64.getEncoder.encodeToString(signature)
+        signature = Base64.getEncoder.encodeToString(signature),
+        curveAlgorithm = curveAlgorithm
       )
       privKey.verify(pubKeyDecoded, signature) shouldBe false
 
       // test & verify
       KeyServiceClientRestCacheRedis.pubKeyDELETE(pubKeyDelete) map (_ shouldBe false)
-
     }
 
     scenario("key exists; invalid signature --> true and delete key") {
 
       // prepare
-      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
       val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
         Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
-      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1,
+        infoPubKey = pubKey1,
+        infoHwDeviceId = UUIDUtil.uuidStr,
+        infoAlgorithm = curveAlgorithm)
 
       val pubKeyString = pKey1.pubKeyInfo.pubKey
       val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
       val signature: Array[Byte] = privKey.sign(decodedPubKey)
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKey1,
-        signature = Base64.getEncoder.encodeToString(signature)
+        signature = Base64.getEncoder.encodeToString(signature),
+        curveAlgorithm = curveAlgorithm
       )
       privKey.verify(decodedPubKey, signature) shouldBe true
 
@@ -224,25 +249,28 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
             PublicKeyManager.findByPubKey(pubKeyString) map (_ shouldBe 'empty)
 
           }
-
       }
-
     }
 
     scenario("key exists; invalid signature --> false and don't delete key") {
 
       // prepare
-      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
       val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
         Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
-      val privKeyB = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
-      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1, infoPubKey = pubKey1, infoHwDeviceId = UUIDUtil.uuidStr)
+      val privKeyB = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
+      val pKey1 = TestDataGeneratorDb.createPublicKey(privateKey = privKey1,
+        infoPubKey = pubKey1,
+        infoHwDeviceId = UUIDUtil.uuidStr,
+        infoAlgorithm = curveAlgorithm
+      )
 
       val pubKeyString = pKey1.pubKeyInfo.pubKey
       val signature: Array[Byte] = privKeyB.sign(Base64.getDecoder.decode(pubKeyString))
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKeyString,
-        signature = Base64.getEncoder.encodeToString(signature)
+        signature = Base64.getEncoder.encodeToString(signature),
+        curveAlgorithm = curveAlgorithm
       )
       privKey.verify(Base64.getDecoder.decode(pubKeyString), signature) shouldBe false
 
@@ -262,40 +290,43 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
             PublicKeyManager.findByPubKey(pubKeyString) map (_ shouldBe Some(pKey1))
 
           }
-
       }
-
     }
-
   }
 
-  feature("findPubKeyCached()") {
+  feature("pubKeyDELETE() - ECDSA") {
+    scenariosFor(pubKeyDELETE(ECDSA))
+  }
 
+  feature("pubKeyDELETE() - EDDSA") {
+    scenariosFor(pubKeyDELETE(EDDSA))
+  }
+
+  def findPubKeyCached(curveAlgorithm: String): Unit = {
     scenario("key does not exist --> find nothing") {
 
       // prepare
-      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
       val pubKey1 = Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey))
       // test
       KeyServiceClientRestCacheRedis.findPubKeyCached(pubKey1) map { result =>
 
         // verify
         result shouldBe empty
-
       }
-
     }
 
     scenario("key exists --> Some") {
 
       // prepare
-      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
       val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
         Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
       val publicKey = TestDataGeneratorDb.createPublicKey(
         privateKey = privKey1,
         infoPubKey = pubKey1,
         infoValidNotBefore = DateTime.now.minusDays(1),
+        infoAlgorithm = curveAlgorithm,
         infoValidNotAfter = Some(DateTime.now.plusDays(1))
       )
       PublicKeyManager.create(publicKey) flatMap {
@@ -313,24 +344,22 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
             val expected = Some(Json4sUtil.any2any[rest.PublicKey](pubKeyDb))
             result shouldBe expected
             verifyCachedKey(publicKey, expected)
-
           }
-
       }
-
     }
 
     scenario("key exists in cache (for test purposes it is different from the database copy) --> Some") {
 
       // prepare
-      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
       val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
         Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
       val publicKey = TestDataGeneratorDb.createPublicKey(
         privateKey = privKey1,
         infoPubKey = pubKey1,
         infoValidNotBefore = DateTime.now.minusDays(1),
-        infoValidNotAfter = Some(DateTime.now.plusDays(1))
+        infoValidNotAfter = Some(DateTime.now.plusDays(1)),
+        infoAlgorithm = curveAlgorithm
       )
       PublicKeyManager.create(publicKey) flatMap {
 
@@ -354,19 +383,20 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
                 val expected = Some(modifiedKey)
                 result shouldBe expected
                 verifyCachedKey(publicKey, expected)
-
               }
-
           }
-
       }
-
     }
-
   }
 
-  feature("currentlyValidPubKeysCached()") {
+  feature("findPubKeyCached() - ECDSA") {
+    scenariosFor(findPubKeyCached(ECDSA))
+  }
+  feature("findPubKeyCached() - EDDSA") {
+    scenariosFor(findPubKeyCached(EDDSA))
+  }
 
+  def currentlyValidPubKeysCached(curveAlgorithm: String): Unit = {
     scenario("has no keys --> None") {
 
       // test
@@ -383,13 +413,14 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
     scenario("has valid key(s) --> Some") {
 
       // prepare
-      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
       val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
         Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
       val publicKey = TestDataGeneratorDb.createPublicKey(
         privateKey = privKey1,
         infoPubKey = pubKey1,
-        infoValidNotBefore = DateTime.now.minusDays(1)
+        infoValidNotBefore = DateTime.now.minusDays(1),
+        infoAlgorithm = curveAlgorithm
       )
       PublicKeyManager.create(publicKey) flatMap {
 
@@ -419,13 +450,14 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
     scenario("has valid key(s) in cache (for test purpose they differ from the database copy) --> Some") {
 
       // prepare
-      val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+      val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
       val (pubKey1, privKey1) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
         Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
       val publicKey = TestDataGeneratorDb.createPublicKey(
         privateKey = privKey1,
         infoPubKey = pubKey1,
-        infoValidNotBefore = DateTime.now.minusDays(1)
+        infoValidNotBefore = DateTime.now.minusDays(1),
+        infoAlgorithm = curveAlgorithm
       )
       PublicKeyManager.create(publicKey) flatMap {
 
@@ -460,20 +492,27 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
       }
 
     }
-
   }
 
-  feature("pubKeyTrustedGET()") {
+  feature("currentlyValidPubKeysCached() - ECDSA") {
+    scenariosFor(currentlyValidPubKeysCached(ECDSA))
+  }
 
+  feature("currentlyValidPubKeysCached() - EDDSA") {
+    scenariosFor(currentlyValidPubKeysCached(EDDSA))
+  }
+
+  def pubKeyTrustedGet(curveAlgorithm: String): Unit = {
     scenario("empty database --> empty") {
 
       // prepare
-      val twoKeyPairs = TestDataGeneratorRest.generateTwoKeyPairs()
+      val twoKeyPairs = TestDataGeneratorRest.generateTwoKeyPairs(curveAlgorithm)
 
       val findTrustedSigned = TestDataGeneratorRest.findTrustedSigned(
         sourcePublicKey = twoKeyPairs.keyMaterialA.publicKey.pubKeyInfo.pubKey,
         sourcePrivateKey = twoKeyPairs.keyMaterialA.privateKeyString,
-        minTrust = 100
+        minTrust = 100,
+        infoAlgorithm = curveAlgorithm
       )
 
       // test
@@ -504,9 +543,9 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
          */
 
       // prepare
-      val keyPairsAAndB = TestDataGeneratorRest.generateTwoKeyPairs()
-      val keyPairsCAndD = TestDataGeneratorRest.generateTwoKeyPairs()
-      val keyPairsEAndF = TestDataGeneratorRest.generateTwoKeyPairs()
+      val keyPairsAAndB = TestDataGeneratorRest.generateTwoKeyPairs(curveAlgorithm)
+      val keyPairsCAndD = TestDataGeneratorRest.generateTwoKeyPairs(curveAlgorithm)
+      val keyPairsEAndF = TestDataGeneratorRest.generateTwoKeyPairs(curveAlgorithm)
 
       val publicKeys = keyPairsAAndB.publicKeys ++ keyPairsCAndD.publicKeys ++ keyPairsEAndF.publicKeys
 
@@ -549,7 +588,8 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
           val findTrustedSigned = TestDataGeneratorRest.findTrustedSigned(
             sourcePublicKey = keyA.publicKey.pubKeyInfo.pubKey,
             sourcePrivateKey = keyA.privateKeyString,
-            minTrust = signedTrustRelationAToB.trustRelation.trustLevel - 1
+            minTrust = signedTrustRelationAToB.trustRelation.trustLevel - 1,
+            infoAlgorithm = curveAlgorithm
           )
 
           // test
@@ -584,7 +624,7 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
     scenario("A trusts B; B is cached --> cached copy") {
 
       // prepare
-      val keyPairAAndB = TestDataGeneratorRest.generateTwoKeyPairs()
+      val keyPairAAndB = TestDataGeneratorRest.generateTwoKeyPairs(curveAlgorithm)
 
       uploadPublicKeys(keyPairAAndB.publicKeys) flatMap { publicKeysUploaded =>
 
@@ -601,7 +641,8 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
           val findTrustedSigned = TestDataGeneratorRest.findTrustedSigned(
             sourcePublicKey = keyPairAAndB.keyMaterialA.publicKey.pubKeyInfo.pubKey,
             sourcePrivateKey = keyPairAAndB.keyMaterialA.privateKeyString,
-            minTrust = signedTrustRelationAToB.trustRelation.trustLevel
+            minTrust = signedTrustRelationAToB.trustRelation.trustLevel,
+            infoAlgorithm = curveAlgorithm
           )
 
           val modifiedTrustedKeyResult = TrustedKeyResult(
@@ -625,15 +666,17 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
                 result shouldBe Right(Set(modifiedTrustedKeyResult))
 
               }
-
           }
-
         }
-
       }
-
     }
+  }
+  feature("pubKeyTrustedGET() - ECDSA") {
+    scenariosFor(pubKeyTrustedGet(ECDSA))
+  }
 
+  feature("pubKeyTrustedGET() - EDDSA") {
+    scenariosFor(pubKeyTrustedGet(EDDSA))
   }
 
   private def verifyCachedKey(publicKey: PublicKey, expected: Option[rest.PublicKey]): Future[Assertion] = {

@@ -3,8 +3,9 @@ package com.ubirch.keyService.testTools.data.generator
 import java.util.Base64
 
 import com.ubirch.crypto.GeneratorKeyFactory
-import com.ubirch.crypto.utils.{Curve, Hash, Utils}
+import com.ubirch.crypto.utils.{Hash, Utils}
 import com.ubirch.key.model.rest.{FindTrusted, FindTrustedSigned, PublicKey, PublicKeyInfo, Revokation, SignedRevoke, SignedTrustRelation, TrustRelation}
+import com.ubirch.keyservice.util.pubkey.PublicKeyUtil.associateCurve
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.uuid.UUIDUtil
@@ -169,13 +170,15 @@ object TestDataGeneratorRest {
 
     val trustRelation = TrustRelation(
       created = DateUtil.nowUTC,
+      curveAlgorithm = from.publicKey.pubKeyInfo.algorithm,
       sourcePublicKey = from.publicKey.pubKeyInfo.pubKey,
       targetPublicKey = to.publicKey.pubKeyInfo.pubKey,
       trustLevel = trustLevel,
       validNotAfter = validNotAfter
     )
     val trustRelationJson = Json4sUtil.any2String(trustRelation).get
-    val privKey = GeneratorKeyFactory.getPrivKey(Base64.getDecoder.decode(from.privateKeyString), Curve.Ed25519)
+    val privKey = GeneratorKeyFactory.getPrivKey(Base64.getDecoder.decode(from.privateKeyString),
+      associateCurve(from.publicKey.pubKeyInfo.algorithm))
     val signature = Base64.getEncoder.encodeToString(privKey.sign(trustRelationJson.getBytes()))
 
     SignedTrustRelation(trustRelation, signature)
@@ -185,38 +188,42 @@ object TestDataGeneratorRest {
   def findTrustedSigned(depth: Int = 1,
                         sourcePublicKey: String,
                         sourcePrivateKey: String,
-                        minTrust: Int = 50
+                        minTrust: Int = 50,
+                        infoAlgorithm: String
                        ): FindTrustedSigned = {
 
     val findTrusted = FindTrusted(
       depth = depth,
       sourcePublicKey = sourcePublicKey,
       queryDate = DateUtil.nowUTC,
-      minTrustLevel = minTrust
+      minTrustLevel = minTrust,
+      curveAlgorithm = infoAlgorithm
     )
     val payload = Json4sUtil.any2String(findTrusted).get
 
-    val privKey = GeneratorKeyFactory.getPrivKey(Base64.getDecoder.decode(sourcePrivateKey), Curve.Ed25519)
-    val sign = Base64.getEncoder.encodeToString(privKey.sign(payload.getBytes))
+    val privKey = GeneratorKeyFactory.getPrivKey(Base64.getDecoder.decode(sourcePrivateKey), associateCurve(infoAlgorithm))
+    val signature = Base64.getEncoder.encodeToString(privKey.sign(payload.getBytes))
     FindTrustedSigned(
       findTrusted = findTrusted,
-      signature = sign
+      signature = signature
     )
 
   }
 
   def signedRevoke(publicKey: String,
                    privateKey: String,
-                   created: DateTime = DateUtil.nowUTC
+                   created: DateTime = DateUtil.nowUTC,
+                   curveAlgorithm: String
                   ): SignedRevoke = {
 
     val revokation = Revokation(
+      curveAlgorithm = curveAlgorithm,
       publicKey = publicKey,
       revokationDate = created
     )
     val payload = Json4sUtil.any2String(revokation).get
 
-    val privKey = GeneratorKeyFactory.getPrivKey(Base64.getDecoder.decode(privateKey), Curve.Ed25519)
+    val privKey = GeneratorKeyFactory.getPrivKey(Base64.getDecoder.decode(privateKey), associateCurve(curveAlgorithm))
     val sign = Base64.getEncoder.encodeToString(privKey.sign(payload.getBytes))
     SignedRevoke(
       revokation = revokation,
@@ -225,26 +232,26 @@ object TestDataGeneratorRest {
 
   }
 
-  def generateOneKeyPair(): KeyMaterial = {
+  def generateOneKeyPair(curveAlgorithm: String): KeyMaterial = {
 
-    val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+    val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
     val (publicKeyA, privateKeyA) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
       Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
-    KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA)
+    KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA, algorithmCurve = curveAlgorithm)
 
   }
 
-  def generateTwoKeyPairs(): KeyMaterialAAndBRest = {
+  def generateTwoKeyPairs(curveAlgorithm: String): KeyMaterialAAndBRest = {
 
-    val privKey = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+    val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
     val (publicKeyA, privateKeyA) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPublicKey)),
       Base64.getEncoder.encodeToString(Hex.decodeHex(privKey.getRawPrivateKey)))
-    val keyMaterialA = KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA)
+    val keyMaterialA = KeyGenUtil.keyMaterial(publicKey = publicKeyA, privateKey = privateKeyA, algorithmCurve = curveAlgorithm)
 
-    val privKeyB = GeneratorKeyFactory.getPrivKey(Curve.Ed25519)
+    val privKeyB = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
     val (publicKeyB, privateKeyB) = (Base64.getEncoder.encodeToString(Hex.decodeHex(privKeyB.getRawPublicKey)),
       Base64.getEncoder.encodeToString(Hex.decodeHex(privKeyB.getRawPrivateKey)))
-    val keyMaterialB = KeyGenUtil.keyMaterial(publicKey = publicKeyB, privateKey = privateKeyB)
+    val keyMaterialB = KeyGenUtil.keyMaterial(publicKey = publicKeyB, privateKey = privateKeyB, algorithmCurve = curveAlgorithm)
 
     val publicKeys = Set(
       Json4sUtil.any2any[PublicKey](keyMaterialA.publicKey),
