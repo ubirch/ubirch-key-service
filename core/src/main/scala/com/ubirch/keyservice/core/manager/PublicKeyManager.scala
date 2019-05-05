@@ -319,6 +319,7 @@ object PublicKeyManager extends StrictLogging {
         val pubKeyBytes = Base64.getDecoder.decode(foundPubKey.pubKeyInfo.pubKey)
         val pubKey = GeneratorKeyFactory.getPubKey(pubKeyBytes, PublicKeyUtil.associateCurve(foundPubKey.pubKeyInfo.algorithm))
         val validSignature = pubKey.verify(Base64.getDecoder.decode(pubKeyBytes), Base64.getDecoder.decode(pubKeyDelete.signature))
+        logger.info(s"deleteByPubKey() - found key, signature match=$validSignature")
 
         if (validSignature) {
 
@@ -350,13 +351,13 @@ object PublicKeyManager extends StrictLogging {
               logger.error(s"deleteByPubKey() -- RuntimeException: re.message=${re.getMessage}", re)
               false
           }
+
+          logger.debug(s"deleteByPubKey() -- delete result=$deleteResult")
           Future(deleteResult)
         } else {
           logger.error(s"unable to delete public key with invalid signature: $pubKeyDelete")
           Future(false)
         }
-
-        Future(true)
       case None =>
         logger.error(s"public key not found to delete: $pubKeyDelete")
         Future(false)
