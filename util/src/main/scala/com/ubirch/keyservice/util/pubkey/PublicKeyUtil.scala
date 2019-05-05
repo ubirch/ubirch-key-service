@@ -9,7 +9,7 @@ import org.apache.commons.codec.binary.Hex
 import com.ubirch.key.model.db.{PublicKey, PublicKeyInfo}
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.crypto.GeneratorKeyFactory
-import com.ubirch.crypto.utils.Curve
+import com.ubirch.crypto.utils.{Curve, Hash, Utils}
 
 /**
   * Created by derMicha on 19/05/17.
@@ -34,9 +34,9 @@ object PublicKeyUtil extends StrictLogging {
         logger.debug("pubKey: '%s'".format(publicKey.pubKeyInfo.pubKey))
         logger.debug("signed part: '%s'".format(Hex.encodeHexString(part)))
         try {
-          val rawPubKeyHex = Hex.encodeHexString(Base64.getDecoder.decode(publicKey.pubKeyInfo.pubKey))
+          val rawPubKeyHex = Base64.getDecoder.decode(publicKey.pubKeyInfo.pubKey)
           val pubKey = GeneratorKeyFactory.getPubKey(rawPubKeyHex, associateCurve(publicKey.pubKeyInfo.algorithm))
-          pubKey.verify(part, Base64.getDecoder.decode(publicKey.signature))
+          pubKey.verify(Utils.hash(part, associateHash(publicKey.pubKeyInfo.algorithm)), Base64.getDecoder.decode(publicKey.signature))
         } catch {
           case e: InvalidKeySpecException =>
             logger.error("failed to validate signature", e)
@@ -76,5 +76,16 @@ object PublicKeyUtil extends StrictLogging {
     }
   }
 
+  /**
+    * Associate a string to a Hash algorithm used by the algorithm
+    * @param curve the string representing the curve
+    * @return the associated curve
+    */
+  def associateHash(curve: String): Hash = {
+    curve match {
+      case "ecdsa-p256v1" => Hash.SHA256
+      case _ => Hash.SHA512
+    }
+  }
 
 }
