@@ -725,8 +725,7 @@ class PublicKeyManagerSpec extends Neo4jSpec with GivenWhenThen {
       val signature = Base64.getEncoder.encodeToString(privKey.sign(Base64.getDecoder.decode(pubKeyString)))
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKey1,
-        signature = signature,
-        curveAlgorithm = curveAlgorithm
+        signature = signature
       )
 
       privKey.verify(Base64.getDecoder.decode(pubKeyString), Base64.getDecoder.decode(signature)) shouldBe true
@@ -754,8 +753,7 @@ class PublicKeyManagerSpec extends Neo4jSpec with GivenWhenThen {
       val signature = Base64.getEncoder.encodeToString(privKeyB.sign(pubKeyString.getBytes))
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKeyString,
-        signature = signature,
-        curveAlgorithm = curveAlgorithm
+        signature = signature
       )
 
       privKey.verify(Base64.getDecoder.decode(pubKeyString), Base64.getDecoder.decode(signature)) shouldBe false
@@ -794,8 +792,7 @@ class PublicKeyManagerSpec extends Neo4jSpec with GivenWhenThen {
         val signature = Base64.getEncoder.encodeToString(privKey.sign(Base64.getDecoder.decode(pubKeyString)))
         val pubKeyDelete = PublicKeyDelete(
           publicKey = pubKeyString,
-          signature = signature,
-          curveAlgorithm = curveAlgorithm
+          signature = signature
         )
         privKey.verify(Base64.getDecoder.decode(pubKeyString), Base64.getDecoder.decode(signature)) shouldBe true
 
@@ -841,8 +838,7 @@ class PublicKeyManagerSpec extends Neo4jSpec with GivenWhenThen {
         val signature = Base64.getEncoder.encodeToString(privKeyB.sign(pubKeyString.getBytes))
         val pubKeyDelete = PublicKeyDelete(
           publicKey = pubKeyString,
-          signature = signature,
-          curveAlgorithm = curveAlgorithm
+          signature = signature
         )
 
         privKey.verify(Base64.getDecoder.decode(pubKeyString), Base64.getDecoder.decode(signature))  shouldBe false
@@ -888,8 +884,7 @@ class PublicKeyManagerSpec extends Neo4jSpec with GivenWhenThen {
         val signature = Base64.getEncoder.encodeToString(privKey.sign(Base64.getDecoder.decode(pubKeyString)))
         val pubKeyDelete = PublicKeyDelete(
           publicKey = pubKeyString,
-          signature = signature,
-          curveAlgorithm = curveAlgorithm
+          signature = signature
         )
 
         privKey.verify(Base64.getDecoder.decode(pubKeyString), Base64.getDecoder.decode(signature)) shouldBe true
@@ -936,8 +931,7 @@ class PublicKeyManagerSpec extends Neo4jSpec with GivenWhenThen {
         val signature = Base64.getEncoder.encodeToString(privKeyB.sign(Base64.getDecoder.decode(pubKeyString)))
         val pubKeyDelete = PublicKeyDelete(
           publicKey = pubKeyString,
-          signature = signature,
-          curveAlgorithm = curveAlgorithm
+          signature = signature
         )
 
         privKey.verify(Base64.getDecoder.decode(pubKeyString),Base64.getDecoder.decode(signature)) shouldBe false
