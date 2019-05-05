@@ -314,6 +314,8 @@ object PublicKeyManager extends StrictLogging {
     */
   def deleteByPubKey(pubKeyDelete: PublicKeyDelete)
                     (implicit neo4jDriver: Driver): Future[Boolean] = {
+    logger.info(s"deleteByPubKey() - looking up key ${pubKeyDelete.publicKey}")
+
     findByPubKey(pubKeyDelete.publicKey) flatMap {
       case Some(foundPubKey: PublicKey) =>
         val pubKeyBytes = Base64.getDecoder.decode(foundPubKey.pubKeyInfo.pubKey)
