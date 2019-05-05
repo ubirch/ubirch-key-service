@@ -174,8 +174,7 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
       val signature = Base64.getEncoder.encodeToString(privKey.sign(decodedPubKey))
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKey1,
-        signature = signature,
-        curveAlgorithm = curveAlgorithm
+        signature = signature
       )
       privKey.verify(decodedPubKey, Base64.getDecoder.decode(signature)) shouldBe true
 
@@ -203,8 +202,7 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
       val signature: Array[Byte] = privKeyB.sign(pubKeyString.getBytes())
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKeyString,
-        signature = Base64.getEncoder.encodeToString(signature),
-        curveAlgorithm = curveAlgorithm
+        signature = Base64.getEncoder.encodeToString(signature)
       )
       privKey.verify(pubKeyDecoded, signature) shouldBe false
 
@@ -228,8 +226,7 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
       val signature: Array[Byte] = privKey.sign(decodedPubKey)
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKey1,
-        signature = Base64.getEncoder.encodeToString(signature),
-        curveAlgorithm = curveAlgorithm
+        signature = Base64.getEncoder.encodeToString(signature)
       )
       privKey.verify(decodedPubKey, signature) shouldBe true
 
@@ -269,8 +266,7 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
       val signature: Array[Byte] = privKeyB.sign(Base64.getDecoder.decode(pubKeyString))
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKeyString,
-        signature = Base64.getEncoder.encodeToString(signature),
-        curveAlgorithm = curveAlgorithm
+        signature = Base64.getEncoder.encodeToString(signature)
       )
       privKey.verify(Base64.getDecoder.decode(pubKeyString), signature) shouldBe false
 
