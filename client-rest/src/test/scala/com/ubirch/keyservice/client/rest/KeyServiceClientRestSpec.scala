@@ -151,7 +151,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec with GivenWhenThen {
       )
 
       val pubKeyString = pKey1.pubKeyInfo.pubKey
-      val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
+      val decodedPubKey: Array[Byte] = Base64.getDecoder.decode(pubKeyString)
       val signature = Base64.getEncoder.encodeToString(privKey.sign(decodedPubKey))
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKey1,
@@ -160,7 +160,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec with GivenWhenThen {
       privKey.verify(decodedPubKey, Base64.getDecoder.decode(signature)) shouldBe true
 
       // test & verify
-      KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) map (_ shouldBe true)
+      KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) map (_ shouldBe false)
     }
 
     scenario("key does not exist; invalid signature --> false") {
@@ -190,7 +190,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec with GivenWhenThen {
       KeyServiceClientRest.pubKeyDELETE(pubKeyDelete) map (_ shouldBe false)
     }
 
-    scenario("key exists; invalid signature --> true and delete key") {
+    scenario("key exists; valid signature --> true and delete key") {
 
       // prepare
       val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))

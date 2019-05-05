@@ -6,13 +6,12 @@ import com.ubirch.keyservice.config.KeySvcConfig
 import com.ubirch.keyservice.core.manager.PublicKeyManager
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
-
 import org.neo4j.driver.v1.Driver
-
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.routing.RoundRobinPool
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 /**
@@ -56,7 +55,7 @@ class PublicKeyActor(implicit neo4jDriver: Driver) extends Actor
       }
       catch {
         case e: Exception =>
-          log.error("queryCurrentlyValid", e)
+          log.error(e, "queryCurrentlyValid")
           sender ! JsonErrorResponse(errorType = "KeyError", errorMessage = e.getMessage)
       }
 
@@ -69,7 +68,12 @@ class PublicKeyActor(implicit neo4jDriver: Driver) extends Actor
 
       val sender = context.sender()
       val dbPubKeyDelete = Json4sUtil.any2any[db.PublicKeyDelete](pubKeyDelete)
-      PublicKeyManager.deleteByPubKey(dbPubKeyDelete) map (sender ! _)
+      PublicKeyManager.deleteByPubKey(dbPubKeyDelete) map (sender ! _) recoverWith{
+        case e: Exception =>
+          log.error(e, "something bad happend")
+          sender ! JsonErrorResponse(errorType = "KeyError", errorMessage = e.getMessage)
+          Future(None)
+      }
 
     case signedRevoke: SignedRevoke =>
 

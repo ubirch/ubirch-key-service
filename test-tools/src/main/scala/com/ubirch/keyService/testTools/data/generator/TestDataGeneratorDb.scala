@@ -2,7 +2,6 @@ package com.ubirch.keyService.testTools.data.generator
 
 import java.util.Base64
 
-import com.typesafe.scalalogging.slf4j.StrictLogging
 import com.ubirch.crypto.GeneratorKeyFactory
 import com.ubirch.crypto.utils.{Hash, Utils}
 import com.ubirch.key.model.db.{FindTrusted, FindTrustedSigned, PublicKey, PublicKeyInfo, Revokation, SignedRevoke, SignedTrustRelation, TrustRelation}
@@ -18,7 +17,7 @@ import org.joda.time.{DateTime, DateTimeZone}
   * author: cvandrei
   * since: 2017-05-09
   */
-object TestDataGeneratorDb extends StrictLogging{
+object TestDataGeneratorDb {
 
   /**
     * Generate a [[PublicKeyInfo]] with all fields set.
@@ -102,7 +101,7 @@ object TestDataGeneratorDb extends StrictLogging{
     )
 
     val pubKeyInfoString = PublicKeyUtil.publicKeyInfo2String(pubKeyInfo).get
-    val privKey = GeneratorKeyFactory.getPrivKey(Hex.encodeHexString(Base64.getDecoder.decode(privateKey)),
+    val privKey = GeneratorKeyFactory.getPrivKey(Base64.getDecoder.decode(privateKey),
       associateCurve(infoAlgorithm))
     val signature = Base64.getEncoder.encodeToString(privKey.sign(pubKeyInfoString.getBytes))
     PublicKey(

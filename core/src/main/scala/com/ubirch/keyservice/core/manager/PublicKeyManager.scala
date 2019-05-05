@@ -315,12 +315,11 @@ object PublicKeyManager extends StrictLogging {
   def deleteByPubKey(pubKeyDelete: PublicKeyDelete)
                     (implicit neo4jDriver: Driver): Future[Boolean] = {
     logger.info(s"deleteByPubKey() - looking up key ${pubKeyDelete.publicKey}")
-
     findByPubKey(pubKeyDelete.publicKey) flatMap {
-      case Some(foundPubKey: PublicKey) =>
+      case Some(foundPubKey: PublicKey) => {
         val pubKeyBytes = Base64.getDecoder.decode(foundPubKey.pubKeyInfo.pubKey)
         val pubKey = GeneratorKeyFactory.getPubKey(pubKeyBytes, PublicKeyUtil.associateCurve(foundPubKey.pubKeyInfo.algorithm))
-        val validSignature = pubKey.verify(Base64.getDecoder.decode(pubKeyBytes), Base64.getDecoder.decode(pubKeyDelete.signature))
+        val validSignature = pubKey.verify(pubKeyBytes, Base64.getDecoder.decode(pubKeyDelete.signature))
         logger.info(s"deleteByPubKey() - found key, signature match=$validSignature")
 
         if (validSignature) {
@@ -360,10 +359,14 @@ object PublicKeyManager extends StrictLogging {
           logger.error(s"unable to delete public key with invalid signature: $pubKeyDelete")
           Future(false)
         }
+      }
+
       case None =>
         logger.error(s"public key not found to delete: $pubKeyDelete")
         Future(false)
     }
+
+
   }
 
   def revoke(signedRevoke: SignedRevoke)

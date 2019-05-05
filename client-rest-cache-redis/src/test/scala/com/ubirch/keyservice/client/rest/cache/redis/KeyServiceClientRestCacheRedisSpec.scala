@@ -157,7 +157,7 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
   }
 
   def pubKeyDELETE(curveAlgorithm: String): Unit = {
-    scenario("key does not exist; valid signature --> true") {
+    scenario("key does not exist; valid signature --> false") {
 
       // prepare
       val privKey = GeneratorKeyFactory.getPrivKey(associateCurve(curveAlgorithm))
@@ -179,7 +179,7 @@ class KeyServiceClientRestCacheRedisSpec extends Neo4jSpec
       privKey.verify(decodedPubKey, Base64.getDecoder.decode(signature)) shouldBe true
 
       // test & verify
-      KeyServiceClientRestCacheRedis.pubKeyDELETE(pubKeyDelete) map (_ shouldBe true)
+      KeyServiceClientRestCacheRedis.pubKeyDELETE(pubKeyDelete) map (_ shouldBe false)
 
     }
 
