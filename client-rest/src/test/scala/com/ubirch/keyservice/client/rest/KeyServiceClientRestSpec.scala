@@ -154,7 +154,6 @@ class KeyServiceClientRestSpec extends Neo4jSpec with GivenWhenThen {
       val decodedPubKey = Base64.getDecoder.decode(pubKeyString)
       val signature = Base64.getEncoder.encodeToString(privKey.sign(decodedPubKey))
       val pubKeyDelete = PublicKeyDelete(
-        curveAlgorithm = curveAlgorithm,
         publicKey = pubKey1,
         signature = signature
       )
@@ -183,8 +182,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec with GivenWhenThen {
       val signature = Base64.getEncoder.encodeToString(privKeyB.sign(pubKeyString.getBytes()))
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKeyString,
-        signature = signature,
-        curveAlgorithm = curveAlgorithm
+        signature = signature
       )
       privKey.verify(pubKeyDecoded, Base64.getDecoder.decode(signature)) shouldBe false
 
@@ -209,8 +207,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec with GivenWhenThen {
       val signature = Base64.getEncoder.encodeToString(privKey.sign(decodedPubKey))
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKey1,
-        signature = signature,
-        curveAlgorithm = curveAlgorithm
+        signature = signature
       )
       privKey.verify(decodedPubKey, Base64.getDecoder.decode(signature)) shouldBe true
 
@@ -250,8 +247,7 @@ class KeyServiceClientRestSpec extends Neo4jSpec with GivenWhenThen {
       val signature = Base64.getEncoder.encodeToString(privKeyB.sign(pubKeyString.getBytes()))
       val pubKeyDelete = PublicKeyDelete(
         publicKey = pubKeyString,
-        signature = signature,
-        curveAlgorithm = curveAlgorithm
+        signature = signature
       )
       privKey.verify(pubKeyString.getBytes, Base64.getDecoder.decode(signature)) shouldBe false
 
