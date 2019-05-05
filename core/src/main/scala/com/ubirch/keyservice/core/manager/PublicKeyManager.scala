@@ -314,60 +314,53 @@ object PublicKeyManager extends StrictLogging {
     */
   def deleteByPubKey(pubKeyDelete: PublicKeyDelete)
                     (implicit neo4jDriver: Driver): Future[Boolean] = {
-    val pubKeyB64 = Base64.getDecoder.decode(pubKeyDelete.publicKey)
-    val pubKey = GeneratorKeyFactory.getPubKey(pubKeyB64, PublicKeyUtil.associateCurve(pubKeyDelete.curveAlgorithm))
-    val validSignature = pubKey.verify(Base64.getDecoder.decode(pubKeyDelete.publicKey),
-      Base64.getDecoder.decode(pubKeyDelete.signature))
-    if (validSignature) {
+    findByPubKey(pubKeyDelete.publicKey) flatMap {
+      case Some(foundPubKey: PublicKey) =>
+        val pubKeyBytes = Base64.getDecoder.decode(foundPubKey.pubKeyInfo.pubKey)
+        val pubKey = GeneratorKeyFactory.getPubKey(pubKeyBytes, PublicKeyUtil.associateCurve(foundPubKey.pubKeyInfo.algorithm))
+        val validSignature = pubKey.verify(Base64.getDecoder.decode(pubKeyBytes), Base64.getDecoder.decode(pubKeyDelete.signature))
 
-      val query =
-        """MATCH (pubKey: PublicKey)
-          |WHERE pubKey.infoPubKey = $infoPubKey
-          |DELETE pubKey""".stripMargin
-      val parameterMap = parameters("infoPubKey", pubKeyDelete.publicKey)
+        if (validSignature) {
 
-      val deleteResult: Boolean = try {
+          val query =
+            """MATCH (pubKey: PublicKey)
+              |WHERE pubKey.infoPubKey = $infoPubKey
+              |DELETE pubKey""".stripMargin
+          val parameterMap = parameters("infoPubKey", pubKeyDelete.publicKey)
 
-        val session = neo4jDriver.session
-        try {
+          val deleteResult: Boolean = try {
+            val session = neo4jDriver.session
+            try {
+              session.writeTransaction(new TransactionWork[Boolean]() {
+                def execute(tx: Transaction): Boolean = {
+                  tx.run(query, parameterMap)
+                  logger.info(s"deleted publicKey=${pubKeyDelete.publicKey}")
+                  true
+                }
+              })
+            } finally if (session != null) session.close()
+          } catch {
+            case su: ServiceUnavailableException =>
+              logger.error(s"deleteByPubKey() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
+              false
+            case e: Exception =>
+              logger.error(s"deleteByPubKey() -- Exception: e.message=${e.getMessage}", e)
+              false
+            case re: RuntimeException =>
+              logger.error(s"deleteByPubKey() -- RuntimeException: re.message=${re.getMessage}", re)
+              false
+          }
+          Future(deleteResult)
+        } else {
+          logger.error(s"unable to delete public key with invalid signature: $pubKeyDelete")
+          Future(false)
+        }
 
-          session.writeTransaction(new TransactionWork[Boolean]() {
-            def execute(tx: Transaction): Boolean = {
-
-              tx.run(query, parameterMap)
-              logger.info(s"deleted publicKey=${pubKeyDelete.publicKey}")
-
-              true
-
-            }
-          })
-
-        } finally if (session != null) session.close()
-
-      } catch {
-
-        case su: ServiceUnavailableException =>
-
-          logger.error(s"deleteByPubKey() -- ServiceUnavailableException: su.message=${su.getMessage}", su)
-          false
-
-        case e: Exception =>
-
-          logger.error(s"deleteByPubKey() -- Exception: e.message=${e.getMessage}", e)
-          false
-
-        case re: RuntimeException =>
-
-          logger.error(s"deleteByPubKey() -- RuntimeException: re.message=${re.getMessage}", re)
-          false
-
-      }
-      Future(deleteResult)
-    } else {
-      logger.error(s"unable to delete public key with invalid signature: $pubKeyDelete")
-      Future(false)
+        Future(true)
+      case None =>
+        logger.error(s"public key not found to delete: $pubKeyDelete")
+        Future(false)
     }
-
   }
 
   def revoke(signedRevoke: SignedRevoke)
