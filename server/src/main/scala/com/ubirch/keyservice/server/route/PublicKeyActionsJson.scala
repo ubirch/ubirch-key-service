@@ -116,7 +116,7 @@ trait PublicKeyActionsJson extends ResponseUtil {
 
           case None =>
             logger.error(s"failed to find public key ($publicKey)")
-            complete(StatusCodes.BadRequest -> JsonErrorResponse(errorType = "QueryError", errorMessage = "failed to find public key"))
+            complete(StatusCodes.NotFound -> JsonErrorResponse(errorType = "QueryError", errorMessage = "failed to find public key"))
 
           case _ =>
             logger.error("failed to find public key (server error)")
