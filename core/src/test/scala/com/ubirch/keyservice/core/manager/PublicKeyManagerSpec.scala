@@ -709,7 +709,7 @@ class PublicKeyManagerSpec extends Neo4jSpec with GivenWhenThen {
   }
 
   def deleteByPubKey(curveAlgorithm: String): Unit = {
-    scenario("database empty; pubKey doesn't exist; valid signature --> true") {
+    scenario("database empty; pubKey doesn't exist; valid signature --> false") {
 
       // prepare
       val privKey = GeneratorKeyFactory.getPrivKey(PublicKeyUtil.associateCurve(curveAlgorithm))
@@ -731,7 +731,7 @@ class PublicKeyManagerSpec extends Neo4jSpec with GivenWhenThen {
       privKey.verify(Base64.getDecoder.decode(pubKeyString), Base64.getDecoder.decode(signature)) shouldBe true
 
       // test & verify
-      PublicKeyManager.deleteByPubKey(pubKeyDelete) map (_ shouldBe true)
+      PublicKeyManager.deleteByPubKey(pubKeyDelete) map (_ shouldBe false)
     }
 
     scenario("database empty; pubKey doesn't exist; invalid signature --> false") {
@@ -762,7 +762,7 @@ class PublicKeyManagerSpec extends Neo4jSpec with GivenWhenThen {
       PublicKeyManager.deleteByPubKey(pubKeyDelete) map (_ shouldBe false)
     }
 
-    scenario("database not empty; pubKey doesn't exist; valid signature --> true") {
+    scenario("database not empty; pubKey doesn't exist; valid signature --> false") {
 
       // prepare
       val privKey = GeneratorKeyFactory.getPrivKey(PublicKeyUtil.associateCurve(curveAlgorithm))
@@ -803,7 +803,7 @@ class PublicKeyManagerSpec extends Neo4jSpec with GivenWhenThen {
           PublicKeyManager.findByPubKey(pKey1.pubKeyInfo.pubKey) map (_ shouldBe empty)
           PublicKeyManager.findByPubKey(pKey2.pubKeyInfo.pubKey) map (_ shouldBe defined)
 
-          result shouldBe true
+          result shouldBe false
         }
       }
     }

@@ -297,7 +297,7 @@ val excludedLoggers = Seq(
 )
 
 val ubirchConfig = ubirchUtilG %% "config" % "0.2.3" excludeAll (excludedLoggers: _*)
-val ubirchCrypto = "com.ubirch" % "ubirch-crypto" % "2.0.5"
+val ubirchCrypto = "com.ubirch" % "ubirch-crypto" % "2.0.6" excludeAll (excludedLoggers: _*)
 val ubirchDate = ubirchUtilG %% "date" % "0.5.3" excludeAll (excludedLoggers: _*)
 val ubirchDeepCheckModel = ubirchUtilG %% "deep-check-model" % "0.3.1" excludeAll (excludedLoggers: _*)
 val ubirchJson = ubirchUtilG %% "json" % "0.5.1" excludeAll (excludedLoggers: _*)

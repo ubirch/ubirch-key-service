@@ -34,8 +34,8 @@ object PublicKeyUtil extends StrictLogging {
         logger.debug("pubKey: '%s'".format(publicKey.pubKeyInfo.pubKey))
         logger.debug("signed part: '%s'".format(Hex.encodeHexString(part)))
         try {
-          val rawPubKeyHex = Base64.getDecoder.decode(publicKey.pubKeyInfo.pubKey)
-          val pubKey = GeneratorKeyFactory.getPubKey(rawPubKeyHex, associateCurve(publicKey.pubKeyInfo.algorithm))
+          val pubKeyBytes = Base64.getDecoder.decode(publicKey.pubKeyInfo.pubKey)
+          val pubKey = GeneratorKeyFactory.getPubKey(pubKeyBytes, associateCurve(publicKey.pubKeyInfo.algorithm))
           pubKey.verify(Utils.hash(part, associateHash(publicKey.pubKeyInfo.algorithm)), Base64.getDecoder.decode(publicKey.signature))
         } catch {
           case e: InvalidKeySpecException =>
@@ -49,8 +49,8 @@ object PublicKeyUtil extends StrictLogging {
             //TODO added prevPubKey signature check!!!
             logger.debug(s"publicKeyInfoString: '$publicKeyInfoString'")
             try {
-              val rawPubKeyHex = Hex.encodeHexString(Base64.getDecoder.decode(publicKey.pubKeyInfo.pubKey))
-              val pubKey = GeneratorKeyFactory.getPubKey(rawPubKeyHex, associateCurve(publicKey.pubKeyInfo.algorithm))
+              val pubKeyBytes = Base64.getDecoder.decode(publicKey.pubKeyInfo.pubKey)
+              val pubKey = GeneratorKeyFactory.getPubKey(pubKeyBytes, associateCurve(publicKey.pubKeyInfo.algorithm))
               pubKey.verify(publicKeyInfoString.getBytes, Base64.getDecoder.decode(publicKey.signature))
             } catch {
               case e: InvalidKeySpecException =>
