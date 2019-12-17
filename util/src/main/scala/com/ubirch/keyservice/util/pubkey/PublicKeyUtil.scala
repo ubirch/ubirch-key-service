@@ -30,7 +30,11 @@ object PublicKeyUtil extends StrictLogging {
     publicKey.raw match {
       case Some(raw) =>
         logger.debug(s"rawMessage: '$raw'")
-        val part: Array[Byte] = Hex.decodeHex(raw).dropRight(67)
+
+        val part: Array[Byte] = raw.charAt(3) match {
+          case '2' => Hex.decodeHex(raw).dropRight(66)
+          case  _ => Hex.decodeHex(raw).dropRight(67)
+        }
         logger.debug("pubKey: '%s'".format(publicKey.pubKeyInfo.pubKey))
         logger.debug("signed part: '%s'".format(Hex.encodeHexString(part)))
         try {
@@ -47,7 +51,7 @@ object PublicKeyUtil extends StrictLogging {
 
           case Some(publicKeyInfoString) =>
             //TODO added prevPubKey signature check!!!
-            logger.debug(s"publicKeyInfoString: '$publicKeyInfoString'")
+            logger.info(s"publicKeyInfoString: '$publicKeyInfoString'")
             try {
               val pubKeyBytes = Base64.getDecoder.decode(publicKey.pubKeyInfo.pubKey)
               val pubKey = GeneratorKeyFactory.getPubKey(pubKeyBytes, associateCurve(publicKey.pubKeyInfo.algorithm))
