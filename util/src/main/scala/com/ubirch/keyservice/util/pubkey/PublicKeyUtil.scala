@@ -29,8 +29,6 @@ object PublicKeyUtil extends StrictLogging {
 
     publicKey.raw match {
       case Some(raw) =>
-        logger.debug(s"rawMessage: '$raw'")
-
         val sigIndex: Int = raw.charAt(3) match {
           // check v2 of the ubirch-protocol encoding, but make sure we don't fall for a mix (legacy bin encoding)
           case '2' if raw.charAt(4).toLower != 'b' =>
