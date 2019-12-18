@@ -31,10 +31,17 @@ object PublicKeyUtil extends StrictLogging {
       case Some(raw) =>
         logger.debug(s"rawMessage: '$raw'")
 
-        val part: Array[Byte] = raw.charAt(3) match {
-          case '2' => Hex.decodeHex(raw).dropRight(66)
-          case  _ => Hex.decodeHex(raw).dropRight(67)
+        val sigIndex: Int = raw.charAt(3) match {
+          // check v2 of the ubirch-protocol encoding, but make sure we don't fall for a mix (legacy bin encoding)
+          case '2' if raw.charAt(4).toLower != 'b' =>
+            logger.debug(s"registration message: '$raw'")
+            66
+          // legacy ubirch-protocol encoding
+          case  _ =>
+          logger.warn(s"legacy registration message: '$raw'")
+            67
         }
+        val part: Array[Byte] = Hex.decodeHex(raw).dropRight(sigIndex)
         logger.debug("pubKey: '%s'".format(publicKey.pubKeyInfo.pubKey))
         logger.debug("signed part: '%s'".format(Hex.encodeHexString(part)))
         try {
