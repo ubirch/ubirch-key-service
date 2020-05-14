@@ -69,6 +69,7 @@ lazy val clientRestCacheRedis = (project in file("client-rest-cache-redis"))
     testTools % "test"
   )
   .settings(
+    version := "0.11.4-SNAPSHOT",
     name := "client-rest-cache-redis",
     description := "REST client of the key-service (with Redis based cache)",
     libraryDependencies ++= depClientRestCacheRedis
