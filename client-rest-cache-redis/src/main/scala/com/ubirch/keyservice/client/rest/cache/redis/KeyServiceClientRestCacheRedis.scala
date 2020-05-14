@@ -1,15 +1,13 @@
 package com.ubirch.keyservice.client.rest.cache.redis
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.HttpExt
+import akka.stream.Materializer
 import com.ubirch.key.model.rest.{FindTrustedSigned, PublicKey, TrustedKeyResult}
 import com.ubirch.keyservice.client.rest.KeyServiceClientRestBase
 import com.ubirch.util.model.JsonErrorResponse
 import com.ubirch.util.redis.RedisClientUtil
-
 import org.json4s.native.Serialization.read
-
-import akka.actor.ActorSystem
-import akka.http.scaladsl.HttpExt
-import akka.stream.Materializer
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
@@ -52,7 +50,11 @@ object KeyServiceClientRestCacheRedis extends KeyServiceClientRestBase {
 
       case Some(json) =>
 
-        Future(Some(read[Set[PublicKey]](json)))
+        val pubKeySet = read[Set[PublicKey]](json)
+        if (pubKeySet.isEmpty)
+          super.currentlyValidPubKeys(hardwareId) flatMap (KeyServiceClientRedisCacheUtil.cacheValidKeys(hardwareId, _))
+        else
+          Future(Some(pubKeySet))
 
     }
 

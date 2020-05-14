@@ -1,15 +1,13 @@
 package com.ubirch.keyservice.client.rest.cache.redis
 
+import akka.actor.ActorSystem
 import com.typesafe.scalalogging.slf4j.StrictLogging
-
 import com.ubirch.key.model.rest.{FindTrustedSigned, PublicKey, PublicKeyInfo, TrustedKeyResult}
 import com.ubirch.keyservice.client.rest.cache.redis.config.KeyClientRedisConfig
 import com.ubirch.util.date.DateUtil
 import com.ubirch.util.json.Json4sUtil
 import com.ubirch.util.model.JsonErrorResponse
 import com.ubirch.util.redis.RedisClientUtil
-
-import akka.actor.ActorSystem
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
@@ -78,25 +76,28 @@ object KeyServiceClientRedisCacheUtil extends StrictLogging {
 
         Future(None)
 
-      case Some(result) =>
+      case Some(pubKeySet) if pubKeySet.isEmpty =>
+        Future(None)
+
+      case Some(pubKeySet) =>
 
         val redis = RedisClientUtil.getRedisClient
 
-        val expiry = expireInSeconds(result)
+        val expiry = expireInSeconds(pubKeySet)
 
         val cacheKey = CacheHelperUtil.cacheKeyHardwareId(hardwareId)
-        val json = Json4sUtil.any2String(result).get
-        redis.set[String](cacheKey, json, exSeconds = Some(expiry), NX = true) map {
+        val json = Json4sUtil.any2String(pubKeySet).get
+        redis.set[String](cacheKey, json, exSeconds = Some(expiry)) map {
 
           case true =>
 
             logger.debug(s"cached valid public keys: key=$cacheKey (expiry = $expiry seconds)")
-            Some(result)
+            Some(pubKeySet)
 
           case false =>
 
-            logger.error(s"failed to add to key-service rest client cache: key=$cacheKey")
-            Some(result)
+            logger.error(s"failed to add pubKeys $pubKeySet to rest client cache: key=$cacheKey")
+            Some(pubKeySet)
 
         }
 
