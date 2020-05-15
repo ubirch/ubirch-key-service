@@ -91,7 +91,7 @@ object KeyServiceClientRedisCacheUtil extends StrictLogging {
 
           case true =>
 
-            logger.debug(s"cached valid public keys: key=$cacheKey (expiry = $expiry seconds)")
+            logger.debug(s"cached valid public keys $pubKeySet: key=$cacheKey (expiry = $expiry seconds)")
             Some(pubKeySet)
 
           case false =>
