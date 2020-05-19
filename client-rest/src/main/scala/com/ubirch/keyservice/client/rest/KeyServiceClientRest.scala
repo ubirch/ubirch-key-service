@@ -1,20 +1,17 @@
 package com.ubirch.keyservice.client.rest
 
+import akka.http.scaladsl.HttpExt
+import akka.http.scaladsl.model._
+import akka.stream.Materializer
+import akka.util.ByteString
 import com.typesafe.scalalogging.slf4j.StrictLogging
-
-import com.ubirch.key.model.rest.{FindTrustedSigned, PublicKey, PublicKeyDelete, SignedRevoke, SignedTrustRelation, TrustedKeyResult}
+import com.ubirch.key.model.rest._
 import com.ubirch.keyservice.client.rest.config.KeyClientRestConfig
 import com.ubirch.util.deepCheck.model.DeepCheckResponse
 import com.ubirch.util.deepCheck.util.DeepCheckResponseUtil
 import com.ubirch.util.json.{Json4sUtil, MyJsonProtocol}
 import com.ubirch.util.model.{JsonErrorResponse, JsonResponse}
-
 import org.json4s.native.Serialization.read
-
-import akka.http.scaladsl.HttpExt
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCode, StatusCodes}
-import akka.stream.Materializer
-import akka.util.ByteString
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -106,7 +103,6 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
             Future(
               logErrorAndReturnNone(s"pubKey() call to key-service failed: url=$url code=$code, status=${res.status}")
             )
-
         }
 
       case None =>
@@ -174,10 +170,8 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
       case res@HttpResponse(code, _, _, _) =>
 
         res.discardEntityBytes()
-        Future(
-          logErrorAndReturnNone(s"findPubKey() call to key-service failed: url=$url code=$code, status=${res.status}")
-        )
-
+        logger.warn(s"findPubKey() call to key-service failed: url=$url code=$code, status=${res.status}")
+        Future(None)
     }
 
   }
@@ -248,7 +242,7 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
           case res@HttpResponse(code, _, entity, _) =>
 
             res.discardEntityBytes()
-            logger.error(s"pubKeyTrustedGET() call to key-service failed: url=$url code=$code, status=${res.status}")
+            logger.warn(s"pubKeyTrustedGET() call to key-service failed: url=$url code=$code, status=${res.status}")
             entity.dataBytes.runFold(ByteString(""))(_ ++ _) map { body =>
               Left(read[JsonErrorResponse](body.utf8String))
             }
@@ -265,7 +259,7 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
   }
 
   def pubKeyRevokePOST(signedRevoke: SignedRevoke)
-                     (implicit httpClient: HttpExt, materializer: Materializer): Future[Either[JsonErrorResponse, PublicKey]] = {
+                      (implicit httpClient: HttpExt, materializer: Materializer): Future[Either[JsonErrorResponse, PublicKey]] = {
 
     Json4sUtil.any2String(signedRevoke) match {
 
@@ -320,8 +314,9 @@ trait KeyServiceClientRestBase extends MyJsonProtocol
       case res@HttpResponse(code, _, _, _) =>
 
         res.discardEntityBytes()
+        logger.warn(s"currentlyValidPubKeys() call to key-service failed: url=$url, code=$code, status=${res.status}")
         Future(
-          logErrorAndReturnNone(s"currentlyValidPubKeys() call to key-service failed: url=$url, code=$code, status=${res.status}")
+          None
         )
 
     }
